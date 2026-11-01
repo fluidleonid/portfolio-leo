@@ -107,13 +107,19 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
 
     // Calculate dynamic anchor positions for NAV rays and labels based on container width
     const cx = navWidth / 2;
-    const isDesktopNav = navWidth >= 390;
-    const leftLabelEnd = isDesktopNav ? 92 : Math.max(50, cx - 48);
-    const leftRayEnd = isDesktopNav ? 100 : Math.max(58, cx - 42);
-    const rightLabel1Start = isDesktopNav ? 294 : Math.min(navWidth - 75, cx + 46);
-    const rightRay1End = isDesktopNav ? 286 : Math.min(navWidth - 83, cx + 40);
-    const rightLabel2Start = isDesktopNav ? 338 : Math.min(navWidth - 45, cx + 46);
-    const rightRay2End = isDesktopNav ? 330 : Math.min(navWidth - 53, cx + 40);
+    // Left side: lines become shorter and texts shift slightly horizontally while keeping full 18px text
+    const leftLabelEnd = Math.max(48, Math.min(92, cx - 58));
+    const leftRayEnd = leftLabelEnd + 6;
+    const leftTurnX = Math.max(leftRayEnd + 4, cx - 48);
+
+    // Right side: 'experience' width ~82px, 'about' width ~44px
+    const rightLabel1Start = Math.min(294, Math.max(cx + 46, navWidth - 16 - 78));
+    const rightRay1End = rightLabel1Start - 6;
+    const rightTurn1X = Math.min(rightRay1End - 4, cx + 48);
+
+    const rightLabel2Start = Math.min(338, Math.max(cx + 46, navWidth - 16 - 44));
+    const rightRay2End = rightLabel2Start - 6;
+    const rightTurn2X = Math.min(rightRay2End - 4, cx + 48);
 
     return (
       <header
@@ -154,10 +160,7 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
         <div className="flex w-full flex-row items-center justify-between gap-[8px] sm:gap-[32px]">
           {/* NAV Section */}
           <div ref={navContainerRef} className="relative flex-1 min-w-0 sm:flex-initial sm:w-[406px]">
-            <Section
-              label="NAV"
-              labelClassName="left-[14px] sm:left-[28px]"
-              className="relative flex h-[124px] w-full sm:w-[406px] items-center justify-center p-0"
+            <Section label="NAV" className="relative flex h-[124px] w-full sm:w-[406px] items-center justify-center p-[16px]"
             >
               {/* Radial guide lines adaptively anchored to centered knob */}
               <svg
@@ -167,7 +170,7 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
               >
                 {/* Top-left radial ray + horizontal line to "works" */}
                 <path
-                  d={`M${cx - 35.62} 39.74 L${cx - 48} 32 H${leftRayEnd}`}
+                  d={`M${cx - 35.62} 39.74 L${leftTurnX} 32 H${leftRayEnd}`}
                   stroke={activeNav === "works" ? tokens.colors.signalAmber : tokens.colors.borderSubtle}
                   strokeWidth="1"
                   className="transition-colors duration-150"
@@ -175,23 +178,23 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
 
                 {/* Bottom-left radial ray + horizontal line to "index" */}
                 <path
-                  d={`M${cx - 35.62} 84.26 L${cx - 48} 92 H${leftRayEnd}`}
+                  d={`M${cx - 35.62} 84.26 L${leftTurnX} 92 H${leftRayEnd}`}
                   stroke={activeNav === "index" ? tokens.colors.signalAmber : tokens.colors.borderSubtle}
                   strokeWidth="1"
                   className="transition-colors duration-150"
                 />
 
-                {/* Top-right radial ray + shorter horizontal line to "experience" */}
+                {/* Top-right radial ray + horizontal line to "experience" */}
                 <path
-                  d={`M${cx + 35.62} 39.74 L${cx + 48} 32 H${rightRay1End}`}
+                  d={`M${cx + 35.62} 39.74 L${rightTurn1X} 32 H${rightRay1End}`}
                   stroke={activeNav === "experience" ? tokens.colors.signalAmber : tokens.colors.borderSubtle}
                   strokeWidth="1"
                   className="transition-colors duration-150"
                 />
 
-                {/* Bottom-right radial ray + longer horizontal line to "about" */}
+                {/* Bottom-right radial ray + horizontal line to "about" */}
                 <path
-                  d={`M${cx + 35.62} 84.26 L${cx + 48} 92 H${rightRay2End}`}
+                  d={`M${cx + 35.62} 84.26 L${rightTurn2X} 92 H${rightRay2End}`}
                   stroke={activeNav === "about" ? tokens.colors.signalAmber : tokens.colors.borderSubtle}
                   strokeWidth="1"
                   className="transition-colors duration-150"
@@ -208,7 +211,7 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
                 onMouseEnter={() => setHoveredNav("works")}
                 onMouseLeave={() => setHoveredNav(null)}
                 style={{ right: `${navWidth - leftLabelEnd}px` }}
-                className="absolute top-[32px] -translate-y-1/2 cursor-pointer text-right text-[15px] sm:text-[18px] leading-none font-normal text-content-primary font-stetica hover:text-content-contrast transition-colors duration-150 select-none tracking-normal"
+                className="absolute top-[32px] -translate-y-1/2 cursor-pointer text-right text-[18px] leading-none font-normal text-content-primary font-stetica hover:text-content-contrast transition-colors duration-150 select-none tracking-normal"
               >
                 works
               </a>
@@ -222,7 +225,7 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
                 onMouseEnter={() => setHoveredNav("index")}
                 onMouseLeave={() => setHoveredNav(null)}
                 style={{ right: `${navWidth - leftLabelEnd}px` }}
-                className="absolute top-[92px] -translate-y-1/2 cursor-pointer text-right text-[15px] sm:text-[18px] leading-none font-normal text-content-primary font-stetica hover:text-content-contrast transition-colors duration-150 select-none tracking-normal"
+                className="absolute top-[92px] -translate-y-1/2 cursor-pointer text-right text-[18px] leading-none font-normal text-content-primary font-stetica hover:text-content-contrast transition-colors duration-150 select-none tracking-normal"
               >
                 index
               </a>
@@ -247,7 +250,7 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
                 onMouseEnter={() => setHoveredNav("experience")}
                 onMouseLeave={() => setHoveredNav(null)}
                 style={{ left: `${rightLabel1Start}px` }}
-                className="absolute top-[32px] -translate-y-1/2 cursor-pointer text-left text-[14px] sm:text-[18px] leading-none font-normal text-content-primary font-stetica hover:text-content-contrast transition-colors duration-150 select-none tracking-normal"
+                className="absolute top-[32px] -translate-y-1/2 cursor-pointer text-left text-[18px] leading-none font-normal text-content-primary font-stetica hover:text-content-contrast transition-colors duration-150 select-none tracking-normal"
               >
                 experience
               </button>
@@ -258,7 +261,7 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
                 onMouseEnter={() => setHoveredNav("about")}
                 onMouseLeave={() => setHoveredNav(null)}
                 style={{ left: `${rightLabel2Start}px` }}
-                className="absolute top-[92px] -translate-y-1/2 cursor-pointer text-left text-[15px] sm:text-[18px] leading-none font-normal text-content-primary font-stetica hover:text-content-contrast transition-colors duration-150 select-none tracking-normal"
+                className="absolute top-[92px] -translate-y-1/2 cursor-pointer text-left text-[18px] leading-none font-normal text-content-primary font-stetica hover:text-content-contrast transition-colors duration-150 select-none tracking-normal"
               >
                 about
               </button>
@@ -266,10 +269,7 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
           </div>
 
           {/* CV Download Section (Buttons stay 100% full 60px original size, section width adapts) */}
-          <Section
-            label="CV"
-            labelClassName="left-[14px] sm:left-[28px]"
-            className="flex h-[124px] w-[76px] sm:w-[124px] shrink-0 items-center justify-center p-0"
+          <Section label="CV" className="flex h-[124px] w-[96px] sm:w-[124px] shrink-0 items-center justify-center p-[16px]"
           >
             <ButtonDownload aria-label="Download CV" />
           </Section>
@@ -278,10 +278,7 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
         {/* 4. ROW 2: CONTACTS (COMM) + PET PROJECTS (PET) in ONE SINGLE ROW (Buttons stay full 44px size) */}
         <div className="flex w-full flex-row items-center justify-between gap-[8px] sm:gap-[32px]">
           {/* COMM Section with 3 tactile pills (Buttons stay full 44px size) */}
-          <Section
-            label="COMM"
-            labelClassName="left-[14px] sm:left-[28px]"
-            className="flex h-[124px] flex-1 sm:flex-initial sm:w-[290px] min-w-0 flex-row items-center justify-between px-[8px] sm:px-[20px] py-0"
+          <Section label="COMM" className="flex h-[124px] flex-1 sm:flex-initial sm:w-[290px] min-w-0 flex-row items-center justify-center gap-[8px] sm:gap-[16px] p-[16px]"
           >
             <a
               href="https://linkedin.com/in/leoniddmitriev"
@@ -308,10 +305,7 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
           </Section>
 
           {/* PET Section with 3 ButtonLamps (Buttons stay full 44px size) */}
-          <Section
-            label="PET"
-            labelClassName="left-[14px] sm:left-[28px]"
-            className="flex h-[124px] flex-1 sm:flex-initial sm:w-[242px] min-w-0 flex-row items-center justify-between px-[8px] sm:px-[20px] py-0"
+          <Section label="PET" className="flex h-[124px] flex-1 sm:flex-initial sm:w-[242px] min-w-0 flex-row items-center justify-center gap-[8px] sm:gap-[16px] p-[16px]"
           >
             <ButtonLamp label="1" aria-label="Pet Project 1" />
             <ButtonLamp label="2" aria-label="Pet Project 2" />
