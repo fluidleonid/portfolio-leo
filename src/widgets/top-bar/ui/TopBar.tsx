@@ -274,7 +274,7 @@ export const TopBar: React.FC<TopBarProps> = ({
       */}
       <nav
         aria-label="Portfolio Radio Tuner Navigation"
-        className="relative w-full overflow-hidden bg-surface select-none border-none px-[8px] pt-[6px] pb-[4px]"
+        className="relative w-full overflow-hidden bg-surface select-none border-none px-[16px] pt-[6px] pb-[4px]"
       >
         {/* Container (98:1375): height 47px */}
         <div
@@ -336,7 +336,7 @@ export const TopBar: React.FC<TopBarProps> = ({
                   }}
                   className="flex-1 text-left cursor-pointer"
                 >
-                  <span className="font-stetica text-[9px] sm:text-[10px] leading-[14px] font-medium text-content-primary select-none truncate block hover:text-content-contrast transition-colors duration-150">
+                  <span className="font-stetica text-[10px] leading-[14px] font-medium uppercase text-content-primary select-none truncate block hover:text-content-contrast transition-colors duration-150">
                     {frame.label}
                   </span>
                 </button>
