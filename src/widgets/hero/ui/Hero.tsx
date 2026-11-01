@@ -39,28 +39,23 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
   ) => {
     const [selectedNav, setSelectedNav] = useState<NavItem>(defaultNav);
     const [hoveredNav, setHoveredNav] = useState<NavItem | null>(null);
-    const innerRef = React.useRef<HTMLDivElement | null>(null);
-    const [scale, setScale] = useState<number>(1);
+    const navContainerRef = React.useRef<HTMLDivElement | null>(null);
+    const [navWidth, setNavWidth] = useState<number>(406);
 
-    // Responsive scaling to preserve exact row layout without stacking into 4 rows on mobile
+    // Responsive width measurement for NAV section to adjust padding/ray offsets without scaling buttons
     React.useEffect(() => {
-      const updateScale = () => {
-        if (!innerRef.current) return;
-        const w = innerRef.current.clientWidth;
-        if (w < 564 && w > 0) {
-          setScale(w / 564);
-        } else {
-          setScale(1);
-        }
+      const updateWidth = () => {
+        if (!navContainerRef.current) return;
+        setNavWidth(navContainerRef.current.clientWidth);
       };
 
-      updateScale();
-      const ro = new ResizeObserver(updateScale);
-      if (innerRef.current) ro.observe(innerRef.current);
-      window.addEventListener("resize", updateScale);
+      updateWidth();
+      const ro = new ResizeObserver(updateWidth);
+      if (navContainerRef.current) ro.observe(navContainerRef.current);
+      window.addEventListener("resize", updateWidth);
       return () => {
         ro.disconnect();
-        window.removeEventListener("resize", updateScale);
+        window.removeEventListener("resize", updateWidth);
       };
     }, []);
 
@@ -110,22 +105,20 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
       handleSelectNav(nearest);
     };
 
-    const setHeaderRef = React.useCallback(
-      (node: HTMLDivElement | null) => {
-        innerRef.current = node;
-        if (typeof ref === "function") {
-          ref(node);
-        } else if (ref) {
-          (ref as React.MutableRefObject<HTMLDivElement | null>).current = node;
-        }
-      },
-      [ref]
-    );
+    // Calculate dynamic anchor positions for NAV rays and labels based on container width
+    const cx = navWidth / 2;
+    const isDesktopNav = navWidth >= 390;
+    const leftLabelEnd = isDesktopNav ? 92 : Math.max(50, cx - 48);
+    const leftRayEnd = isDesktopNav ? 100 : Math.max(58, cx - 42);
+    const rightLabel1Start = isDesktopNav ? 294 : Math.min(navWidth - 75, cx + 46);
+    const rightRay1End = isDesktopNav ? 286 : Math.min(navWidth - 83, cx + 40);
+    const rightLabel2Start = isDesktopNav ? 338 : Math.min(navWidth - 45, cx + 46);
+    const rightRay2End = isDesktopNav ? 330 : Math.min(navWidth - 53, cx + 40);
 
     return (
       <header
         id="top"
-        ref={setHeaderRef}
+        ref={ref}
         className={`relative flex w-full max-w-[564px] flex-col gap-[24px] sm:gap-[32px] select-none ${className}`}
         aria-label="Portfolio Introduction"
         {...props}
@@ -157,32 +150,24 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
           />
         </div>
 
-        {/* 3. ROW 1: NAVIGATION (406px) + CV (124px) in ONE SINGLE ROW (Preserves 2-row hero layout) */}
-        <div
-          style={{ height: `${124 * scale}px` }}
-          className="relative w-full overflow-visible"
-        >
-          <div
-            style={{
-              width: "564px",
-              transform: `scale(${scale})`,
-              transformOrigin: "top left",
-            }}
-            className="flex w-[564px] flex-row items-center justify-between shrink-0"
-          >
+        {/* 3. ROW 1: NAVIGATION + CV in ONE SINGLE ROW (Preserves 2-row layout, buttons stay full 1:1 size) */}
+        <div className="flex w-full flex-row items-center justify-between gap-[8px] sm:gap-[32px]">
+          {/* NAV Section */}
+          <div ref={navContainerRef} className="relative flex-1 min-w-0 sm:flex-initial sm:w-[406px]">
             <Section
               label="NAV"
-              className="relative flex h-[124px] w-[406px] shrink-0 items-center justify-center p-0"
+              labelClassName="left-[14px] sm:left-[28px]"
+              className="relative flex h-[124px] w-full sm:w-[406px] items-center justify-center p-0"
             >
-              {/* 20px straight radial guide lines placed 8px from knob edge (r = 42px to 62px) */}
+              {/* Radial guide lines adaptively anchored to centered knob */}
               <svg
-                className="pointer-events-none absolute inset-0 h-[124px] w-[406px]"
-                viewBox="0 0 406 124"
+                className="pointer-events-none absolute inset-0 h-[124px] w-full"
+                viewBox={`0 0 ${navWidth} 124`}
                 fill="none"
               >
                 {/* Top-left radial ray + horizontal line to "works" */}
                 <path
-                  d="M167.38 39.74L155 32H100"
+                  d={`M${cx - 35.62} 39.74 L${cx - 48} 32 H${leftRayEnd}`}
                   stroke={activeNav === "works" ? tokens.colors.signalAmber : tokens.colors.borderSubtle}
                   strokeWidth="1"
                   className="transition-colors duration-150"
@@ -190,7 +175,7 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
 
                 {/* Bottom-left radial ray + horizontal line to "index" */}
                 <path
-                  d="M167.38 84.26L155 92H100"
+                  d={`M${cx - 35.62} 84.26 L${cx - 48} 92 H${leftRayEnd}`}
                   stroke={activeNav === "index" ? tokens.colors.signalAmber : tokens.colors.borderSubtle}
                   strokeWidth="1"
                   className="transition-colors duration-150"
@@ -198,7 +183,7 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
 
                 {/* Top-right radial ray + shorter horizontal line to "experience" */}
                 <path
-                  d="M238.62 39.74L251 32H286"
+                  d={`M${cx + 35.62} 39.74 L${cx + 48} 32 H${rightRay1End}`}
                   stroke={activeNav === "experience" ? tokens.colors.signalAmber : tokens.colors.borderSubtle}
                   strokeWidth="1"
                   className="transition-colors duration-150"
@@ -206,14 +191,14 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
 
                 {/* Bottom-right radial ray + longer horizontal line to "about" */}
                 <path
-                  d="M238.62 84.26L251 92H330"
+                  d={`M${cx + 35.62} 84.26 L${cx + 48} 92 H${rightRay2End}`}
                   stroke={activeNav === "about" ? tokens.colors.signalAmber : tokens.colors.borderSubtle}
                   strokeWidth="1"
                   className="transition-colors duration-150"
                 />
               </svg>
 
-              {/* Left Column: "works" (top, centered on y=32px) and "index" (bottom, centered on y=92px) */}
+              {/* Left Column: "works" and "index" */}
               <a
                 href="#works"
                 onClick={(e) => {
@@ -222,7 +207,8 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
                 }}
                 onMouseEnter={() => setHoveredNav("works")}
                 onMouseLeave={() => setHoveredNav(null)}
-                className="absolute right-[314px] top-[32px] -translate-y-1/2 cursor-pointer text-right text-[18px] leading-none font-normal text-content-primary font-stetica hover:text-content-contrast transition-colors duration-150 select-none tracking-normal"
+                style={{ right: `${navWidth - leftLabelEnd}px` }}
+                className="absolute top-[32px] -translate-y-1/2 cursor-pointer text-right text-[15px] sm:text-[18px] leading-none font-normal text-content-primary font-stetica hover:text-content-contrast transition-colors duration-150 select-none tracking-normal"
               >
                 works
               </a>
@@ -235,13 +221,17 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
                 }}
                 onMouseEnter={() => setHoveredNav("index")}
                 onMouseLeave={() => setHoveredNav(null)}
-                className="absolute right-[314px] top-[92px] -translate-y-1/2 cursor-pointer text-right text-[18px] leading-none font-normal text-content-primary font-stetica hover:text-content-contrast transition-colors duration-150 select-none tracking-normal"
+                style={{ right: `${navWidth - leftLabelEnd}px` }}
+                className="absolute top-[92px] -translate-y-1/2 cursor-pointer text-right text-[15px] sm:text-[18px] leading-none font-normal text-content-primary font-stetica hover:text-content-contrast transition-colors duration-150 select-none tracking-normal"
               >
                 index
               </a>
 
-              {/* Centered Rotary Knob */}
-              <div className="relative z-10">
+              {/* Centered Rotary Knob - 100% full original size without scaling */}
+              <div
+                style={{ left: `${cx}px` }}
+                className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 z-10"
+              >
                 <Knob
                   value={knobTargetAngle}
                   snapAngles={snapAngles}
@@ -250,13 +240,14 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
                 />
               </div>
 
-              {/* Right Column: "experience" (top, centered on y=32px) and "about" (bottom, centered on y=92px) */}
+              {/* Right Column: "experience" and "about" */}
               <button
                 type="button"
                 onClick={() => handleSelectNav("experience")}
                 onMouseEnter={() => setHoveredNav("experience")}
                 onMouseLeave={() => setHoveredNav(null)}
-                className="absolute left-[294px] top-[32px] -translate-y-1/2 cursor-pointer text-left text-[18px] leading-none font-normal text-content-primary font-stetica hover:text-content-contrast transition-colors duration-150 select-none tracking-normal"
+                style={{ left: `${rightLabel1Start}px` }}
+                className="absolute top-[32px] -translate-y-1/2 cursor-pointer text-left text-[14px] sm:text-[18px] leading-none font-normal text-content-primary font-stetica hover:text-content-contrast transition-colors duration-150 select-none tracking-normal"
               >
                 experience
               </button>
@@ -266,74 +257,66 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
                 onClick={() => handleSelectNav("about")}
                 onMouseEnter={() => setHoveredNav("about")}
                 onMouseLeave={() => setHoveredNav(null)}
-                className="absolute left-[338px] top-[92px] -translate-y-1/2 cursor-pointer text-left text-[18px] leading-none font-normal text-content-primary font-stetica hover:text-content-contrast transition-colors duration-150 select-none tracking-normal"
+                style={{ left: `${rightLabel2Start}px` }}
+                className="absolute top-[92px] -translate-y-1/2 cursor-pointer text-left text-[15px] sm:text-[18px] leading-none font-normal text-content-primary font-stetica hover:text-content-contrast transition-colors duration-150 select-none tracking-normal"
               >
                 about
               </button>
             </Section>
-
-            {/* CV Download Section (Figma node 52:1809, 124x124px) */}
-            <Section
-              label="CV"
-              className="flex h-[124px] w-[124px] shrink-0 items-center justify-center p-0"
-            >
-              <ButtonDownload aria-label="Download CV" />
-            </Section>
           </div>
+
+          {/* CV Download Section (Buttons stay 100% full 60px original size, section width adapts) */}
+          <Section
+            label="CV"
+            labelClassName="left-[14px] sm:left-[28px]"
+            className="flex h-[124px] w-[76px] sm:w-[124px] shrink-0 items-center justify-center p-0"
+          >
+            <ButtonDownload aria-label="Download CV" />
+          </Section>
         </div>
 
-        {/* 4. ROW 2: CONTACTS (290px) + PET PROJECTS (242px) in ONE SINGLE ROW */}
-        <div
-          style={{ height: `${124 * scale}px` }}
-          className="relative w-full overflow-visible"
-        >
-          <div
-            style={{
-              width: "564px",
-              transform: `scale(${scale})`,
-              transformOrigin: "top left",
-            }}
-            className="flex w-[564px] flex-row items-center justify-between shrink-0"
+        {/* 4. ROW 2: CONTACTS (COMM) + PET PROJECTS (PET) in ONE SINGLE ROW (Buttons stay full 44px size) */}
+        <div className="flex w-full flex-row items-center justify-between gap-[8px] sm:gap-[32px]">
+          {/* COMM Section with 3 tactile pills (Buttons stay full 44px size) */}
+          <Section
+            label="COMM"
+            labelClassName="left-[14px] sm:left-[28px]"
+            className="flex h-[124px] flex-1 sm:flex-initial sm:w-[290px] min-w-0 flex-row items-center justify-between px-[8px] sm:px-[20px] py-0"
           >
-            {/* COMM Section (Figma node 52:1790, 290x124px) with 3 tactile pills */}
-            <Section
-              label="COMM"
-              className="flex h-[124px] w-[290px] shrink-0 flex-row items-center justify-between px-[20px] py-0"
+            <a
+              href="https://linkedin.com/in/leoniddmitriev"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="cursor-pointer shrink-0"
             >
-              <a
-                href="https://linkedin.com/in/leoniddmitriev"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="cursor-pointer"
-              >
-                <Button label="in" aria-label="LinkedIn Profile" />
-              </a>
-              <a
-                href="https://t.me/leo_dmitriev"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="cursor-pointer"
-              >
-                <Button label="tg" aria-label="Telegram Channel" />
-              </a>
-              <a
-                href="mailto:contact@leodmitriev.com"
-                className="cursor-pointer"
-              >
-                <Button label="@" aria-label="Send Email" />
-              </a>
-            </Section>
+              <Button label="in" aria-label="LinkedIn Profile" />
+            </a>
+            <a
+              href="https://t.me/leo_dmitriev"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="cursor-pointer shrink-0"
+            >
+              <Button label="tg" aria-label="Telegram Channel" />
+            </a>
+            <a
+              href="mailto:contact@leodmitriev.com"
+              className="cursor-pointer shrink-0"
+            >
+              <Button label="@" aria-label="Send Email" />
+            </a>
+          </Section>
 
-            {/* PET Section (Figma node 46:1606, 242x124px) with 3 ButtonLamps */}
-            <Section
-              label="PET"
-              className="flex h-[124px] w-[242px] shrink-0 flex-row items-center justify-between px-[20px] py-0"
-            >
-              <ButtonLamp label="1" aria-label="Pet Project 1" />
-              <ButtonLamp label="2" aria-label="Pet Project 2" />
-              <ButtonLamp label="3" aria-label="Pet Project 3" />
-            </Section>
-          </div>
+          {/* PET Section with 3 ButtonLamps (Buttons stay full 44px size) */}
+          <Section
+            label="PET"
+            labelClassName="left-[14px] sm:left-[28px]"
+            className="flex h-[124px] flex-1 sm:flex-initial sm:w-[242px] min-w-0 flex-row items-center justify-between px-[8px] sm:px-[20px] py-0"
+          >
+            <ButtonLamp label="1" aria-label="Pet Project 1" />
+            <ButtonLamp label="2" aria-label="Pet Project 2" />
+            <ButtonLamp label="3" aria-label="Pet Project 3" />
+          </Section>
         </div>
       </header>
     );
