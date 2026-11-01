@@ -61,7 +61,7 @@ export const Project = React.forwardRef<HTMLDivElement, ProjectProps>(
     return (
       <section
         ref={ref}
-        className={`relative flex w-[564px] flex-col gap-[32px] select-none scroll-mt-[100px] ${className}`}
+        className={`relative flex w-full max-w-[564px] flex-col gap-[28px] sm:gap-[32px] select-none scroll-mt-[100px] ${className}`}
         aria-label={title}
         {...props}
       >
@@ -80,18 +80,18 @@ export const Project = React.forwardRef<HTMLDivElement, ProjectProps>(
           <h2 className="text-[18px] font-medium leading-[24px] text-content-primary font-hauora tracking-normal">
             {title}
           </h2>
-          <p className="text-[18px] font-normal leading-[24px] text-content-primary font-hauora whitespace-pre-line tracking-normal">
+          <p className="text-[16px] sm:text-[18px] font-normal leading-[22px] sm:leading-[24px] text-content-primary font-hauora whitespace-pre-line tracking-normal">
             {description}
           </p>
         </div>
 
-        {/* 3. CASES ROW (564x154px: KEY list + CASE buttons) */}
-        <div className="flex w-full flex-row items-center gap-[32px]">
-          {/* Left Block: KEY (266x154px) - Key Achievements with Glowing Amber Indicator Lamps */}
+        {/* 3. CASES ROW: Responsive (columns on mobile, 266x154px row on desktop) */}
+        <div className="flex w-full flex-col sm:flex-row items-center gap-[16px] sm:gap-[32px]">
+          {/* Left Block: KEY - Key Achievements with Glowing Amber Indicator Lamps */}
           <Section
             label="KEY"
             direction="column"
-            className="h-[154px] w-[266px] shrink-0 justify-center gap-[18px] px-[28px] py-[28px]"
+            className="h-[154px] w-full sm:w-[266px] shrink-0 justify-center gap-[18px] px-[20px] sm:px-[28px] py-[28px]"
           >
             {resolvedAchievements.map((item, idx) => {
               const label = typeof item === "string" ? item : item.label;
@@ -108,11 +108,11 @@ export const Project = React.forwardRef<HTMLDivElement, ProjectProps>(
             })}
           </Section>
 
-          {/* Right Block: CASE (266x154px) */}
+          {/* Right Block: CASE - Interactive Case Study Buttons */}
           <Section
             label="CASE"
             direction="column"
-            className="h-[154px] w-[266px] shrink-0 justify-center px-[28px] py-[28px]"
+            className="h-[154px] w-full sm:w-[266px] shrink-0 justify-center px-[20px] sm:px-[28px] py-[28px]"
           >
             {caseStudies.map((item, idx) => {
               const btn = (

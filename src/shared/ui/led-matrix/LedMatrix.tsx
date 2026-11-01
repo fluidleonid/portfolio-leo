@@ -514,17 +514,18 @@ export const LedMatrix = React.forwardRef<HTMLDivElement, LedMatrixProps>(
     return (
       <div
         ref={ref}
-        className={`relative inline-flex flex-col select-none bg-transparent p-0 border-0 shadow-none ${className}`}
+        className={`relative inline-flex w-full max-w-[558px] flex-col items-center justify-center select-none bg-transparent p-0 border-0 shadow-none ${className}`}
         {...props}
       >
         <canvas
           ref={canvasRef}
           onPointerMove={handlePointerMove}
           onPointerLeave={handlePointerLeave}
-          className="rounded-[2px] shadow-none"
+          className="rounded-[2px] shadow-none max-w-full h-auto object-contain"
           style={{
-            width: `${totalWidth}px`,
-            height: `${totalHeight}px`,
+            width: "100%",
+            maxWidth: `${totalWidth}px`,
+            aspectRatio: `${totalWidth} / ${totalHeight}`,
             display: "block",
             cursor: interactive ? "crosshair" : "default",
           }}

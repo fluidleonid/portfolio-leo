@@ -84,7 +84,8 @@ export const TopBar: React.FC<TopBarProps> = ({
   }, []);
 
   // Map real scroll position to needle ratio on the tuner dial:
-  // Each frame [i/FRAME_COUNT, (i+1)/FRAME_COUNT] directly represents browsing through section i
+  // Each station center corresponds to MARKER_RATIOS[i] = (i + 0.5) / FRAME_COUNT
+  // When section i arrives at 100px from viewport top, the needle centers on station i
   const scrollYToRatio = useCallback((scrollY: number): number => {
     const scrolls = sectionScrollsRef.current;
     if (!scrolls || scrolls.length < FRAME_COUNT) return 0;
@@ -93,23 +94,32 @@ export const TopBar: React.FC<TopBarProps> = ({
     const winHeight = window.innerHeight;
     const maxScroll = Math.max(0, docHeight - winHeight);
 
+    // Below or at Hero
     if (scrollY <= scrolls[0]) return 0;
+
+    // Transition from top (0) to station 1 (works center)
+    if (scrollY < scrolls[1]) {
+      const t = scrollY / Math.max(1, scrolls[1]);
+      return t * MARKER_RATIOS[1];
+    }
+
+    // Past the last station (about) towards maximum scroll
     if (scrollY >= scrolls[FRAME_COUNT - 1]) {
       const lastScroll = scrolls[FRAME_COUNT - 1];
       const extraScrollRange = maxScroll - lastScroll;
-      if (extraScrollRange <= 0) return 1;
+      if (extraScrollRange <= 0) return MARKER_RATIOS[FRAME_COUNT - 1];
       const t = Math.min(1, Math.max(0, (scrollY - lastScroll) / extraScrollRange));
-      return (FRAME_COUNT - 1) / FRAME_COUNT + t * (1 / FRAME_COUNT);
+      return MARKER_RATIOS[FRAME_COUNT - 1] + t * (1 - MARKER_RATIOS[FRAME_COUNT - 1]);
     }
 
-    // Interpolate through the active section frame
-    for (let i = 0; i < FRAME_COUNT - 1; i++) {
+    // Interpolate between section centers so each section aligns at 100px when needle is over its frame
+    for (let i = 1; i < FRAME_COUNT - 1; i++) {
       const s1 = scrolls[i];
       const s2 = scrolls[i + 1];
       if (scrollY >= s1 && scrollY <= s2) {
         const range = s2 - s1;
         const t = range > 0 ? (scrollY - s1) / range : 0;
-        return (i + t) / FRAME_COUNT;
+        return MARKER_RATIOS[i] + t * (MARKER_RATIOS[i + 1] - MARKER_RATIOS[i]);
       }
     }
 
@@ -126,16 +136,33 @@ export const TopBar: React.FC<TopBarProps> = ({
     const maxScroll = Math.max(0, docHeight - winHeight);
 
     const r = Math.max(0, Math.min(1, ratio));
-    const scaled = r * FRAME_COUNT;
-    const i = Math.min(FRAME_COUNT - 1, Math.floor(scaled));
-    const t = scaled - i;
 
-    if (i >= FRAME_COUNT - 1) {
-      const lastScroll = scrolls[FRAME_COUNT - 1];
-      return lastScroll + t * (maxScroll - lastScroll);
+    // Left of station 1
+    if (r <= MARKER_RATIOS[1]) {
+      const t = r / MARKER_RATIOS[1];
+      return t * scrolls[1];
     }
 
-    return scrolls[i] + t * (scrolls[i + 1] - scrolls[i]);
+    // Right of last station
+    const lastIdx = FRAME_COUNT - 1;
+    if (r >= MARKER_RATIOS[lastIdx]) {
+      const remainingRatio = 1 - MARKER_RATIOS[lastIdx];
+      if (remainingRatio <= 0) return scrolls[lastIdx];
+      const t = Math.min(1, Math.max(0, (r - MARKER_RATIOS[lastIdx]) / remainingRatio));
+      return scrolls[lastIdx] + t * (maxScroll - scrolls[lastIdx]);
+    }
+
+    // Between stations
+    for (let i = 1; i < lastIdx; i++) {
+      const r1 = MARKER_RATIOS[i];
+      const r2 = MARKER_RATIOS[i + 1];
+      if (r >= r1 && r <= r2) {
+        const t = (r - r1) / (r2 - r1);
+        return scrolls[i] + t * (scrolls[i + 1] - scrolls[i]);
+      }
+    }
+
+    return scrolls[lastIdx];
   }, []);
 
   // Synchronize needle with actual page scroll
@@ -321,7 +348,7 @@ export const TopBar: React.FC<TopBarProps> = ({
                   }}
                   className="flex-1 text-left cursor-pointer"
                 >
-                  <span className="font-stetica text-[10px] leading-[14px] font-medium text-content-primary select-none truncate block hover:text-content-contrast transition-colors duration-150">
+                  <span className="font-stetica text-[9px] sm:text-[10px] leading-[14px] font-medium text-content-primary select-none truncate block hover:text-content-contrast transition-colors duration-150">
                     {frame.label}
                   </span>
                 </button>

@@ -88,13 +88,13 @@ export const Experience: React.FC<ExperienceProps> = ({
   return (
     <section
       id="experience"
-      className={`flex w-[564px] flex-col select-none scroll-mt-[100px] ${className}`}
+      className={`flex w-full max-w-[564px] flex-col select-none scroll-mt-[100px] ${className}`}
       aria-label="Work Experience and Education"
       {...props}
     >
       {/* 1. Experience Block */}
       <div className="flex w-full flex-col">
-        <h2 className="font-hauora text-[18px] font-medium leading-[24px] text-content-primary tracking-normal mb-[8px]">
+        <h2 className="font-hauora text-[20px] font-medium leading-[26px] text-content-contrast tracking-normal mb-[8px]">
           Experience
         </h2>
 
@@ -102,29 +102,31 @@ export const Experience: React.FC<ExperienceProps> = ({
           {experiences.map((item) => (
             <div
               key={item.id}
-              className="flex w-full flex-row items-start border-b border-border-hardware/50 py-[20px] transition-colors duration-150 hover:border-border-hardware"
+              className="flex w-full flex-row items-start border-b border-border-subtle py-[20px] transition-colors duration-150 hover:border-content-muted"
             >
               {/* Left Column: Start Date (Month / Year stacked) */}
-              <div className="flex w-[72px] shrink-0 flex-col font-hauora text-[13px] leading-[18px] text-content-muted">
+              <div className="flex w-[58px] sm:w-[72px] shrink-0 flex-col font-hauora text-[12px] sm:text-[13px] leading-[18px] text-content-muted">
                 <span>{item.startMonth}</span>
                 <span>{item.startYear}</span>
               </div>
 
               {/* Center Column: Company, Role, and Header Work Summary */}
-              <div className="flex flex-1 flex-col gap-[2px] pr-[16px]">
-                <span className="font-hauora text-[15px] font-medium leading-[20px] text-content-primary">
+              <div className="flex flex-1 flex-col gap-[2px] pr-[12px] sm:pr-[16px]">
+                <span className="font-hauora text-[15px] font-medium leading-[20px] text-content-contrast">
                   {item.company}
                 </span>
                 <span className="font-hauora text-[14px] leading-[20px] text-content-secondary">
                   {item.role}
                 </span>
-                <p className="mt-[4px] font-hauora text-[13px] leading-[19px] text-content-muted">
-                  {item.description}
-                </p>
+                {item.description && (
+                  <p className="mt-[4px] font-hauora text-[13px] leading-[19px] text-content-muted whitespace-pre-line">
+                    {item.description}
+                  </p>
+                )}
               </div>
 
               {/* Right Column: End Date / Status */}
-              <div className="w-[84px] shrink-0 text-right font-hauora text-[13px] leading-[20px] text-content-muted">
+              <div className="w-[70px] sm:w-[84px] shrink-0 text-right font-hauora text-[12px] sm:text-[13px] leading-[20px] text-content-muted">
                 {item.endDate}
               </div>
             </div>
@@ -133,8 +135,8 @@ export const Experience: React.FC<ExperienceProps> = ({
       </div>
 
       {/* 2. Education Block */}
-      <div className="mt-[48px] flex w-full flex-col">
-        <h2 className="font-hauora text-[18px] font-medium leading-[24px] text-content-primary tracking-normal mb-[8px]">
+      <div className="mt-[56px] flex w-full flex-col">
+        <h2 className="font-hauora text-[20px] font-medium leading-[26px] text-content-contrast tracking-normal mb-[8px]">
           Education
         </h2>
 
@@ -142,17 +144,17 @@ export const Experience: React.FC<ExperienceProps> = ({
           {education.map((item) => (
             <div
               key={item.id}
-              className="flex w-full flex-row items-start border-b border-border-hardware/50 py-[20px] transition-colors duration-150 hover:border-border-hardware"
+              className="flex w-full flex-row items-start border-b border-border-subtle py-[20px] transition-colors duration-150 hover:border-content-muted"
             >
               {/* Left Column: Period (Start Year – / End Year stacked) */}
-              <div className="flex w-[72px] shrink-0 flex-col font-hauora text-[13px] leading-[18px] text-content-muted">
+              <div className="flex w-[58px] sm:w-[72px] shrink-0 flex-col font-hauora text-[12px] sm:text-[13px] leading-[18px] text-content-muted">
                 <span>{item.startYear}</span>
                 <span>{item.endYear}</span>
               </div>
 
               {/* Center Column: Institution & Degree */}
-              <div className="flex flex-1 flex-col gap-[2px] pr-[16px]">
-                <span className="font-hauora text-[15px] font-medium leading-[20px] text-content-primary">
+              <div className="flex flex-1 flex-col gap-[2px] pr-[12px] sm:pr-[16px]">
+                <span className="font-hauora text-[15px] font-medium leading-[20px] text-content-contrast">
                   {item.institution}
                 </span>
                 <span className="font-hauora text-[14px] leading-[20px] text-content-secondary">

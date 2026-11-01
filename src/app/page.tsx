@@ -52,7 +52,7 @@ export default function Home() {
   }, []);
 
   return (
-    <main className="flex min-h-screen w-full flex-col items-center justify-start bg-canvas px-4 py-16">
+    <main className="flex min-h-screen w-full flex-col items-center justify-start bg-canvas px-[16px] sm:px-6 py-12 sm:py-16">
       {/* 
         Full-width vintage stereo radio tuner TopBar (Reference: Solid State AM/FM Stereo Tuner Scale)
         Sticks flush to the top of the viewport with no outer border
@@ -73,7 +73,7 @@ export default function Home() {
         WORKS: 6 Flagman Project Blocks
         (1 initial project + 5 additional projects matching the 6 project scale blocks in the tuner)
       */}
-      <div className="flex w-full flex-col items-center gap-[120px] mt-[100px]">
+      <div className="flex w-full flex-col items-center gap-[80px] sm:gap-[120px] mt-[60px] sm:mt-[100px]">
         {/* Project 1 (Works Flagship) */}
         <Project
           id="works"
@@ -172,12 +172,12 @@ export default function Home() {
       </div>
 
       {/* Experience & Education Section (FSD Experience Widget formatted per reference screenshot & resume) */}
-      <Experience className="mt-[140px] pt-[40px] border-t border-border-hardware/50" />
+      <Experience className="mt-[100px] sm:mt-[140px] pt-[40px] border-t border-border-subtle" />
 
       {/* About Section Anchor */}
       <section
         id="about"
-        className="mt-[100px] mb-[40px] min-h-[calc(100vh-100px)] flex w-[564px] flex-col justify-start gap-[20px] border-t border-border-hardware/50 pt-[40px] pb-[80px] scroll-mt-[100px]"
+        className="mt-[80px] sm:mt-[100px] mb-[40px] min-h-[calc(100vh-100px)] flex w-full max-w-[564px] flex-col justify-start gap-[20px] border-t border-border-subtle pt-[40px] pb-[120px] scroll-mt-[100px]"
       >
         <span className="font-stetica text-[12px] uppercase tracking-widest text-content-badge">
           BIO // ABOUT
