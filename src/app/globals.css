@@ -1,1 +1,35 @@
 @import "tailwindcss";
+
+@theme {
+  /* Typography Families */
+  --font-hauora: "Hauora", -apple-system, sans-serif;
+  --font-stetica: "AA Stetica", sans-serif;
+
+  /* Canvas & Surface Tokens */
+  --color-canvas: #292929;
+  --color-surface: #242424;
+  --color-surface-deep: #1a1a1a;
+  --color-surface-groove: #1f1f1f;
+  --color-surface-pill: #303030;
+
+  /* Hardware Borders & Outlines */
+  --color-border-hardware: #383838;
+  --color-border-subtle: #484848;
+  --color-border-active: #666666;
+
+  /* Typography / Content Colors */
+  --color-content-primary: #CCCCCC;
+  --color-content-badge: rgba(204, 204, 204, 0.16);
+  --color-content-secondary: #8C8C8C;
+  --color-content-hover: #D4D4D4;
+  --color-content-contrast: #FFFFFF;
+  --color-content-muted: #737373;
+
+  /* Signal & Physical Accent Lights */
+  --color-signal-amber: #FFAA00;
+  --color-signal-amber-glow: #FFB733;
+}
+
+@utility text-content-badge {
+  color: var(--color-content-badge, rgba(204, 204, 204, 0.16));
+}
