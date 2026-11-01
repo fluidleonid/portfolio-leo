@@ -34,8 +34,8 @@ const FRAMES: TunerFrame[] = [
 ];
 
 const FRAME_COUNT = FRAMES.length; // 9
-// Center position ratio of each frame on the tuner dial: (i + 0.5) / 9
-const MARKER_RATIOS = FRAMES.map((_, i) => (i + 0.5) / FRAME_COUNT);
+// Station anchor ratio of each frame on the tuner dial: exactly aligns section arrival with frame start
+const STATION_RATIOS = FRAMES.map((_, i) => i / FRAME_COUNT);
 
 export const TopBar: React.FC<TopBarProps> = ({
   activeStation = "index",
@@ -45,7 +45,7 @@ export const TopBar: React.FC<TopBarProps> = ({
   ...props
 }) => {
   const [isVisible, setIsVisible] = useState(false);
-  const [needleRatio, setNeedleRatio] = useState<number>(MARKER_RATIOS[0]);
+  const [needleRatio, setNeedleRatio] = useState<number>(0);
   const [isDragging, setIsDragging] = useState(false);
 
   const trackRef = useRef<HTMLDivElement>(null);
@@ -84,8 +84,7 @@ export const TopBar: React.FC<TopBarProps> = ({
   }, []);
 
   // Map real scroll position to needle ratio on the tuner dial:
-  // Each station center corresponds to MARKER_RATIOS[i] = (i + 0.5) / FRAME_COUNT
-  // When section i arrives at 100px from viewport top, the needle centers on station i
+  // Each station i arrives at 100px from viewport top when needle reaches STATION_RATIOS[i] = i / 9
   const scrollYToRatio = useCallback((scrollY: number): number => {
     const scrolls = sectionScrollsRef.current;
     if (!scrolls || scrolls.length < FRAME_COUNT) return 0;
@@ -97,29 +96,24 @@ export const TopBar: React.FC<TopBarProps> = ({
     // Below or at Hero
     if (scrollY <= scrolls[0]) return 0;
 
-    // Transition from top (0) to station 1 (works center)
-    if (scrollY < scrolls[1]) {
-      const t = scrollY / Math.max(1, scrolls[1]);
-      return t * MARKER_RATIOS[1];
-    }
-
     // Past the last station (about) towards maximum scroll
-    if (scrollY >= scrolls[FRAME_COUNT - 1]) {
-      const lastScroll = scrolls[FRAME_COUNT - 1];
+    const lastIdx = FRAME_COUNT - 1;
+    if (scrollY >= scrolls[lastIdx]) {
+      const lastScroll = scrolls[lastIdx];
       const extraScrollRange = maxScroll - lastScroll;
-      if (extraScrollRange <= 0) return MARKER_RATIOS[FRAME_COUNT - 1];
+      if (extraScrollRange <= 0) return STATION_RATIOS[lastIdx];
       const t = Math.min(1, Math.max(0, (scrollY - lastScroll) / extraScrollRange));
-      return MARKER_RATIOS[FRAME_COUNT - 1] + t * (1 - MARKER_RATIOS[FRAME_COUNT - 1]);
+      return STATION_RATIOS[lastIdx] + t * (1 - STATION_RATIOS[lastIdx]);
     }
 
-    // Interpolate between section centers so each section aligns at 100px when needle is over its frame
-    for (let i = 1; i < FRAME_COUNT - 1; i++) {
+    // Interpolate between stations so each section aligns at 100px when needle reaches its station mark
+    for (let i = 0; i < lastIdx; i++) {
       const s1 = scrolls[i];
       const s2 = scrolls[i + 1];
       if (scrollY >= s1 && scrollY <= s2) {
         const range = s2 - s1;
         const t = range > 0 ? (scrollY - s1) / range : 0;
-        return MARKER_RATIOS[i] + t * (MARKER_RATIOS[i + 1] - MARKER_RATIOS[i]);
+        return STATION_RATIOS[i] + t * (STATION_RATIOS[i + 1] - STATION_RATIOS[i]);
       }
     }
 
@@ -137,27 +131,21 @@ export const TopBar: React.FC<TopBarProps> = ({
 
     const r = Math.max(0, Math.min(1, ratio));
 
-    // Left of station 1
-    if (r <= MARKER_RATIOS[1]) {
-      const t = r / MARKER_RATIOS[1];
-      return t * scrolls[1];
-    }
-
-    // Right of last station
+    // Right of last station (about)
     const lastIdx = FRAME_COUNT - 1;
-    if (r >= MARKER_RATIOS[lastIdx]) {
-      const remainingRatio = 1 - MARKER_RATIOS[lastIdx];
+    if (r >= STATION_RATIOS[lastIdx]) {
+      const remainingRatio = 1 - STATION_RATIOS[lastIdx];
       if (remainingRatio <= 0) return scrolls[lastIdx];
-      const t = Math.min(1, Math.max(0, (r - MARKER_RATIOS[lastIdx]) / remainingRatio));
+      const t = Math.min(1, Math.max(0, (r - STATION_RATIOS[lastIdx]) / remainingRatio));
       return scrolls[lastIdx] + t * (maxScroll - scrolls[lastIdx]);
     }
 
     // Between stations
-    for (let i = 1; i < lastIdx; i++) {
-      const r1 = MARKER_RATIOS[i];
-      const r2 = MARKER_RATIOS[i + 1];
+    for (let i = 0; i < lastIdx; i++) {
+      const r1 = STATION_RATIOS[i];
+      const r2 = STATION_RATIOS[i + 1];
       if (r >= r1 && r <= r2) {
-        const t = (r - r1) / (r2 - r1);
+        const t = (r2 - r1 > 0) ? (r - r1) / (r2 - r1) : 0;
         return scrolls[i] + t * (scrolls[i + 1] - scrolls[i]);
       }
     }
