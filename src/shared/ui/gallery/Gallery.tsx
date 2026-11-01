@@ -69,9 +69,10 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
         const parentRect = parent
           ? parent.getBoundingClientRect()
           : containerRef.current.getBoundingClientRect();
+        const clientW = document.documentElement.clientWidth;
         const offset = Math.max(0, parentRect.left);
         setLeftOffset(offset);
-        setViewportWidth(window.innerWidth);
+        setViewportWidth(clientW);
       };
 
       updateDimensions();
@@ -200,24 +201,25 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
         ? images
         : ["/quickaccess.png", "/quickaccess.png", "/quickaccess.png"];
 
+    const isMobile = viewportWidth !== null ? viewportWidth <= 640 : false;
+
     return (
       <div
         ref={setRefs}
-        className={`relative flex select-none ${className}`}
+        className={`relative flex select-none overflow-hidden ${
+          isMobile
+            ? "w-[calc(100%+32px)] -ml-[16px] -mr-[16px] max-w-[100vw]"
+            : "w-full max-w-full"
+        } ${className}`}
         style={{
-          width: bleed
-            ? viewportWidth
-              ? `${viewportWidth}px`
-              : "100vw"
-            : maxWidth
-            ? `${maxWidth}px`
-            : "564px",
-          marginLeft: bleed
-            ? leftOffset !== null
-              ? `-${leftOffset}px`
-              : "calc(-1 * ((100vw - 564px) / 2))"
-            : undefined,
-          maxWidth: "none",
+          width:
+            !isMobile && bleed && viewportWidth && leftOffset !== null
+              ? `${Math.max(maxWidth, viewportWidth - leftOffset)}px`
+              : undefined,
+          maxWidth:
+            !isMobile && bleed && viewportWidth && leftOffset !== null
+              ? `${viewportWidth - leftOffset}px`
+              : undefined,
           ...style,
         }}
         {...props}
@@ -239,16 +241,8 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
           }`}
           style={{
             touchAction: "pan-y",
-            paddingLeft: bleed
-              ? leftOffset !== null
-                ? `${leftOffset}px`
-                : "calc((100vw - 564px) / 2)"
-              : undefined,
-            paddingRight: bleed
-              ? leftOffset !== null
-                ? `${Math.max(28, leftOffset)}px`
-                : "calc((100vw - 564px) / 2)"
-              : undefined,
+            paddingLeft: isMobile ? "16px" : undefined,
+            paddingRight: isMobile ? "16px" : undefined,
           }}
         >
           {/* Inner Wrapper (image-scroll) */}
