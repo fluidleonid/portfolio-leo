@@ -86,12 +86,9 @@ export const Project = React.forwardRef<HTMLDivElement, ProjectProps>(
         </div>
 
         {/* 3. CASES ROW: Responsive (columns on mobile, 266x154px row on desktop) */}
-        <div className="flex w-full flex-col sm:flex-row items-center gap-[8px] sm:gap-[32px]">
+        <div className="flex w-full flex-col sm:flex-row items-stretch gap-[8px] sm:gap-[32px]">
           {/* Left Block: KEY - Key Achievements with Glowing Amber Indicator Lamps */}
-          <Section
-            label="KEY"
-            direction="column"
-            className="h-[154px] w-full sm:w-[266px] shrink-0 justify-center gap-[8px] sm:gap-[18px] p-[16px] sm:px-[28px] sm:py-[28px]"
+          <Section label="KEY" direction="column" className="min-h-[154px] w-full sm:w-[266px] shrink-0 justify-center items-stretch gap-[8px] sm:gap-[18px] p-[16px] sm:px-[28px] sm:py-[28px]"
           >
             {resolvedAchievements.map((item, idx) => {
               const label = typeof item === "string" ? item : item.label;
@@ -109,10 +106,7 @@ export const Project = React.forwardRef<HTMLDivElement, ProjectProps>(
           </Section>
 
           {/* Right Block: CASE - Interactive Case Study Buttons */}
-          <Section
-            label="CASE"
-            direction="column"
-            className="h-[154px] w-full sm:w-[266px] shrink-0 justify-center gap-[8px] sm:gap-[16px] p-[16px] sm:px-[28px] sm:py-[28px]"
+          <Section label="CASE" direction="column" className="min-h-[154px] w-full sm:w-[266px] shrink-0 justify-center items-stretch gap-[8px] sm:gap-[16px] p-[16px] sm:px-[28px] sm:py-[28px]"
           >
             {caseStudies.map((item, idx) => {
               const btn = (
@@ -122,6 +116,7 @@ export const Project = React.forwardRef<HTMLDivElement, ProjectProps>(
                   labelPosition="right"
                   onClick={item.onClick}
                   aria-label={item.label}
+                  className="w-full"
                 />
               );
 
@@ -130,9 +125,7 @@ export const Project = React.forwardRef<HTMLDivElement, ProjectProps>(
                   <a
                     key={item.id ?? idx}
                     href={item.href}
-                    className="cursor-pointer"
-                  >
-                    {btn}
+                    className="cursor-pointer w-full flex">{btn}
                   </a>
                 );
               }

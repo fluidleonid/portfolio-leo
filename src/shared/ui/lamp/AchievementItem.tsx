@@ -31,14 +31,16 @@ export const AchievementItem = React.forwardRef<HTMLDivElement, AchievementItemP
     return (
       <div
         ref={ref}
-        className={`group flex flex-row items-center gap-[12px] select-none ${className}`}
+        className={`group flex w-full flex-row items-start sm:items-center gap-[12px] select-none ${className}`}
         {...props}
       >
         {/* Amber Indicator Lamp */}
-        <Lamp size={lampSize} active={active} {...lampProps} />
+        <div className="shrink-0 pt-[3px] sm:pt-0">
+          <Lamp size={lampSize} active={active} {...lampProps} />
+        </div>
 
         {/* Achievement Label with font-stetica & text-content-primary */}
-        <span className="text-[18px] leading-[22px] font-normal text-content-primary font-stetica tracking-normal transition-colors duration-150 group-hover:text-content-contrast">
+        <span className="flex-1 min-w-0 text-[18px] leading-[22px] font-normal text-content-primary font-stetica tracking-normal break-words whitespace-normal transition-colors duration-150 group-hover:text-content-contrast">
           {label}
         </span>
       </div>

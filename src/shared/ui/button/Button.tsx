@@ -71,9 +71,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         : "w-[64px]";
 
     // Label width class
-    const labelWidthClass =
-      isHorizontal
-        ? "text-left"
+    const labelWidthClass = isHorizontal ? "flex-1 min-w-0 text-left break-words whitespace-normal"
         : size === "sm"
         ? "w-[44px] text-center"
         : size === "responsive"
@@ -90,8 +88,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
           (typeof label === "string" ? label : "Tactile Button")
         }
         className={`group relative inline-flex ${
-          isHorizontal
-            ? "flex-row items-center gap-[16px]"
+          isHorizontal ? "flex-row items-start sm:items-center gap-[16px] w-full"
             : `flex-col items-center gap-[4px] ${containerWidthClass}`
         } cursor-pointer select-none focus-visible:outline-none disabled:pointer-events-none disabled:opacity-40 ${className}`}
         {...props}
