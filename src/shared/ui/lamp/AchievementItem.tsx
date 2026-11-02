@@ -40,7 +40,7 @@ export const AchievementItem = React.forwardRef<HTMLDivElement, AchievementItemP
         </div>
 
         {/* Achievement Label with font-stetica & text-content-primary */}
-        <span className="flex-1 min-w-0 text-[18px] leading-[22px] font-normal text-content-primary font-stetica tracking-normal break-words whitespace-normal transition-colors duration-150 group-hover:text-content-contrast">
+        <span className="flex-1 min-w-0 text-[16px] sm:text-[18px] leading-[20px] sm:leading-[22px] font-normal text-content-primary font-stetica tracking-normal break-words whitespace-normal transition-colors duration-150 group-hover:text-content-contrast">
           {label}
         </span>
       </div>

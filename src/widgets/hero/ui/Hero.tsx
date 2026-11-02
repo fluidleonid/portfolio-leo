@@ -259,7 +259,7 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
                 onMouseEnter={() => setHoveredNav("works")}
                 onMouseLeave={() => setHoveredNav(null)}
                 style={{ right: `${navWidth - leftLabelEnd}px`, top: `${yTop}px` }}
-                className="absolute -translate-y-1/2 cursor-pointer text-right text-[18px] leading-none font-normal text-content-primary font-stetica hover:text-content-contrast transition-colors duration-150 select-none tracking-normal"
+                className="absolute -translate-y-1/2 cursor-pointer text-right text-[16px] sm:text-[18px] leading-none font-normal text-content-primary font-stetica hover:text-content-contrast transition-colors duration-150 select-none tracking-normal"
               >
                 works
               </a>
@@ -273,7 +273,7 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
                 onMouseEnter={() => setHoveredNav("index")}
                 onMouseLeave={() => setHoveredNav(null)}
                 style={{ right: `${navWidth - leftLabelEnd}px`, top: `${yBottom}px` }}
-                className="absolute -translate-y-1/2 cursor-pointer text-right text-[18px] leading-none font-normal text-content-primary font-stetica hover:text-content-contrast transition-colors duration-150 select-none tracking-normal"
+                className="absolute -translate-y-1/2 cursor-pointer text-right text-[16px] sm:text-[18px] leading-none font-normal text-content-primary font-stetica hover:text-content-contrast transition-colors duration-150 select-none tracking-normal"
               >
                 index
               </a>
@@ -299,7 +299,7 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
                 onMouseEnter={() => setHoveredNav("career")}
                 onMouseLeave={() => setHoveredNav(null)}
                 style={{ left: `${rightLabel1Start}px`, top: `${yTop}px` }}
-                className="absolute -translate-y-1/2 cursor-pointer text-left text-[18px] leading-none font-normal text-content-primary font-stetica hover:text-content-contrast transition-colors duration-150 select-none tracking-normal"
+                className="absolute -translate-y-1/2 cursor-pointer text-left text-[16px] sm:text-[18px] leading-none font-normal text-content-primary font-stetica hover:text-content-contrast transition-colors duration-150 select-none tracking-normal"
               >
                 career
               </button>
@@ -310,7 +310,7 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
                 onMouseEnter={() => setHoveredNav("about")}
                 onMouseLeave={() => setHoveredNav(null)}
                 style={{ left: `${rightLabel2Start}px`, top: `${yBottom}px` }}
-                className="absolute -translate-y-1/2 cursor-pointer text-left text-[18px] leading-none font-normal text-content-primary font-stetica hover:text-content-contrast transition-colors duration-150 select-none tracking-normal"
+                className="absolute -translate-y-1/2 cursor-pointer text-left text-[16px] sm:text-[18px] leading-none font-normal text-content-primary font-stetica hover:text-content-contrast transition-colors duration-150 select-none tracking-normal"
               >
                 about
               </button>

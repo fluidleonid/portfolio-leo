@@ -112,7 +112,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         {/* Hardware Label: AA Stetica styled with text-content-primary (#CCCCCC) */}
         {label && (
           <span
-            className={`${labelWidthClass} text-[18px] leading-[22px] font-normal text-content-primary transition-colors duration-150 select-none tracking-normal font-stetica group-hover:text-content-contrast ${labelClassName}`}
+            className={`${labelWidthClass} text-[16px] sm:text-[18px] leading-[20px] sm:leading-[22px] font-normal text-content-primary transition-colors duration-150 select-none tracking-normal font-stetica group-hover:text-content-contrast ${labelClassName}`}
           >
             {label}
           </span>

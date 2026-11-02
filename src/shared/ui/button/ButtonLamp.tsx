@@ -109,7 +109,7 @@ export const ButtonLamp = React.forwardRef<HTMLButtonElement, ButtonLampProps>(
 
           {/* Centered Numeral: Badge style (text-content-badge) when inactive, text-surface when active/hovered */}
           <span
-            className={`pointer-events-none relative z-10 flex h-full w-full items-center justify-center text-center text-[18px] font-medium leading-none tracking-normal font-stetica transition-colors duration-150 ${
+            className={`pointer-events-none relative z-10 flex h-full w-full items-center justify-center text-center text-[16px] sm:text-[18px] font-medium leading-none tracking-normal font-stetica transition-colors duration-150 ${
               active
                 ? "text-surface"
                 : "text-content-badge group-hover:text-surface group-active:text-surface"
