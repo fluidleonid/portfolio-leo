@@ -286,7 +286,7 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
               rel="noopener noreferrer"
               className="cursor-pointer shrink-0"
             >
-              <Button label="in" aria-label="LinkedIn Profile" />
+              <Button label="in" size="responsive" aria-label="LinkedIn Profile" />
             </a>
             <a
               href="https://t.me/leo_dmitriev"
@@ -294,22 +294,22 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
               rel="noopener noreferrer"
               className="cursor-pointer shrink-0"
             >
-              <Button label="tg" aria-label="Telegram Channel" />
+              <Button label="tg" size="responsive" aria-label="Telegram Channel" />
             </a>
             <a
               href="mailto:contact@leodmitriev.com"
               className="cursor-pointer shrink-0"
             >
-              <Button label="@" aria-label="Send Email" />
+              <Button label="@" size="responsive" aria-label="Send Email" />
             </a>
           </Section>
 
           {/* PET Section with 3 ButtonLamps (Buttons stay full 44px size) */}
           <Section label="PET" className="flex h-[124px] flex-1 sm:flex-initial sm:w-[242px] min-w-0 flex-row items-center justify-center gap-[8px] sm:gap-[16px] p-[16px]"
           >
-            <ButtonLamp label="1" aria-label="Pet Project 1" />
-            <ButtonLamp label="2" aria-label="Pet Project 2" />
-            <ButtonLamp label="3" aria-label="Pet Project 3" />
+            <ButtonLamp label="1" size="responsive" aria-label="Pet Project 1" />
+            <ButtonLamp label="2" size="responsive" aria-label="Pet Project 2" />
+            <ButtonLamp label="3" size="responsive" aria-label="Pet Project 3" />
           </Section>
         </div>
       </header>
