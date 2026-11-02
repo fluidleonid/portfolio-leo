@@ -8,7 +8,7 @@ export interface GalleryProps extends React.HTMLAttributes<HTMLDivElement> {
   images?: string[];
   /** Outer container max-width in px when bleed=false (default 564) */
   maxWidth?: number;
-  /** Whether the gallery should bleed out to the right screen edge without being clipped by the parent container (default true) */
+  /** Whether the gallery should bleed out across the full viewport (default true) */
   bleed?: boolean;
   /** Wrapper fixed height in px (default 600) */
   height?: number;
@@ -16,7 +16,7 @@ export interface GalleryProps extends React.HTMLAttributes<HTMLDivElement> {
   padding?: number;
   /** Gap between images in px (default 20) */
   gap?: number;
-  /** Wrapper corner radius in px (default 0 - sharp rectangular) */
+  /** Wrapper corner radius in px (default 12) */
   cornerRadius?: number;
   /** Wrapper background color token (default tokens.colors.surface) */
   wrapperBg?: string;
@@ -29,12 +29,11 @@ export interface GalleryProps extends React.HTMLAttributes<HTMLDivElement> {
  *
  * Structure:
  * 1. Outer Container: Full-bleed unclipped track (100vw, marginLeft: -leftOffset)
- * 2. Inner Wrapper (image-scroll): Height 600px, 28px padding, 0px corner radius, and surface background.
- *    Expands to hold all images and scrolls together with them.
+ * 2. Inner Wrapper (image-scroll): Height 600px, 28px padding, 12px corner radius, and #242424 surface background.
+ *    The entire wrapper itself scrolls across the viewport track.
  * 3. Images: Pure images only, filling the 544px inner height while strictly preserving aspect ratio.
  *    Zero shadows, zero texts/captions, zero border radiuses.
- * 4. Interaction: Drag-to-scroll & Touch Swipe ONLY (mouse drag, trackpad click-drag, touch swipe with momentum).
- *    Mouse wheel scroll is completely decoupled from gallery so vertical page scrolling flows naturally.
+ * 4. Interaction: Drag-to-scroll & Touch/Trackpad Swipe.
  */
 export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
   (
@@ -45,7 +44,7 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
       height = tokens.geometry.galleryHeight,
       padding = tokens.geometry.galleryPadding,
       gap = tokens.geometry.galleryGap,
-      cornerRadius = 0,
+      cornerRadius = 12,
       wrapperBg = tokens.colors.surface,
       className = "",
       children,
@@ -58,9 +57,8 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
     const scrollContainerRef = useRef<HTMLDivElement | null>(null);
     const [leftOffset, setLeftOffset] = useState<number | null>(null);
     const [viewportWidth, setViewportWidth] = useState<number | null>(null);
-    const [parentWidth, setParentWidth] = useState<number>(564);
 
-    // Calculate breakout dimensions so wrapper bleeds cleanly to the right viewport edge
+    // Calculate breakout dimensions so wrapper bleeds cleanly across full viewport width
     useEffect(() => {
       if (!bleed) return;
 
@@ -74,9 +72,6 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
         const offset = Math.max(0, parentRect.left);
         setLeftOffset(offset);
         setViewportWidth(clientW);
-        if (parentRect.width > 0) {
-          setParentWidth(parentRect.width);
-        }
       };
 
       updateDimensions();
@@ -206,12 +201,18 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
         : ["/quickaccess.png", "/quickaccess.png", "/quickaccess.png"];
 
     const isMobile = viewportWidth !== null ? viewportWidth <= 640 : false;
-    const desktopBleedWidth =
-      !isMobile && bleed && viewportWidth && leftOffset !== null
-        ? Math.max(parentWidth, viewportWidth - leftOffset)
-        : null;
-    const desktopBleedMarginRight =
-      desktopBleedWidth !== null ? -(desktopBleedWidth - parentWidth) : undefined;
+    const desktopLeftPadding =
+      leftOffset !== null
+        ? `${leftOffset}px`
+        : "calc((100vw - 564px) / 2)";
+    const desktopRightPadding =
+      leftOffset !== null
+        ? `${Math.max(28, leftOffset)}px`
+        : "calc((100vw - 564px) / 2)";
+    const desktopMarginLeft =
+      leftOffset !== null
+        ? `-${leftOffset}px`
+        : "calc(-1 * ((100vw - 564px) / 2))";
 
     return (
       <div
@@ -219,24 +220,26 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
         className={`relative flex select-none overflow-hidden ${
           isMobile
             ? "w-[calc(100%+32px)] -ml-[16px] -mr-[16px] max-w-[100vw]"
-            : desktopBleedWidth !== null
-            ? "w-full"
+            : bleed
+            ? "w-screen max-w-[100vw]"
             : "w-full max-w-full"
         } ${className}`}
         style={{
-          width: desktopBleedWidth !== null ? `${desktopBleedWidth}px` : undefined,
-          maxWidth: desktopBleedWidth !== null ? "none" : undefined,
-          marginRight:
-            desktopBleedMarginRight !== undefined
-              ? `${desktopBleedMarginRight}px`
+          width:
+            !isMobile && bleed
+              ? viewportWidth !== null
+                ? `${viewportWidth}px`
+                : "100vw"
               : undefined,
+          marginLeft: !isMobile && bleed ? desktopMarginLeft : undefined,
+          maxWidth: !isMobile && bleed ? "100vw" : undefined,
           ...style,
         }}
         {...props}
       >
         {/* 
-          Horizontal scroll container:
-          - overflow-x-auto: Allows natural horizontal trackpad two-finger swipe and horizontal scroll.
+          Horizontal scroll track spanning the full screen width:
+          - overflow-x-auto: Allows natural horizontal trackpad two-finger swipe, wheel, and drag.
           - [scrollbar-width:none]: Keeps scrollbar completely invisible across all browsers.
           - touch-pan-y: Lets vertical touch scroll page naturally, while horizontal gestures swipe gallery.
         */}
@@ -251,11 +254,11 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
           }`}
           style={{
             touchAction: "pan-y",
-            paddingLeft: isMobile ? "16px" : undefined,
-            paddingRight: isMobile ? "16px" : undefined,
+            paddingLeft: isMobile ? "16px" : bleed ? desktopLeftPadding : undefined,
+            paddingRight: isMobile ? "16px" : bleed ? desktopRightPadding : undefined,
           }}
         >
-          {/* Inner Wrapper (image-scroll) */}
+          {/* Inner Wrapper (image-scroll): The #242424 rounded container itself advances/scrolls horizontally */}
           <div
             className="flex w-max shrink-0 flex-row items-center select-none"
             style={{
