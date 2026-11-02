@@ -173,16 +173,13 @@ export default function Home() {
       </div>
 
       {/* Career & Education Section (FSD Career Widget formatted per reference screenshot & resume) */}
-      <Experience id="career" className="mt-[100px] sm:mt-[140px] pt-[40px] border-t border-border-hardware" />
+      <Experience id="career" className="mt-[100px] sm:mt-[140px]" />
 
       {/* About Section Anchor */}
       <section
         id="about"
-        className="mt-[80px] sm:mt-[100px] mb-[40px] min-h-[calc(100vh-100px)] flex w-full max-w-[564px] flex-col justify-start gap-[20px] border-t border-border-subtle pt-[40px] pb-[120px] scroll-mt-[100px]"
+        className="mt-[80px] sm:mt-[100px] mb-[40px] min-h-[calc(100vh-100px)] flex w-full max-w-[564px] flex-col justify-start gap-[20px] pb-[120px] scroll-mt-[100px]"
       >
-        <span className="font-stetica text-[12px] uppercase tracking-widest text-content-badge">
-          BIO // ABOUT
-        </span>
         <h3 className="font-hauora text-[18px] font-medium text-content-primary">
           Leo Dmitriev
         </h3>

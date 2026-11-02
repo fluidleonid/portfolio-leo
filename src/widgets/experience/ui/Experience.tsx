@@ -95,10 +95,6 @@ export const Experience: React.FC<ExperienceProps> = ({
     >
       {/* 1. Career Block */}
       <div className="flex w-full flex-col">
-        <h2 className="font-hauora text-[18px] font-medium leading-[24px] text-content-contrast tracking-normal mb-[8px]">
-          Career
-        </h2>
-
         <div className="flex w-full flex-col">
           {experiences.map((item) => (
             <div
