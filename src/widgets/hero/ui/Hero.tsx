@@ -144,30 +144,52 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
     const yTop = cy - yOffset;
     const yBottom = cy + yOffset;
 
-    // Radial ray exit coordinates: Knob well radius is 34px.
-    // Exit distance is 42.5px (dx ~36, dy ~22.5), guaranteeing a consistent ~8.5px space between knob well rim and ray start.
-    const dyExit = isDesktopNav ? 22.26 : 22.5;
-    const dxExit = isDesktopNav ? 35.62 : 36.0;
+    // Desktop: 32° radial ray exit coordinates from knob center
+    const dyExit = 22.26;
+    const dxExit = 35.62;
 
-    // Left side: lines comfortably exit outwards towards the left labels
-    const leftLabelEnd = isDesktopNav
-      ? Math.max(48, Math.min(92, cx - 58))
-      : 16 + 46;
-    const leftRayEnd = Math.min(cx - dxExit - 6, leftLabelEnd + 6);
-    const leftTurnX = Math.max(leftRayEnd + 4, cx - (isDesktopNav ? 48 : 42));
+    const pad = isDesktopNav ? 20 : 16;
 
-    // Right side: 'career' width ~50px, 'about' width ~44px
-    const rightLabel1Start = isDesktopNav
-      ? Math.min(320, Math.max(cx + 46, navWidth - 16 - 54))
-      : navWidth - 16 - 52;
-    const rightRay1End = Math.max(cx + dxExit + 6, rightLabel1Start - 6);
-    const rightTurn1X = Math.min(rightRay1End - 4, cx + (isDesktopNav ? 48 : 42));
+    // Label widths and target points where rays connect (with 6px gap to text):
+    // works (~46px mob, ~52px dsk), index (~42px mob, ~47px dsk)
+    const leftTarget1 = pad + (isDesktopNav ? 52 : 46) + 6;
+    const leftTarget2 = pad + (isDesktopNav ? 47 : 42) + 6;
 
-    const rightLabel2Start = isDesktopNav
-      ? Math.min(338, Math.max(cx + 46, navWidth - 16 - 44))
-      : navWidth - 16 - 44;
-    const rightRay2End = Math.max(cx + dxExit + 6, rightLabel2Start - 6);
-    const rightTurn2X = Math.min(rightRay2End - 4, cx + (isDesktopNav ? 48 : 42));
+    // career (~50px mob, ~58px dsk), about (~42px mob, ~50px dsk)
+    const rightTarget1 = navWidth - pad - (isDesktopNav ? 58 : 50) - 6;
+    const rightTarget2 = navWidth - pad - (isDesktopNav ? 50 : 42) - 6;
+
+    // Desktop horizontal knee turns: as container width changes, horizontal line H compresses/stretches
+    const leftTurn = Math.max(leftTarget1 + 4, cx - 48);
+    const rightTurn = Math.min(rightTarget1 - 4, cx + 48);
+
+    // Mobile: direct straight angled lines from knob perimeter (40px radius from center, 6px space from 34px well)
+    const getDirectLine = (tgtX: number, tgtY: number) => {
+      const vx = tgtX - cx;
+      const vy = tgtY - cy;
+      const dist = Math.hypot(vx, vy);
+      const ux = vx / (dist || 1);
+      const uy = vy / (dist || 1);
+      const startX = cx + 40 * ux;
+      const startY = cy + 40 * uy;
+      return `M ${startX.toFixed(1)} ${startY.toFixed(1)} L ${tgtX.toFixed(1)} ${tgtY.toFixed(1)}`;
+    };
+
+    const pathWorks = isDesktopNav
+      ? `M ${(cx - dxExit).toFixed(1)} ${(cy - dyExit).toFixed(1)} L ${leftTurn.toFixed(1)} ${yTop} H ${leftTarget1}`
+      : getDirectLine(leftTarget1, yTop);
+
+    const pathIndex = isDesktopNav
+      ? `M ${(cx - dxExit).toFixed(1)} ${(cy + dyExit).toFixed(1)} L ${leftTurn.toFixed(1)} ${yBottom} H ${leftTarget2}`
+      : getDirectLine(leftTarget2, yBottom);
+
+    const pathCareer = isDesktopNav
+      ? `M ${(cx + dxExit).toFixed(1)} ${(cy - dyExit).toFixed(1)} L ${rightTurn.toFixed(1)} ${yTop} H ${rightTarget1}`
+      : getDirectLine(rightTarget1, yTop);
+
+    const pathAbout = isDesktopNav
+      ? `M ${(cx + dxExit).toFixed(1)} ${(cy + dyExit).toFixed(1)} L ${rightTurn.toFixed(1)} ${yBottom} H ${rightTarget2}`
+      : getDirectLine(rightTarget2, yBottom);
 
     return (
       <header
@@ -216,40 +238,40 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
                 viewBox={`0 0 ${navWidth} ${navHeight}`}
                 fill="none"
               >
-                {/* Top-left radial ray + horizontal line to "works" */}
+                {/* Top-left: works */}
                 <path
-                  d={`M${cx - dxExit} ${cy - dyExit} L${leftTurnX} ${yTop} H${leftRayEnd}`}
+                  d={pathWorks}
                   stroke={activeNav === "works" ? tokens.colors.signalAmber : tokens.colors.borderSubtle}
                   strokeWidth="1"
                   className="transition-colors duration-150"
                 />
 
-                {/* Bottom-left radial ray + horizontal line to "index" */}
+                {/* Bottom-left: index */}
                 <path
-                  d={`M${cx - dxExit} ${cy + dyExit} L${leftTurnX} ${yBottom} H${leftRayEnd}`}
+                  d={pathIndex}
                   stroke={activeNav === "index" ? tokens.colors.signalAmber : tokens.colors.borderSubtle}
                   strokeWidth="1"
                   className="transition-colors duration-150"
                 />
 
-                {/* Top-right radial ray + horizontal line to "career" */}
+                {/* Top-right: career */}
                 <path
-                  d={`M${cx + dxExit} ${cy - dyExit} L${rightTurn1X} ${yTop} H${rightRay1End}`}
+                  d={pathCareer}
                   stroke={activeNav === "career" || activeNav === "experience" ? tokens.colors.signalAmber : tokens.colors.borderSubtle}
                   strokeWidth="1"
                   className="transition-colors duration-150"
                 />
 
-                {/* Bottom-right radial ray + horizontal line to "about" */}
+                {/* Bottom-right: about */}
                 <path
-                  d={`M${cx + dxExit} ${cy + dyExit} L${rightTurn2X} ${yBottom} H${rightRay2End}`}
+                  d={pathAbout}
                   stroke={activeNav === "about" ? tokens.colors.signalAmber : tokens.colors.borderSubtle}
                   strokeWidth="1"
                   className="transition-colors duration-150"
                 />
               </svg>
 
-              {/* Left Column: "works" and "index" */}
+              {/* Left Column: "works" and "index" - always aligned to left edge */}
               <a
                 href="#works"
                 onClick={(e) => {
@@ -258,8 +280,8 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
                 }}
                 onMouseEnter={() => setHoveredNav("works")}
                 onMouseLeave={() => setHoveredNav(null)}
-                style={{ right: `${navWidth - leftLabelEnd}px`, top: `${yTop}px` }}
-                className="absolute -translate-y-1/2 cursor-pointer text-right text-[16px] sm:text-[18px] leading-none font-normal text-content-primary font-stetica hover:text-content-contrast transition-colors duration-150 select-none tracking-normal"
+                style={{ top: `${yTop}px` }}
+                className="absolute left-[16px] sm:left-[20px] -translate-y-1/2 cursor-pointer text-left text-[16px] sm:text-[18px] leading-none font-normal text-content-primary font-stetica hover:text-content-contrast transition-colors duration-150 select-none tracking-normal"
               >
                 works
               </a>
@@ -272,8 +294,8 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
                 }}
                 onMouseEnter={() => setHoveredNav("index")}
                 onMouseLeave={() => setHoveredNav(null)}
-                style={{ right: `${navWidth - leftLabelEnd}px`, top: `${yBottom}px` }}
-                className="absolute -translate-y-1/2 cursor-pointer text-right text-[16px] sm:text-[18px] leading-none font-normal text-content-primary font-stetica hover:text-content-contrast transition-colors duration-150 select-none tracking-normal"
+                style={{ top: `${yBottom}px` }}
+                className="absolute left-[16px] sm:left-[20px] -translate-y-1/2 cursor-pointer text-left text-[16px] sm:text-[18px] leading-none font-normal text-content-primary font-stetica hover:text-content-contrast transition-colors duration-150 select-none tracking-normal"
               >
                 index
               </a>
@@ -292,14 +314,14 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
                 />
               </div>
 
-              {/* Right Column: "career" and "about" */}
+              {/* Right Column: "career" and "about" - always aligned to right edge */}
               <button
                 type="button"
                 onClick={() => handleSelectNav("career")}
                 onMouseEnter={() => setHoveredNav("career")}
                 onMouseLeave={() => setHoveredNav(null)}
-                style={{ left: `${rightLabel1Start}px`, top: `${yTop}px` }}
-                className="absolute -translate-y-1/2 cursor-pointer text-left text-[16px] sm:text-[18px] leading-none font-normal text-content-primary font-stetica hover:text-content-contrast transition-colors duration-150 select-none tracking-normal"
+                style={{ top: `${yTop}px` }}
+                className="absolute right-[16px] sm:right-[20px] -translate-y-1/2 cursor-pointer text-right text-[16px] sm:text-[18px] leading-none font-normal text-content-primary font-stetica hover:text-content-contrast transition-colors duration-150 select-none tracking-normal"
               >
                 career
               </button>
@@ -309,8 +331,8 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
                 onClick={() => handleSelectNav("about")}
                 onMouseEnter={() => setHoveredNav("about")}
                 onMouseLeave={() => setHoveredNav(null)}
-                style={{ left: `${rightLabel2Start}px`, top: `${yBottom}px` }}
-                className="absolute -translate-y-1/2 cursor-pointer text-left text-[16px] sm:text-[18px] leading-none font-normal text-content-primary font-stetica hover:text-content-contrast transition-colors duration-150 select-none tracking-normal"
+                style={{ top: `${yBottom}px` }}
+                className="absolute right-[16px] sm:right-[20px] -translate-y-1/2 cursor-pointer text-right text-[16px] sm:text-[18px] leading-none font-normal text-content-primary font-stetica hover:text-content-contrast transition-colors duration-150 select-none tracking-normal"
               >
                 about
               </button>
