@@ -34,8 +34,28 @@ const FRAMES: TunerFrame[] = [
 ];
 
 const FRAME_COUNT = FRAMES.length; // 9
-// Station anchor ratio of each frame on the tuner dial: exactly aligns section arrival with frame start
-const STATION_RATIOS = FRAMES.map((_, i) => i / FRAME_COUNT);
+
+// Initial proportional fractions & cumulative ratios matching real section heights
+const DEFAULT_FRACTIONS = [
+  0.08, // index (Hero)
+  0.12, // works (Project 1)
+  0.12, // project-2
+  0.12, // project-3
+  0.12, // project-4
+  0.12, // project-5
+  0.12, // project-6
+  0.09, // career
+  0.11, // about
+];
+
+const DEFAULT_RATIOS = (() => {
+  let cum = 0;
+  return DEFAULT_FRACTIONS.map((_, idx) => {
+    if (idx === 0) return 0;
+    cum += DEFAULT_FRACTIONS[idx - 1];
+    return cum;
+  });
+})();
 
 export const TopBar: React.FC<TopBarProps> = ({
   activeStation = "index",
@@ -47,11 +67,14 @@ export const TopBar: React.FC<TopBarProps> = ({
   const [isVisible, setIsVisible] = useState(false);
   const [needleRatio, setNeedleRatio] = useState<number>(0);
   const [isDragging, setIsDragging] = useState(false);
+  const [frameFractions, setFrameFractions] = useState<number[]>(DEFAULT_FRACTIONS);
+  const [stationRatios, setStationRatios] = useState<number[]>(DEFAULT_RATIOS);
+  const stationRatiosRef = useRef<number[]>(DEFAULT_RATIOS);
 
   const trackRef = useRef<HTMLDivElement>(null);
   const sectionScrollsRef = useRef<number[]>([]);
 
-  // Dynamically measure the real scroll position corresponding to each marker/section
+  // Dynamically measure the real scroll position and proportional height of each section
   const updateSectionScrolls = useCallback(() => {
     if (typeof window === "undefined") return;
 
@@ -61,11 +84,11 @@ export const TopBar: React.FC<TopBarProps> = ({
     const winHeight = window.innerHeight;
     const maxScroll = Math.max(0, docHeight - winHeight);
 
-    const positions: number[] = [];
+    const tops: number[] = [];
 
     FRAMES.forEach((frame, i) => {
       if (i === 0 || frame.targetId === "top") {
-        positions.push(0);
+        tops.push(0);
         return;
       }
       const el =
@@ -73,13 +96,41 @@ export const TopBar: React.FC<TopBarProps> = ({
         (frame.targetId === "career" ? document.getElementById("experience") : null);
       if (el) {
         const rect = el.getBoundingClientRect();
-        const absTop = rect.top + window.scrollY;
-        const targetScroll = Math.min(maxScroll, Math.max(0, absTop - topOffset));
-        positions.push(targetScroll);
+        const absTop = Math.max(0, rect.top + window.scrollY);
+        tops.push(absTop);
       } else {
         // Fallback proportional position if element not yet rendered
-        positions.push((i / (FRAME_COUNT - 1)) * maxScroll);
+        tops.push((i / (FRAME_COUNT - 1)) * docHeight);
       }
+    });
+
+    // Compute real height extent for each frame
+    const extents: number[] = [];
+    for (let i = 0; i < FRAME_COUNT; i++) {
+      if (i < FRAME_COUNT - 1) {
+        extents.push(Math.max(100, tops[i + 1] - tops[i]));
+      } else {
+        extents.push(Math.max(100, docHeight - tops[i]));
+      }
+    }
+
+    const totalExtent = extents.reduce((sum, h) => sum + h, 0);
+    const fractions = extents.map((h) => h / (totalExtent || 1));
+
+    let cum = 0;
+    const ratios = fractions.map((_, idx) => {
+      if (idx === 0) return 0;
+      cum += fractions[idx - 1];
+      return cum;
+    });
+
+    stationRatiosRef.current = ratios;
+    setFrameFractions(fractions);
+    setStationRatios(ratios);
+
+    const positions: number[] = tops.map((top, i) => {
+      if (i === 0) return 0;
+      return Math.min(maxScroll, Math.max(0, top - topOffset));
     });
 
     sectionScrollsRef.current = positions;
@@ -98,14 +149,16 @@ export const TopBar: React.FC<TopBarProps> = ({
     // Below or at Hero
     if (scrollY <= scrolls[0]) return 0;
 
-    // Past the last station (about) towards maximum scroll
+    const currentRatios = stationRatiosRef.current;
     const lastIdx = FRAME_COUNT - 1;
+
+    // Past the last station (about) towards maximum scroll
     if (scrollY >= scrolls[lastIdx]) {
       const lastScroll = scrolls[lastIdx];
       const extraScrollRange = maxScroll - lastScroll;
-      if (extraScrollRange <= 0) return STATION_RATIOS[lastIdx];
+      if (extraScrollRange <= 0) return currentRatios[lastIdx];
       const t = Math.min(1, Math.max(0, (scrollY - lastScroll) / extraScrollRange));
-      return STATION_RATIOS[lastIdx] + t * (1 - STATION_RATIOS[lastIdx]);
+      return currentRatios[lastIdx] + t * (1 - currentRatios[lastIdx]);
     }
 
     // Interpolate between stations so each section aligns at 100px when needle reaches its station mark
@@ -115,7 +168,7 @@ export const TopBar: React.FC<TopBarProps> = ({
       if (scrollY >= s1 && scrollY <= s2) {
         const range = s2 - s1;
         const t = range > 0 ? (scrollY - s1) / range : 0;
-        return STATION_RATIOS[i] + t * (STATION_RATIOS[i + 1] - STATION_RATIOS[i]);
+        return currentRatios[i] + t * (currentRatios[i + 1] - currentRatios[i]);
       }
     }
 
@@ -132,20 +185,21 @@ export const TopBar: React.FC<TopBarProps> = ({
     const maxScroll = Math.max(0, docHeight - winHeight);
 
     const r = Math.max(0, Math.min(1, ratio));
+    const currentRatios = stationRatiosRef.current;
+    const lastIdx = FRAME_COUNT - 1;
 
     // Right of last station (about)
-    const lastIdx = FRAME_COUNT - 1;
-    if (r >= STATION_RATIOS[lastIdx]) {
-      const remainingRatio = 1 - STATION_RATIOS[lastIdx];
+    if (r >= currentRatios[lastIdx]) {
+      const remainingRatio = 1 - currentRatios[lastIdx];
       if (remainingRatio <= 0) return scrolls[lastIdx];
-      const t = Math.min(1, Math.max(0, (r - STATION_RATIOS[lastIdx]) / remainingRatio));
+      const t = Math.min(1, Math.max(0, (r - currentRatios[lastIdx]) / remainingRatio));
       return scrolls[lastIdx] + t * (maxScroll - scrolls[lastIdx]);
     }
 
     // Between stations
     for (let i = 0; i < lastIdx; i++) {
-      const r1 = STATION_RATIOS[i];
-      const r2 = STATION_RATIOS[i + 1];
+      const r1 = currentRatios[i];
+      const r2 = currentRatios[i + 1];
       if (r >= r1 && r <= r2) {
         const t = (r2 - r1 > 0) ? (r - r1) / (r2 - r1) : 0;
         return scrolls[i] + t * (scrolls[i + 1] - scrolls[i]);
@@ -291,8 +345,8 @@ export const TopBar: React.FC<TopBarProps> = ({
             {FRAMES.map((frame, idx) => {
               if (idx === 0) return null; // No dot before the first frame (index)
 
-              // Exact dot position centered in the 2px gap between frame[idx - 1] and frame[idx]
-              const dotPositionPercent = (idx / FRAME_COUNT) * 100;
+              // Exact dot position centered at the seam between frame[idx - 1] and frame[idx]
+              const dotPositionPercent = (stationRatios[idx] ?? (idx / FRAME_COUNT)) * 100;
 
               return (
                 <div
@@ -304,9 +358,10 @@ export const TopBar: React.FC<TopBarProps> = ({
             })}
           </div>
 
-          {/* Row 2: Container (98:1385) - 9 Central Frames (height 24px, Figma: SOLID #000000 op: 0.12, gap 2px) */}
+          {/* Row 2: Container (98:1385) - 9 Central Frames proportional to real page block heights */}
           <div className="relative flex h-[24px] w-full flex-row items-center gap-[2px]">
             {FRAMES.map((frame, idx) => {
+              const weight = frameFractions[idx] ?? (1 / FRAME_COUNT);
               return (
                 <div
                   key={frame.id}
@@ -314,18 +369,20 @@ export const TopBar: React.FC<TopBarProps> = ({
                     e.stopPropagation();
                     handleFrameClick(idx);
                   }}
-                  className="relative h-[24px] flex-1 cursor-pointer bg-black/12 hover:bg-black/20 transition-colors duration-150"
+                  style={{ flex: `${weight} 1 0%` }}
+                  className="relative h-[24px] min-w-0 cursor-pointer bg-black/12 hover:bg-black/20 transition-colors duration-150"
                 />
               );
             })}
           </div>
 
-          {/* Row 3: Container (98:1395) - Labels row (height 17px, Figma: 10px Medium AA Stetica, SOLID #cccccc op: 1) */}
+          {/* Row 3: Container (98:1395) - Labels row proportional to frames */}
           <div className="relative flex h-[17px] w-full flex-row items-start gap-[2px] pt-[3px]">
             {FRAMES.map((frame, idx) => {
+              const weight = frameFractions[idx] ?? (1 / FRAME_COUNT);
               if (!frame.label) {
                 // Empty container (98:1403-1407) under project frames 2..6 (no labels)
-                return <div key={frame.id} className="flex-1" />;
+                return <div key={frame.id} style={{ flex: `${weight} 1 0%` }} className="min-w-0" />;
               }
 
               return (
@@ -336,7 +393,8 @@ export const TopBar: React.FC<TopBarProps> = ({
                     e.stopPropagation();
                     handleFrameClick(idx);
                   }}
-                  className="flex-1 text-left cursor-pointer"
+                  style={{ flex: `${weight} 1 0%` }}
+                  className="min-w-0 text-left cursor-pointer"
                 >
                   <span className="font-stetica text-[10px] leading-[14px] font-medium uppercase text-content-primary select-none truncate block hover:text-content-contrast transition-colors duration-150">
                     {frame.label}
