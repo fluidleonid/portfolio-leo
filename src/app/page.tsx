@@ -103,7 +103,11 @@ export default function Home() {
             "Real-time script versioning and execution observability",
           ]}
           caseStudies={[
-            { label: "Zero-Code Ribbon Builder" },
+            {
+              label: "Zero-Code Ribbon Builder",
+              href: "/case/ribbon-builder",
+              active: true,
+            },
             { label: "Enterprise Design System", active: false },
           ]}
         />
@@ -148,7 +152,7 @@ export default function Home() {
             "Interactive step-by-step diff playback",
           ]}
           caseStudies={[
-            { label: "Agent Tracing Console" },
+            { label: "Agent Tracing Console", href: "/case/ai-workflow", active: true },
             { label: "State Tree Engine", active: false },
           ]}
         />
