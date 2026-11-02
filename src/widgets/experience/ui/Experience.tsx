@@ -83,19 +83,20 @@ export const Experience: React.FC<ExperienceProps> = ({
   experiences = DEFAULT_EXPERIENCES,
   education = DEFAULT_EDUCATION,
   className = "",
+  id = "career",
   ...props
 }) => {
   return (
     <section
-      id="experience"
+      id={id}
       className={`flex w-full max-w-[564px] flex-col select-none scroll-mt-[100px] ${className}`}
-      aria-label="Work Experience and Education"
+      aria-label="Career and Education"
       {...props}
     >
-      {/* 1. Experience Block */}
+      {/* 1. Career Block */}
       <div className="flex w-full flex-col">
         <h2 className="font-hauora text-[20px] font-medium leading-[26px] text-content-contrast tracking-normal mb-[8px]">
-          Experience
+          Career
         </h2>
 
         <div className="flex w-full flex-col">

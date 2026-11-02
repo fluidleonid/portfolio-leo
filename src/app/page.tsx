@@ -21,7 +21,7 @@ export default function Home() {
       { id: "project-4", station: "project-4" },
       { id: "project-5", station: "project-5" },
       { id: "project-6", station: "project-6" },
-      { id: "experience", station: "experience" },
+      { id: "career", station: "career" },
       { id: "about", station: "about" },
     ];
 
@@ -171,8 +171,8 @@ export default function Home() {
         />
       </div>
 
-      {/* Experience & Education Section (FSD Experience Widget formatted per reference screenshot & resume) */}
-      <Experience className="mt-[100px] sm:mt-[140px] pt-[40px] border-t border-border-subtle" />
+      {/* Career & Education Section (FSD Career Widget formatted per reference screenshot & resume) */}
+      <Experience id="career" className="mt-[100px] sm:mt-[140px] pt-[40px] border-t border-border-subtle" />
 
       {/* About Section Anchor */}
       <section

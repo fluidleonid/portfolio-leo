@@ -11,7 +11,7 @@ import {
 } from "@/shared/ui";
 import { tokens } from "@/shared/config";
 
-export type NavItem = "works" | "index" | "experience" | "about";
+export type NavItem = "works" | "index" | "career" | "about" | "experience";
 
 export interface HeroProps extends Omit<React.HTMLAttributes<HTMLDivElement>, "onNavChange"> {
   /** Initial navigation selection (default "index") */
@@ -67,6 +67,7 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
     const snapMap: Record<NavItem, number> = {
       works: -58,
       index: -122,
+      career: 58,
       experience: 58,
       about: 122,
     };
@@ -84,7 +85,9 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
         if (item === "index") {
           window.scrollTo({ top: 0, behavior: "smooth" });
         } else {
-          const el = document.getElementById(item);
+          const el =
+            document.getElementById(item) ||
+            (item === "career" ? document.getElementById("experience") : null);
           if (el) {
             const rect = el.getBoundingClientRect();
             const targetScroll = Math.max(0, rect.top + window.scrollY - 100);
@@ -126,8 +129,8 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
     const leftRayEnd = leftLabelEnd + 6;
     const leftTurnX = Math.max(leftRayEnd + 4, cx - (isDesktopNav ? 48 : 42));
 
-    // Right side: 'experience' width ~82px, 'about' width ~44px
-    const rightLabel1Start = Math.min(294, Math.max(cx + 46, navWidth - 16 - 78));
+    // Right side: 'career' width ~54px, 'about' width ~44px
+    const rightLabel1Start = Math.min(320, Math.max(cx + 46, navWidth - 16 - 54));
     const rightRay1End = rightLabel1Start - 6;
     const rightTurn1X = Math.min(rightRay1End - 4, cx + (isDesktopNav ? 48 : 42));
 
@@ -198,10 +201,10 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
                   className="transition-colors duration-150"
                 />
 
-                {/* Top-right radial ray + horizontal line to "experience" */}
+                {/* Top-right radial ray + horizontal line to "career" */}
                 <path
                   d={`M${cx + dxExit} ${cy - dyExit} L${rightTurn1X} ${yTop} H${rightRay1End}`}
-                  stroke={activeNav === "experience" ? tokens.colors.signalAmber : tokens.colors.borderSubtle}
+                  stroke={activeNav === "career" || activeNav === "experience" ? tokens.colors.signalAmber : tokens.colors.borderSubtle}
                   strokeWidth="1"
                   className="transition-colors duration-150"
                 />
@@ -257,16 +260,16 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
                 />
               </div>
 
-              {/* Right Column: "experience" and "about" */}
+              {/* Right Column: "career" and "about" */}
               <button
                 type="button"
-                onClick={() => handleSelectNav("experience")}
-                onMouseEnter={() => setHoveredNav("experience")}
+                onClick={() => handleSelectNav("career")}
+                onMouseEnter={() => setHoveredNav("career")}
                 onMouseLeave={() => setHoveredNav(null)}
                 style={{ left: `${rightLabel1Start}px`, top: `${yTop}px` }}
                 className="absolute -translate-y-1/2 cursor-pointer text-left text-[18px] leading-none font-normal text-content-primary font-stetica hover:text-content-contrast transition-colors duration-150 select-none tracking-normal"
               >
-                experience
+                career
               </button>
 
               <button

@@ -29,7 +29,7 @@ const FRAMES: TunerFrame[] = [
   { id: "project-4", targetId: "project-4", isProject: true },
   { id: "project-5", targetId: "project-5", isProject: true },
   { id: "project-6", targetId: "project-6", isProject: true },
-  { id: "experience", label: "experience", targetId: "experience" },
+  { id: "career", label: "career", targetId: "career" },
   { id: "about", label: "about", targetId: "about" },
 ];
 
@@ -68,7 +68,9 @@ export const TopBar: React.FC<TopBarProps> = ({
         positions.push(0);
         return;
       }
-      const el = document.getElementById(frame.targetId);
+      const el =
+        document.getElementById(frame.targetId) ||
+        (frame.targetId === "career" ? document.getElementById("experience") : null);
       if (el) {
         const rect = el.getBoundingClientRect();
         const absTop = rect.top + window.scrollY;
