@@ -43,7 +43,7 @@ export const Section = React.forwardRef<HTMLDivElement, SectionProps>(
 
         {label && (
           <div
-            className={`absolute left-[16px] -bottom-[12px] flex h-[24px] items-center justify-center bg-canvas px-[4px] select-none ${labelClassName}`}
+            className={`absolute left-[16px] sm:left-[28px] -bottom-[12px] flex h-[24px] items-center justify-center bg-canvas px-[4px] select-none ${labelClassName}`}
           >
             <span
               className={`text-[14px] font-normal leading-[24px] text-content-badge font-hauora uppercase tracking-normal ${textClassName}`}

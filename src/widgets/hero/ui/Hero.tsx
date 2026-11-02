@@ -160,7 +160,7 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
         <div className="flex w-full flex-row items-center justify-between gap-[8px] sm:gap-[32px]">
           {/* NAV Section */}
           <div ref={navContainerRef} className="relative flex-1 min-w-0 sm:flex-initial sm:w-[406px]">
-            <Section label="NAV" className="relative flex h-[124px] w-full sm:w-[406px] items-center justify-center p-[16px]"
+            <Section label="NAV" className="relative flex h-[124px] w-full sm:w-[406px] items-center justify-center p-[16px] sm:p-[20px]"
             >
               {/* Radial guide lines adaptively anchored to centered knob */}
               <svg
@@ -269,7 +269,7 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
           </div>
 
           {/* CV Download Section (Buttons stay 100% full 60px original size, section width adapts) */}
-          <Section label="CV" className="flex h-[124px] w-[96px] sm:w-[124px] shrink-0 items-center justify-center p-[16px]"
+          <Section label="CV" className="flex h-[124px] w-[96px] sm:w-[124px] shrink-0 items-center justify-center p-[16px] sm:p-[20px]"
           >
             <ButtonDownload aria-label="Download CV" />
           </Section>
@@ -278,7 +278,7 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
         {/* 4. ROW 2: CONTACTS (COMM) + PET PROJECTS (PET) in ONE SINGLE ROW (Buttons stay full 44px size) */}
         <div className="flex w-full flex-row items-center justify-between gap-[8px] sm:gap-[32px]">
           {/* COMM Section with 3 tactile pills (Buttons stay full 44px size) */}
-          <Section label="COMM" className="flex h-[124px] flex-1 sm:flex-initial sm:w-[290px] min-w-0 flex-row items-center justify-center gap-[8px] sm:gap-[16px] p-[16px]"
+          <Section label="COMM" className="flex h-[124px] flex-1 sm:flex-initial sm:w-[290px] min-w-0 flex-row items-center justify-center gap-[8px] sm:gap-[16px] p-[16px] sm:p-[20px]"
           >
             <a
               href="https://linkedin.com/in/leoniddmitriev"
@@ -305,7 +305,7 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
           </Section>
 
           {/* PET Section with 3 ButtonLamps (Buttons stay full 44px size) */}
-          <Section label="PET" className="flex h-[124px] flex-1 sm:flex-initial sm:w-[242px] min-w-0 flex-row items-center justify-center gap-[8px] sm:gap-[16px] p-[16px]"
+          <Section label="PET" className="flex h-[124px] flex-1 sm:flex-initial sm:w-[242px] min-w-0 flex-row items-center justify-center gap-[8px] sm:gap-[16px] p-[16px] sm:p-[20px]"
           >
             <ButtonLamp label="1" size="responsive" aria-label="Pet Project 1" />
             <ButtonLamp label="2" size="responsive" aria-label="Pet Project 2" />

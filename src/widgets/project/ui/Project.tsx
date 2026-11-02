@@ -86,12 +86,12 @@ export const Project = React.forwardRef<HTMLDivElement, ProjectProps>(
         </div>
 
         {/* 3. CASES ROW: Responsive (columns on mobile, 266x154px row on desktop) */}
-        <div className="flex w-full flex-col sm:flex-row items-center gap-[16px] sm:gap-[32px]">
+        <div className="flex w-full flex-col sm:flex-row items-center gap-[8px] sm:gap-[32px]">
           {/* Left Block: KEY - Key Achievements with Glowing Amber Indicator Lamps */}
           <Section
             label="KEY"
             direction="column"
-            className="h-[154px] w-full sm:w-[266px] shrink-0 justify-center gap-[18px] px-[20px] sm:px-[28px] py-[28px]"
+            className="h-[154px] w-full sm:w-[266px] shrink-0 justify-center gap-[8px] sm:gap-[18px] p-[16px] sm:px-[28px] sm:py-[28px]"
           >
             {resolvedAchievements.map((item, idx) => {
               const label = typeof item === "string" ? item : item.label;
@@ -112,7 +112,7 @@ export const Project = React.forwardRef<HTMLDivElement, ProjectProps>(
           <Section
             label="CASE"
             direction="column"
-            className="h-[154px] w-full sm:w-[266px] shrink-0 justify-center px-[20px] sm:px-[28px] py-[28px]"
+            className="h-[154px] w-full sm:w-[266px] shrink-0 justify-center gap-[8px] sm:gap-[16px] p-[16px] sm:px-[28px] sm:py-[28px]"
           >
             {caseStudies.map((item, idx) => {
               const btn = (
