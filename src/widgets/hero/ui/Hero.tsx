@@ -43,6 +43,18 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
     const [navWidth, setNavWidth] = useState<number>(406);
     const [navHeight, setNavHeight] = useState<number>(124);
 
+    const worksRef = React.useRef<HTMLAnchorElement | null>(null);
+    const indexRef = React.useRef<HTMLAnchorElement | null>(null);
+    const careerRef = React.useRef<HTMLButtonElement | null>(null);
+    const aboutRef = React.useRef<HTMLButtonElement | null>(null);
+
+    const [labelWidths, setLabelWidths] = useState({
+      works: 46,
+      index: 42,
+      career: 50,
+      about: 42,
+    });
+
     // Responsive dimension measurement for NAV section to adapt rays and labels to equal section height
     React.useEffect(() => {
       const updateDimensions = () => {
@@ -50,6 +62,14 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
         setNavWidth(navContainerRef.current.clientWidth);
         if (navContainerRef.current.clientHeight > 0) {
           setNavHeight(navContainerRef.current.clientHeight);
+        }
+        if (worksRef.current && worksRef.current.offsetWidth > 0) {
+          setLabelWidths({
+            works: worksRef.current.offsetWidth,
+            index: indexRef.current?.offsetWidth || 42,
+            career: careerRef.current?.offsetWidth || 50,
+            about: aboutRef.current?.offsetWidth || 42,
+          });
         }
       };
 
@@ -140,56 +160,36 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
     const cy = navHeight / 2;
     const isDesktopNav = navHeight >= 110;
 
-    const yOffset = isDesktopNav ? 30 : 23;
+    const yOffset = isDesktopNav ? 30 : 25;
     const yTop = cy - yOffset;
     const yBottom = cy + yOffset;
 
-    // Desktop: 32° radial ray exit coordinates from knob center
-    const dyExit = 22.26;
-    const dxExit = 35.62;
+    // Diagonal ray exit coordinates from knob center:
+    // Knob well radius is 34px. Exit at radius ~40px provides a comfortable ~6px clearance from knob well.
+    // 32° radial ray maintains its exact angled slope and length as container adapts.
+    const dxExit = isDesktopNav ? 35.62 : 36.0;
+    const dyExit = isDesktopNav ? 22.26 : 17.5;
 
     const pad = isDesktopNav ? 20 : 16;
 
     // Label widths and target points where rays connect (with 6px gap to text):
-    // works (~46px mob, ~52px dsk), index (~42px mob, ~47px dsk)
-    const leftTarget1 = pad + (isDesktopNav ? 52 : 46) + 6;
-    const leftTarget2 = pad + (isDesktopNav ? 47 : 42) + 6;
+    const leftTarget1 = pad + (labelWidths.works || (isDesktopNav ? 52 : 46)) + 6;
+    const leftTarget2 = pad + (labelWidths.index || (isDesktopNav ? 47 : 42)) + 6;
 
-    // career (~50px mob, ~58px dsk), about (~42px mob, ~50px dsk)
-    const rightTarget1 = navWidth - pad - (isDesktopNav ? 58 : 50) - 6;
-    const rightTarget2 = navWidth - pad - (isDesktopNav ? 50 : 42) - 6;
+    const rightTarget1 = navWidth - pad - (labelWidths.career || (isDesktopNav ? 58 : 50)) - 6;
+    const rightTarget2 = navWidth - pad - (labelWidths.about || (isDesktopNav ? 50 : 42)) - 6;
 
-    // Desktop horizontal knee turns: as container width changes, horizontal line H compresses/stretches
-    const leftTurn = Math.max(leftTarget1 + 4, cx - 48);
-    const rightTurn = Math.min(rightTarget1 - 4, cx + 48);
+    // Knee turns: diagonal ray comes out from knob at 32° to cx ± 48.
+    // As container adapts, the diagonal segment stays fixed as-is, and the horizontal line H compresses/stretches.
+    const leftTurn1 = Math.max(leftTarget1 + 4, cx - 48);
+    const leftTurn2 = Math.max(leftTarget2 + 4, cx - 48);
+    const rightTurn1 = Math.min(rightTarget1 - 4, cx + 48);
+    const rightTurn2 = Math.min(rightTarget2 - 4, cx + 48);
 
-    // Mobile: direct straight angled lines from knob perimeter (40px radius from center, 6px space from 34px well)
-    const getDirectLine = (tgtX: number, tgtY: number) => {
-      const vx = tgtX - cx;
-      const vy = tgtY - cy;
-      const dist = Math.hypot(vx, vy);
-      const ux = vx / (dist || 1);
-      const uy = vy / (dist || 1);
-      const startX = cx + 40 * ux;
-      const startY = cy + 40 * uy;
-      return `M ${startX.toFixed(1)} ${startY.toFixed(1)} L ${tgtX.toFixed(1)} ${tgtY.toFixed(1)}`;
-    };
-
-    const pathWorks = isDesktopNav
-      ? `M ${(cx - dxExit).toFixed(1)} ${(cy - dyExit).toFixed(1)} L ${leftTurn.toFixed(1)} ${yTop} H ${leftTarget1}`
-      : getDirectLine(leftTarget1, yTop);
-
-    const pathIndex = isDesktopNav
-      ? `M ${(cx - dxExit).toFixed(1)} ${(cy + dyExit).toFixed(1)} L ${leftTurn.toFixed(1)} ${yBottom} H ${leftTarget2}`
-      : getDirectLine(leftTarget2, yBottom);
-
-    const pathCareer = isDesktopNav
-      ? `M ${(cx + dxExit).toFixed(1)} ${(cy - dyExit).toFixed(1)} L ${rightTurn.toFixed(1)} ${yTop} H ${rightTarget1}`
-      : getDirectLine(rightTarget1, yTop);
-
-    const pathAbout = isDesktopNav
-      ? `M ${(cx + dxExit).toFixed(1)} ${(cy + dyExit).toFixed(1)} L ${rightTurn.toFixed(1)} ${yBottom} H ${rightTarget2}`
-      : getDirectLine(rightTarget2, yBottom);
+    const pathWorks = `M ${(cx - dxExit).toFixed(1)} ${(cy - dyExit).toFixed(1)} L ${leftTurn1.toFixed(1)} ${yTop.toFixed(1)} H ${leftTarget1.toFixed(1)}`;
+    const pathIndex = `M ${(cx - dxExit).toFixed(1)} ${(cy + dyExit).toFixed(1)} L ${leftTurn2.toFixed(1)} ${yBottom.toFixed(1)} H ${leftTarget2.toFixed(1)}`;
+    const pathCareer = `M ${(cx + dxExit).toFixed(1)} ${(cy - dyExit).toFixed(1)} L ${rightTurn1.toFixed(1)} ${yTop.toFixed(1)} H ${rightTarget1.toFixed(1)}`;
+    const pathAbout = `M ${(cx + dxExit).toFixed(1)} ${(cy + dyExit).toFixed(1)} L ${rightTurn2.toFixed(1)} ${yBottom.toFixed(1)} H ${rightTarget2.toFixed(1)}`;
 
     return (
       <header
@@ -269,6 +269,7 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
 
               {/* Left Column: "works" and "index" - always aligned to left edge */}
               <a
+                ref={worksRef}
                 href="#works"
                 onClick={(e) => {
                   e.preventDefault();
@@ -287,6 +288,7 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
               </a>
 
               <a
+                ref={indexRef}
                 href="#top"
                 onClick={(e) => {
                   e.preventDefault();
@@ -320,6 +322,7 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
 
               {/* Right Column: "career" and "about" - always aligned to right edge */}
               <button
+                ref={careerRef}
                 type="button"
                 onClick={() => handleSelectNav("career")}
                 onMouseEnter={() => setHoveredNav("career")}
@@ -335,6 +338,7 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
               </button>
 
               <button
+                ref={aboutRef}
                 type="button"
                 onClick={() => handleSelectNav("about")}
                 onMouseEnter={() => setHoveredNav("about")}
