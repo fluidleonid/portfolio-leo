@@ -135,7 +135,13 @@ export const Project = React.forwardRef<HTMLDivElement, ProjectProps>(
                   </div>
 
                   {/* Case Title with Hauora Light 18, color like knob texts, whiter on hover */}
-                  <span className="flex-1 min-w-0 font-hauora font-light text-[18px] leading-[24px] text-content-secondary group-hover:text-content-contrast transition-colors duration-150 break-words whitespace-normal">
+                  <span
+                    className={`flex-1 min-w-0 font-hauora font-light text-[18px] leading-[24px] ${
+                      isAvailable
+                        ? "text-content-secondary group-hover:text-content-contrast"
+                        : "text-content-muted"
+                    } transition-colors duration-150 break-words whitespace-normal`}
+                  >
                     {item.label}
                   </span>
                 </div>

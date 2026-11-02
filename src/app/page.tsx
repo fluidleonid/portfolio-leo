@@ -87,7 +87,7 @@ export default function Home() {
           ]}
           caseStudies={[
             { label: "Case 1 · Ribbon Architecture" },
-            { label: "Case 2 · Usability Study" },
+            { label: "Case 2 · Usability Study", active: false },
           ]}
         />
 
@@ -115,7 +115,7 @@ export default function Home() {
             },
             {
               label: "Case 2 · Transcript-Based Editing",
-              href: "https://leodmitriev.framer.website/work/vlog-editor",
+              active: false,
             },
           ]}
         />
@@ -132,7 +132,7 @@ export default function Home() {
           ]}
           caseStudies={[
             { label: "Case 1 · Agent Tracing" },
-            { label: "Case 2 · State Tree Engine" },
+            { label: "Case 2 · State Tree Engine", active: false },
           ]}
         />
 
@@ -148,7 +148,7 @@ export default function Home() {
           ]}
           caseStudies={[
             { label: "Case 1 · Spatial Canvas" },
-            { label: "Case 2 · Vector Renderer" },
+            { label: "Case 2 · Vector Renderer", active: false },
           ]}
         />
 
@@ -164,7 +164,7 @@ export default function Home() {
           ]}
           caseStudies={[
             { label: "Case 1 · Audio Synthesizer" },
-            { label: "Case 2 · Physical Modeling" },
+            { label: "Case 2 · Physical Modeling", active: false },
           ]}
         />
 
@@ -180,7 +180,7 @@ export default function Home() {
           ]}
           caseStudies={[
             { label: "Case 1 · Spatial Tokens" },
-            { label: "Case 2 · System Sound" },
+            { label: "Case 2 · System Sound", active: false },
           ]}
         />
       </div>
@@ -193,9 +193,6 @@ export default function Home() {
         id="about"
         className="mt-[80px] sm:mt-[100px] mb-[40px] min-h-[calc(100vh-100px)] flex w-full max-w-[564px] flex-col justify-start gap-[20px] pb-[120px] scroll-mt-[100px]"
       >
-        <h3 className="font-hauora text-[18px] font-medium leading-[24px] text-content-contrast">
-          Leo Dmitriev
-        </h3>
         <div className="flex flex-col gap-[16px]">
           <p className="font-hauora text-[18px] font-light leading-[24px] text-content-primary">
             I design data-dense B2B and B2C systems, FinTech tools, and products where every single detail matters, while keeping interfaces clean and friction-free. My workflow is built on a tight bridge between design and frontend: I don't just sketch in Figma, I build components in React, manage design tokens, and connect design directly to the codebase. I also love sharing this craft and mentoring designers along the way.
