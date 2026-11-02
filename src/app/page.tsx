@@ -65,6 +65,7 @@ export default function Home() {
       {/* 1:1 Complete Hero Section from Figma */}
       <Hero
         defaultNav="index"
+        activeNav={activeStation === "index" ? "index" : undefined}
         onNavChange={(nav) => setActiveStation(nav)}
         theme={theme}
       />

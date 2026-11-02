@@ -16,6 +16,8 @@ export type NavItem = "works" | "index" | "career" | "about" | "experience";
 export interface HeroProps extends Omit<React.HTMLAttributes<HTMLDivElement>, "onNavChange"> {
   /** Initial navigation selection (default "index") */
   defaultNav?: NavItem;
+  /** Active navigation selection (controlled from parent) */
+  activeNav?: NavItem;
   /** Callback on navigation change */
   onNavChange?: (nav: NavItem) => void;
   /** Active theme for LED matrix */
@@ -30,6 +32,7 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
   (
     {
       defaultNav = "index",
+      activeNav: controlledActiveNav,
       onNavChange,
       theme = "amber",
       className = "",
@@ -40,6 +43,8 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
     const [selectedNav, setSelectedNav] = useState<NavItem>(defaultNav);
     const [hoveredNav, setHoveredNav] = useState<NavItem | null>(null);
     const navContainerRef = React.useRef<HTMLDivElement | null>(null);
+    const isProgrammaticScrollRef = React.useRef<boolean>(false);
+    const scrollTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
     const [navWidth, setNavWidth] = useState<number>(406);
     const [navHeight, setNavHeight] = useState<number>(124);
 
@@ -83,6 +88,30 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
       };
     }, []);
 
+    // Return knob to "index" when user scrolls back to the top of the page
+    React.useEffect(() => {
+      const handleScroll = () => {
+        if (isProgrammaticScrollRef.current) return;
+        // When scroll reaches near top (< 120px), return rotary knob to "index"
+        if (window.scrollY < 120) {
+          setSelectedNav((prev) => (prev !== "index" ? "index" : prev));
+        }
+      };
+
+      window.addEventListener("scroll", handleScroll, { passive: true });
+      return () => {
+        window.removeEventListener("scroll", handleScroll);
+        if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
+      };
+    }, []);
+
+    // Synchronize with controlled activeNav prop from parent
+    React.useEffect(() => {
+      if (controlledActiveNav === "index" && !isProgrammaticScrollRef.current) {
+        setSelectedNav("index");
+      }
+    }, [controlledActiveNav]);
+
     // Exact snap angle configuration from Figma (works top-left: -58°, index bottom-left: -122°)
     const snapMap: Record<NavItem, number> = {
       works: -58,
@@ -105,6 +134,12 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
         if (item === "index") {
           window.scrollTo({ top: 0, behavior: "smooth" });
         } else {
+          isProgrammaticScrollRef.current = true;
+          if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
+          scrollTimeoutRef.current = setTimeout(() => {
+            isProgrammaticScrollRef.current = false;
+          }, 1000);
+
           const el =
             document.getElementById(item) ||
             (item === "career" ? document.getElementById("experience") : null);
