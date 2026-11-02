@@ -123,7 +123,7 @@ export const Project = React.forwardRef<HTMLDivElement, ProjectProps>(
             })}
           </Section>
 
-          {/* Right Block: CASE - Interactive Case Studies with Small Indicator Lamps in Hauora Light 18 */}
+          {/* Right Block: CASE - Interactive Case Studies with Indicator Lamps in Hauora Light 18 */}
           <Section
             label="CASE"
             direction="column"
@@ -136,7 +136,7 @@ export const Project = React.forwardRef<HTMLDivElement, ProjectProps>(
                 href={item.href}
                 active={item.active}
                 onClick={item.onClick}
-                lampSize={10}
+                lampSize={20}
               />
             ))}
           </Section>

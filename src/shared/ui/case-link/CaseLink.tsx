@@ -10,7 +10,7 @@ export interface CaseLinkProps extends React.HTMLAttributes<HTMLElement> {
   active?: boolean;
   /** Optional click handler */
   onClick?: () => void;
-  /** Indicator lamp size in px (default 10) */
+  /** Indicator lamp size in px (default 20) */
   lampSize?: number;
 }
 
@@ -20,10 +20,10 @@ export interface CaseLinkProps extends React.HTMLAttributes<HTMLElement> {
  *
  * Features:
  * - Minimum height of 28px for effortless touch & click targets
- * - Skeuomorphic indicator Lamp (size 10px, glowing when active)
+ * - Skeuomorphic indicator Lamp (size 20px, glowing when active)
  * - Typography: Hauora Light 18px / 24px in text-content-primary (#CCCCCC)
  * - Hover state: shifts to text-content-contrast (#FFFFFF)
- * - Inactive state: text-content-muted (#8C8C8C), opacity 50%, cursor-default
+ * - Inactive state: text-content-muted (#8C8C8C), cursor-default
  * - Semantic rendering: <a> when href is present, <button> when onClick is present, <div> when inactive
  */
 export const CaseLink = React.forwardRef<HTMLElement, CaseLinkProps>(
@@ -33,7 +33,7 @@ export const CaseLink = React.forwardRef<HTMLElement, CaseLinkProps>(
       href,
       active = true,
       onClick,
-      lampSize = 10,
+      lampSize = 20,
       className = "",
       ...props
     },
