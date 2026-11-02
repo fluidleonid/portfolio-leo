@@ -8,6 +8,7 @@ import {
   Knob,
   Section,
   LedMatrix,
+  Lamp,
 } from "@/shared/ui";
 import { tokens } from "@/shared/config";
 
@@ -42,6 +43,8 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
   ) => {
     const [selectedNav, setSelectedNav] = useState<NavItem>(defaultNav);
     const [hoveredNav, setHoveredNav] = useState<NavItem | null>(null);
+    const [toastVisible, setToastVisible] = useState<boolean>(false);
+    const toastTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
     const navContainerRef = React.useRef<HTMLDivElement | null>(null);
     const isProgrammaticScrollRef = React.useRef<boolean>(false);
     const scrollTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
@@ -90,6 +93,43 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
         setSelectedNav(controlledActiveNav);
       }
     }, [controlledActiveNav]);
+
+    // Cleanup toast timer on unmount
+    React.useEffect(() => {
+      return () => {
+        if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
+      };
+    }, []);
+
+    // Copy email address to clipboard with feedback
+    const handleCopyEmail = (e: React.MouseEvent) => {
+      e.preventDefault();
+      const email = "leodm.uxui@gmail.com";
+
+      if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+        navigator.clipboard.writeText(email).catch(() => {
+          const textArea = document.createElement("textarea");
+          textArea.value = email;
+          document.body.appendChild(textArea);
+          textArea.select();
+          document.execCommand("copy");
+          document.body.removeChild(textArea);
+        });
+      } else if (typeof document !== "undefined") {
+        const textArea = document.createElement("textarea");
+        textArea.value = email;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand("copy");
+        document.body.removeChild(textArea);
+      }
+
+      setToastVisible(true);
+      if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
+      toastTimeoutRef.current = setTimeout(() => {
+        setToastVisible(false);
+      }, 2600);
+    };
 
     // Exact snap angle configuration from Figma (works top-left: -58°, index bottom-left: -122°)
     const snapMap: Record<NavItem, number> = {
@@ -398,12 +438,13 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
             >
               <Button label="tg" size="responsive" aria-label="Telegram Channel" />
             </a>
-            <a
-              href="mailto:leodm.uxui@gmail.com"
+            <Button
+              label="@"
+              size="responsive"
+              aria-label="Copy Email Address"
+              onClick={handleCopyEmail}
               className="cursor-pointer shrink-0"
-            >
-              <Button label="@" size="responsive" aria-label="Send Email" />
-            </a>
+            />
           </Section>
 
           {/* PET Section with 3 ButtonLamps (Buttons stay full 44px size) */}
@@ -413,6 +454,22 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
             <ButtonLamp label="2" size="responsive" aria-label="Pet Project 2" />
             <ButtonLamp label="3" size="responsive" aria-label="Pet Project 3" />
           </Section>
+        </div>
+
+        {/* Soft Toast Notification: 56px height, 12px radius, #242424 background */}
+        <div
+          role="status"
+          aria-live="polite"
+          className={`fixed bottom-[24px] sm:bottom-[32px] left-1/2 -translate-x-1/2 z-50 flex h-[56px] w-auto max-w-[calc(100vw-32px)] items-center justify-center gap-[10px] rounded-[12px] border border-[#383838] bg-[#242424] px-[20px] sm:px-[24px] shadow-[0_12px_36px_rgba(0,0,0,0.55),0_2px_8px_rgba(0,0,0,0.35),inset_0_1px_0_rgba(255,255,255,0.08)] transition-all duration-300 ease-out select-none ${
+            toastVisible
+              ? "opacity-100 translate-y-0 scale-100 pointer-events-auto"
+              : "opacity-0 translate-y-[12px] scale-95 pointer-events-none"
+          }`}
+        >
+          <Lamp size={8} active={toastVisible} />
+          <span className="font-stetica text-[15px] sm:text-[16px] font-normal leading-none text-[#EAEAEA] tracking-tight whitespace-nowrap">
+            Email copied to clipboard
+          </span>
         </div>
       </header>
     );
