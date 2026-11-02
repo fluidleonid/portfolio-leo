@@ -94,16 +94,17 @@ export default function Home() {
         {/* Project 1 (Works Flagship) */}
         <Project
           id="works"
-          title="QuickAccess Ribbon Builder"
-          description={"B2B SaaS visual ribbon editor & workspace configurator\nfor CAD & architectural suites."}
+          title="Orkestra"
+          description={"Modular B2B SaaS platform for enterprise architectural firms and BIM teams to orchestrate and deploy CAD ribbons and custom computational scripts.\nAs Product Designer, I designed the visual no-code Ribbon Builder, structured data-dense analytics dashboards, and built the design system from scratch."}
           images={["/quickaccess.png", "/quickaccess.png", "/quickaccess.png"]}
           keyAchievements={[
-            "Configurable 3-level ribbon layout engine",
-            "Reduced workspace customization time by 48%",
+            "Cut CAD toolbar setup from days of manual coding to 15 minutes",
+            "Eliminated configuration errors to zero via visual layout validation",
+            "Real-time script versioning and execution observability",
           ]}
           caseStudies={[
-            { label: "Case 1 · Ribbon Architecture" },
-            { label: "Case 2 · Usability Study", active: false },
+            { label: "Zero-Code Ribbon Builder" },
+            { label: "Enterprise Design System", active: false },
           ]}
         />
 
@@ -126,11 +127,11 @@ export default function Home() {
           ]}
           caseStudies={[
             {
-              label: "Case 1 · Highlight Detection",
+              label: "Highlight Detection Engine",
               href: "https://leodmitriev.framer.website/work/vlog-editor",
             },
             {
-              label: "Case 2 · Transcript-Based Editing",
+              label: "Transcript-Based Editing",
               active: false,
             },
           ]}
@@ -147,8 +148,8 @@ export default function Home() {
             "Interactive step-by-step diff playback",
           ]}
           caseStudies={[
-            { label: "Case 1 · Agent Tracing" },
-            { label: "Case 2 · State Tree Engine", active: false },
+            { label: "Agent Tracing Console" },
+            { label: "State Tree Engine", active: false },
           ]}
         />
 
@@ -163,8 +164,8 @@ export default function Home() {
             "Instant undo/redo tree persistence",
           ]}
           caseStudies={[
-            { label: "Case 1 · Spatial Canvas" },
-            { label: "Case 2 · Vector Renderer", active: false },
+            { label: "Spatial Canvas Engine" },
+            { label: "Vector Renderer", active: false },
           ]}
         />
 
@@ -179,8 +180,8 @@ export default function Home() {
             "Rotary knob angle interpolation at 120 Hz",
           ]}
           caseStudies={[
-            { label: "Case 1 · Audio Synthesizer" },
-            { label: "Case 2 · Physical Modeling", active: false },
+            { label: "Audio Synthesizer" },
+            { label: "Physical Modeling", active: false },
           ]}
         />
 
@@ -195,8 +196,8 @@ export default function Home() {
             "Haptic audio feedback system integration",
           ]}
           caseStudies={[
-            { label: "Case 1 · Spatial Tokens" },
-            { label: "Case 2 · System Sound", active: false },
+            { label: "Spatial Tokens" },
+            { label: "System Sound", active: false },
           ]}
         />
       </div>
