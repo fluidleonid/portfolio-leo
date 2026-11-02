@@ -79,7 +79,7 @@ export const Experience: React.FC<ExperienceProps> = ({
           {experiences.map((item) => (
             <div
               key={item.id}
-              className="flex w-full flex-row items-start border-b border-border-hardware py-[20px] transition-colors duration-150 hover:border-content-muted"
+              className="flex w-full flex-row items-start border-b border-border-hardware py-[20px]"
             >
               {/* Left Column: Start Date (Month / Year stacked, 14px, Regular, #737373) */}
               <div className="flex w-[58px] sm:w-[72px] shrink-0 flex-col font-hauora text-[14px] font-normal leading-[20px] text-content-muted">
