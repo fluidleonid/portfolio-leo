@@ -25,7 +25,11 @@ export const Lamp = React.forwardRef<HTMLSpanElement, LampProps>(
       <span
         ref={ref}
         aria-hidden="true"
-        className={`relative inline-flex shrink-0 items-center justify-center rounded-full bg-black/40 p-[2px] shadow-[inset_0_1.5px_2px_rgba(0,0,0,0.6),inset_0_-1px_1px_rgba(255,255,255,0.04)] select-none ${className}`}
+        className={`relative inline-flex shrink-0 items-center justify-center rounded-full bg-black/[0.08] p-[2px] ${
+          active
+            ? "shadow-[inset_0_1.5px_2px_rgba(0,0,0,0.25),inset_0_-1px_1px_rgba(255,255,255,0.04)]"
+            : "shadow-[inset_0_1.5px_2px_rgba(0,0,0,0.60),inset_0_-1px_1px_rgba(255,255,255,0.04)]"
+        } select-none ${className}`}
         style={{
           width: `${size}px`,
           height: `${size}px`,
@@ -33,20 +37,20 @@ export const Lamp = React.forwardRef<HTMLSpanElement, LampProps>(
         }}
         {...props}
       >
-        {/* Amber Glass Core Lens */}
+        {/* Core Jewel Lens (1:1 from Figma nodes 118:1325 & 118:1333) */}
         <span
           className="relative block rounded-full transition-all duration-300"
           style={{
             width: `${lensSize}px`,
             height: `${lensSize}px`,
             background: active
-              ? "radial-gradient(circle at 36% 32%, #FFF4B8 0%, #FFB733 35%, #FFAA00 65%, #C25E00 100%)"
-              : "radial-gradient(circle at 40% 36%, #4A3A28 0%, #2E251A 70%, #1A1510 100%)",
+              ? "radial-gradient(circle at 35% 35%, #FFF4B8 0%, #FFB733 35%, #FFAA00 65%, #C25E00 100%)"
+              : "radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.32) 0%, rgba(255, 255, 255, 0.24) 100%), rgba(255, 255, 255, 0.08)",
             boxShadow: active
               ? isSmall
-                ? "0 0 5px 1px rgba(255, 170, 0, 0.6), 0 0 9px 2px rgba(255, 170, 0, 0.25), inset 0 0.5px 1px rgba(255, 255, 255, 0.5)"
+                ? "0 0 5px 1px rgba(255, 170, 0, 0.60), inset 0 0.5px 1px rgba(255, 255, 255, 0.50)"
                 : "0 0 6px 1.5px rgba(255, 170, 0, 0.55), 0 0 14px 3px rgba(255, 170, 0, 0.22), inset 0 1px 1.5px rgba(255, 255, 255, 0.45), inset 0 -1px 1px rgba(0, 0, 0, 0.35)"
-              : "inset 0 1px 1px rgba(255, 255, 255, 0.08), inset 0 -1px 1px rgba(0, 0, 0, 0.5)",
+              : "inset 0 1px 1px rgba(255, 255, 255, 0.08), inset 0 -1px 1px rgba(0, 0, 0, 0.50)",
           }}
         />
       </span>

@@ -64,7 +64,7 @@ export const CaseLink = React.forwardRef<HTMLElement, CaseLinkProps>(
     const baseClasses = `group flex min-h-[28px] w-full flex-row items-center gap-[10px] select-none transition-colors duration-150 ${
       isAvailable
         ? "cursor-pointer"
-        : "cursor-default opacity-50"
+        : "cursor-default"
     } ${className}`;
 
     if (href && isAvailable) {
