@@ -91,19 +91,32 @@ export default function Home() {
           ]}
         />
 
-        {/* Project 2 */}
+        {/* Project 2 (NDA: AI Vlog Editor) */}
         <Project
           id="project-2"
-          title="Scorpex Liquidity Router"
-          description={"Algorithmic cross-venue order routing interface\nfor institutional digital asset trading desks."}
-          images={["/quickaccess.png", "/quickaccess.png", "/quickaccess.png"]}
+          title="NDA"
+          description={"Mobile-first AI video editor turning raw match footage\ninto ready-to-publish vertical vlogs with auto-highlights."}
+          images={[
+            "/aivlog/Projects.png",
+            "/aivlog/Projects-1.png",
+            "/aivlog/Projects-2.png",
+            "/aivlog/Projects-3.png",
+            "/aivlog/Projects-4.png",
+            "/aivlog/Projects-5.png",
+          ]}
           keyAchievements={[
-            "Sub-millisecond visual orderbook stream",
-            "Zero layout shifts during high-volatility spikes",
+            "Auto-cut highlight detection from raw footage by audio peaks",
+            "Bi-directional transcript editing trimming pauses directly from text",
           ]}
           caseStudies={[
-            { label: "Case 1 · Order Routing" },
-            { label: "Case 2 · Latency Benchmark" },
+            {
+              label: "Case 1 · Highlight Detection",
+              href: "https://leodmitriev.framer.website/work/vlog-editor",
+            },
+            {
+              label: "Case 2 · Transcript-Based Editing",
+              href: "https://leodmitriev.framer.website/work/vlog-editor",
+            },
           ]}
         />
 
