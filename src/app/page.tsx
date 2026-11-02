@@ -28,18 +28,26 @@ export default function Home() {
     const handleScroll = () => {
       const scrollY = window.scrollY;
 
-      if (scrollY < 200) {
+      // When works has not reached the top yet, or scroll is near top, active station is "index"
+      const worksEl = document.getElementById("works");
+      if (worksEl) {
+        const rect = worksEl.getBoundingClientRect();
+        if (rect.top > 160) {
+          setActiveStation("index");
+          return;
+        }
+      } else if (scrollY < 260) {
         setActiveStation("index");
         return;
       }
 
-      // Find section currently reached at the 100px from viewport top anchor position
+      // Find section currently reached at the 160px from viewport top anchor position
       for (let i = sectionIds.length - 1; i >= 0; i--) {
         const item = sectionIds[i];
         const el = document.getElementById(item.id);
         if (el) {
           const rect = el.getBoundingClientRect();
-          if (rect.top <= 120) {
+          if (rect.top <= 160) {
             setActiveStation(item.station);
             return;
           }
@@ -65,7 +73,15 @@ export default function Home() {
       {/* 1:1 Complete Hero Section from Figma */}
       <Hero
         defaultNav="index"
-        activeNav={activeStation === "index" ? "index" : undefined}
+        activeNav={
+          activeStation === "career"
+            ? "career"
+            : activeStation === "about"
+            ? "about"
+            : activeStation === "index"
+            ? "index"
+            : "works"
+        }
         onNavChange={(nav) => setActiveStation(nav)}
         theme={theme}
       />

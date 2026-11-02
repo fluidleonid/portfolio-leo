@@ -92,8 +92,8 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
     React.useEffect(() => {
       const handleScroll = () => {
         if (isProgrammaticScrollRef.current) return;
-        // When scroll reaches near top (< 120px), return rotary knob to "index"
-        if (window.scrollY < 120) {
+        // When scroll reaches near top (< 260px), return rotary knob to "index"
+        if (window.scrollY < 260) {
           setSelectedNav((prev) => (prev !== "index" ? "index" : prev));
         }
       };
@@ -107,8 +107,8 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
 
     // Synchronize with controlled activeNav prop from parent
     React.useEffect(() => {
-      if (controlledActiveNav === "index" && !isProgrammaticScrollRef.current) {
-        setSelectedNav("index");
+      if (controlledActiveNav && !isProgrammaticScrollRef.current) {
+        setSelectedNav(controlledActiveNav);
       }
     }, [controlledActiveNav]);
 
@@ -123,8 +123,8 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
 
     const snapAngles = [-122, -58, 58, 122];
 
-    const activeNav = hoveredNav ?? selectedNav;
-    const knobTargetAngle = snapMap[selectedNav];
+    const activeNav = hoveredNav ?? (controlledActiveNav ?? selectedNav);
+    const knobTargetAngle = snapMap[activeNav];
 
     const handleSelectNav = (item: NavItem) => {
       setSelectedNav(item);

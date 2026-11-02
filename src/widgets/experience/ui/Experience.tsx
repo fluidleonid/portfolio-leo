@@ -87,9 +87,9 @@ export const Experience: React.FC<ExperienceProps> = ({
                 <span>{item.startYear}</span>
               </div>
 
-              {/* Center Column: Company (Medium 18px #FFFFFF), Role (Regular 18px #CCCCCC), Description (Light 18px #737373) */}
+              {/* Center Column: Company & Role identical style (Regular 18px #CCCCCC), Description (Light 18px #737373) */}
               <div className="flex flex-1 flex-col gap-[2px] pr-[12px] sm:pr-[16px]">
-                <span className="font-hauora text-[18px] font-medium leading-[24px] text-content-contrast">
+                <span className="font-hauora text-[18px] font-normal leading-[24px] text-content-primary">
                   {item.company}
                 </span>
                 <span className="font-hauora text-[18px] font-normal leading-[24px] text-content-primary">

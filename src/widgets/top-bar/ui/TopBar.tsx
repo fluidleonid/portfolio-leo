@@ -385,6 +385,10 @@ export const TopBar: React.FC<TopBarProps> = ({
                 return <div key={frame.id} style={{ flex: `${weight} 1 0%` }} className="min-w-0" />;
               }
 
+              const isActive =
+                activeStation === frame.id ||
+                (frame.id === "works" && activeStation.startsWith("project"));
+
               return (
                 <button
                   key={frame.id}
@@ -396,7 +400,13 @@ export const TopBar: React.FC<TopBarProps> = ({
                   style={{ flex: `${weight} 1 0%` }}
                   className="min-w-0 text-left cursor-pointer"
                 >
-                  <span className="font-stetica text-[10px] leading-[14px] font-medium uppercase text-content-primary select-none truncate block hover:text-content-contrast transition-colors duration-150">
+                  <span
+                    className={`font-stetica text-[10px] leading-[14px] font-medium uppercase select-none truncate block transition-colors duration-150 ${
+                      isActive
+                        ? "text-content-contrast"
+                        : "text-content-primary hover:text-content-contrast"
+                    }`}
+                  >
                     {frame.label}
                   </span>
                 </button>
