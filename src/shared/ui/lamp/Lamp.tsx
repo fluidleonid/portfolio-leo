@@ -20,31 +20,38 @@ export interface LampProps extends React.HTMLAttributes<HTMLSpanElement> {
 export const Lamp = React.forwardRef<HTMLSpanElement, LampProps>(
   ({ size = 20, active = true, className = "", style, ...props }, ref) => {
     const isLarge = size >= 20;
-    const lensSize = isLarge ? 12 : Math.max(6, size - 4);
-    const paddingClass = isLarge ? "p-[4px]" : "p-[2px]";
+    const lensSize = isLarge ? 12 : Math.max(6, Math.round(size * 0.6));
 
     return (
       <span
         ref={ref}
         aria-hidden="true"
-        className={`relative inline-flex shrink-0 items-center justify-center rounded-full bg-black/[0.12] ${paddingClass} ${
+        className={`relative inline-flex shrink-0 aspect-square items-center justify-center rounded-full bg-black/[0.12] select-none ${
           active
             ? "shadow-[inset_0_1.5px_2px_rgba(0,0,0,0.35),inset_0_-1px_1px_rgba(255,255,255,0.05)] border border-[#2a2a2f]/60"
             : "shadow-[inset_0_1.5px_2px_rgba(0,0,0,0.70),inset_0_-1px_1px_rgba(255,255,255,0.04)] border border-[#2a2a2f]/40"
-        } select-none ${className}`}
+        } ${className}`}
         style={{
           width: `${size}px`,
           height: `${size}px`,
+          minWidth: `${size}px`,
+          minHeight: `${size}px`,
+          maxWidth: `${size}px`,
+          maxHeight: `${size}px`,
           ...style,
         }}
         {...props}
       >
-        {/* Core Jewel Lens (1:1 from Figma nodes 108:768 & 118:1320) */}
+        {/* Core Jewel Lens (Strictly 1:1 circular aspect ratio) */}
         <span
-          className="relative block rounded-full transition-all duration-300"
+          className="relative block shrink-0 aspect-square rounded-full transition-all duration-300"
           style={{
             width: `${lensSize}px`,
             height: `${lensSize}px`,
+            minWidth: `${lensSize}px`,
+            minHeight: `${lensSize}px`,
+            maxWidth: `${lensSize}px`,
+            maxHeight: `${lensSize}px`,
             background: active
               ? "radial-gradient(circle at 35% 35%, #FFF4B8 0%, #FFB733 35%, #FFAA00 65%, #C25E00 100%)"
               : "radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.32) 0%, rgba(255, 255, 255, 0.24) 100%), rgba(255, 255, 255, 0.08)",

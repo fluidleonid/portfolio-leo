@@ -44,7 +44,7 @@ export const CaseLink = React.forwardRef<HTMLElement, CaseLinkProps>(
     const innerContent = (
       <>
         {/* Skeuomorphic Indicator Lamp */}
-        <div className="shrink-0 flex items-center justify-center">
+        <div className="shrink-0 flex items-center justify-center w-[20px] h-[20px]">
           <Lamp size={lampSize} active={isAvailable} />
         </div>
 
