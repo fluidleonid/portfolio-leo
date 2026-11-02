@@ -180,16 +180,20 @@ export default function Home() {
         id="about"
         className="mt-[80px] sm:mt-[100px] mb-[40px] min-h-[calc(100vh-100px)] flex w-full max-w-[564px] flex-col justify-start gap-[20px] pb-[120px] scroll-mt-[100px]"
       >
-        <h3 className="font-hauora text-[18px] font-medium text-content-primary">
+        <h3 className="font-hauora text-[18px] font-medium leading-[24px] text-content-contrast">
           Leo Dmitriev
         </h3>
-        <p className="font-hauora text-[18px] leading-[24px] text-content-primary/80">
-          Product Designer with 5+ years of experience taking complex, data-heavy products from
-          discovery to production across B2B SaaS, consumer apps, and AI-driven platforms.
-          I specialize in turning complex AI logic into intuitive, trust-building B2C experiences and
-          configurable B2B dashboards, partnering closely with engineering thanks to a hands-on
-          frontend background (React/Next.js).
-        </p>
+        <div className="flex flex-col gap-[16px]">
+          <p className="font-hauora text-[18px] font-light leading-[24px] text-content-primary">
+            I design data-dense B2B and B2C systems, FinTech tools, and products where every single detail matters, while keeping interfaces clean and friction-free. My workflow is built on a tight bridge between design and frontend: I don't just sketch in Figma, I build components in React, manage design tokens, and connect design directly to the codebase. I also love sharing this craft and mentoring designers along the way.
+          </p>
+          <p className="font-hauora text-[18px] font-light leading-[24px] text-content-primary">
+            AI agents are integrated into every stage of my pipeline—from brainstorming and rapid component prototyping to automation and writing custom skills. At the same time, I never blindly trust automation; every single artifact, line of code, and design decision goes through my strict manual review and refinement.
+          </p>
+          <p className="font-hauora text-[18px] font-light leading-[24px] text-content-primary">
+            Outside of design, I recharge on the badminton court, hitting mountain trails with friends, and spending time with my wife and our dog. I'm genuinely driven by building cool, lively products and connecting with passionate people.
+          </p>
+        </div>
       </section>
     </main>
   );
