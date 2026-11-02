@@ -4,3 +4,4 @@ export * from "./gallery";
 export * from "./knob";
 export * from "./led-matrix";
 export * from "./lamp";
+export * from "./case-link";

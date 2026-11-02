@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Section, Gallery, Lamp } from "@/shared/ui";
+import { Section, Gallery, CaseLink } from "@/shared/ui";
 import type { CaseItem, Achievement } from "@/entities/project";
 
 export interface ProjectProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -129,67 +129,16 @@ export const Project = React.forwardRef<HTMLDivElement, ProjectProps>(
             direction="column"
             className="w-full sm:w-[266px] sm:flex-1 justify-start items-stretch gap-[8px] sm:gap-[16px] p-[16px] sm:px-[28px] sm:py-[28px]"
           >
-            {caseStudies.map((item, idx) => {
-              const isAvailable = item.active !== false;
-              const key = item.id ?? idx;
-
-              const content = (
-                <div
-                  className={`group flex w-full flex-row items-center gap-[10px] select-none transition-colors duration-150 ${
-                    isAvailable ? "cursor-pointer" : "cursor-default opacity-50"
-                  }`}
-                >
-                  {/* Small Indicator Lamp (Jewel LED) */}
-                  <div className="shrink-0 flex items-center justify-center">
-                    <Lamp size={10} active={isAvailable} />
-                  </div>
-
-                  {/* Case Title with Hauora Light 18, color #CCCCCC, whiter on hover */}
-                  <span
-                    className={`flex-1 min-w-0 font-hauora font-light text-[18px] leading-[24px] ${
-                      isAvailable
-                        ? "text-content-primary group-hover:text-content-contrast"
-                        : "text-content-muted"
-                    } transition-colors duration-150 break-words whitespace-normal`}
-                  >
-                    {item.label}
-                  </span>
-                </div>
-              );
-
-              if (item.href && isAvailable) {
-                return (
-                  <a
-                    key={key}
-                    href={item.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="w-full flex"
-                  >
-                    {content}
-                  </a>
-                );
-              }
-
-              if (item.onClick && isAvailable) {
-                return (
-                  <button
-                    key={key}
-                    type="button"
-                    onClick={item.onClick}
-                    className="w-full flex text-left cursor-pointer bg-transparent border-0 p-0"
-                  >
-                    {content}
-                  </button>
-                );
-              }
-
-              return (
-                <div key={key} className="w-full flex">
-                  {content}
-                </div>
-              );
-            })}
+            {caseStudies.map((item, idx) => (
+              <CaseLink
+                key={item.id ?? idx}
+                label={item.label}
+                href={item.href}
+                active={item.active}
+                onClick={item.onClick}
+                lampSize={10}
+              />
+            ))}
           </Section>
         </div>
       </section>
