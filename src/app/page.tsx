@@ -95,7 +95,7 @@ export default function Home() {
         <Project
           id="works"
           title="Orkestra"
-          description={"Modular B2B SaaS platform for enterprise architectural firms and BIM teams to orchestrate and deploy CAD ribbons and custom computational scripts.\nAs Product Designer, I designed the visual no-code Ribbon Builder, structured data-dense analytics dashboards, and built the design system from scratch."}
+          description={"Modular B2B SaaS platform for enterprise architectural firms and BIM teams to orchestrate and deploy CAD ribbons and custom computational scripts.\n\nAs Product Designer, I designed the visual no-code Ribbon Builder, structured data-dense analytics dashboards, and built the design system from scratch."}
           images={["/quickaccess.png", "/quickaccess.png", "/quickaccess.png"]}
           keyAchievements={[
             "Cut CAD toolbar setup from days of manual coding to 15 minutes",

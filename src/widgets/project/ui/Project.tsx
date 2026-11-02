@@ -75,14 +75,24 @@ export const Project = React.forwardRef<HTMLDivElement, ProjectProps>(
           images={images}
         />
 
-        {/* 2. TITLE & DESCRIPTION BLOCK (564x56px, positioned under gallery) */}
+        {/* 2. TITLE & DESCRIPTION BLOCK (564px, positioned under gallery) */}
         <div className="flex w-full flex-col gap-[8px]">
           <h2 className="text-[18px] font-medium leading-[24px] text-content-primary font-hauora tracking-normal">
             {title}
           </h2>
-          <p className="text-[18px] font-light leading-[24px] text-content-primary font-hauora whitespace-pre-line tracking-normal">
-            {description}
-          </p>
+          <div className="flex flex-col gap-[4px]">
+            {description
+              .split(/\n{2,}/)
+              .filter(Boolean)
+              .map((para, idx) => (
+                <p
+                  key={idx}
+                  className="text-[18px] font-light leading-[24px] text-content-primary font-hauora whitespace-pre-line tracking-normal"
+                >
+                  {para}
+                </p>
+              ))}
+          </div>
         </div>
 
         {/* 3. CASES ROW: Responsive (auto-height content on mobile, equalized height on desktop) */}
