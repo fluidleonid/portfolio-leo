@@ -5,6 +5,8 @@ export interface ButtonLampProps
   label?: string | number;
   /** Size variant: default (48x48), sm (40x40), or responsive (sm on mobile, default on desktop) */
   size?: "default" | "sm" | "responsive";
+  /** Whether the lamp is currently active/illuminated */
+  active?: boolean;
 }
 
 /**
@@ -16,14 +18,27 @@ export interface ButtonLampProps
  * - sm: outer socket 40x40px (rounded 10px, p-3px), inner btn 34x34px (rounded 7px)
  * - responsive: sm on mobile (<sm), default on desktop (sm+)
  *
+ * Inactive typography: Badge style (text-content-badge, rgba(204, 204, 204, 0.16))
+ * Active/Hover typography: text-surface (#242424 dark numeral on illuminated amber mesh)
  * Upward shadow: 0 -4px 4px rgba(0,0,0,0.25)
  * Glass micro-facet: inset 0 1px 4px rgba(38,36,36,0.04)
  * Hover / active: illuminated multi-center organic mesh gradient + gentle contained amber glow
  * Exact backdrop blur 20px with subtle 2%->4% linear diffuser
- * Numeral: AA Stetica 18px medium (text-content-primary)
+ * Numeral: AA Stetica 18px medium
  */
 export const ButtonLamp = React.forwardRef<HTMLButtonElement, ButtonLampProps>(
-  ({ className = "", label = "1", size = "default", disabled, children, ...props }, ref) => {
+  (
+    {
+      className = "",
+      label = "1",
+      size = "default",
+      active = false,
+      disabled,
+      children,
+      ...props
+    },
+    ref
+  ) => {
     // Outer socket classes
     const socketSizeClass =
       size === "sm"
@@ -59,11 +74,19 @@ export const ButtonLamp = React.forwardRef<HTMLButtonElement, ButtonLampProps>(
       >
         {/* Inner btn frame */}
         <span
-          className={`relative flex items-center justify-center overflow-hidden shadow-[0_-4px_4px_rgba(0,0,0,0.25),inset_0_1px_4px_rgba(38,36,36,0.04)] transition-all duration-150 ease-out group-hover:shadow-[0_0_4px_rgba(207,107,6,0.25),inset_0_1px_2px_rgba(255,255,255,0.12)] group-active:translate-y-[0.5px] [transform:translateZ(0)] [-webkit-mask-image:-webkit-radial-gradient(white,black)] ${innerSizeClass}`}
+          className={`relative flex items-center justify-center overflow-hidden transition-all duration-150 ease-out [transform:translateZ(0)] [-webkit-mask-image:-webkit-radial-gradient(white,black)] ${
+            active
+              ? "shadow-[0_0_4px_rgba(207,107,6,0.25),inset_0_1px_2px_rgba(255,255,255,0.12)]"
+              : "shadow-[0_-4px_4px_rgba(0,0,0,0.25),inset_0_1px_4px_rgba(38,36,36,0.04)] group-hover:shadow-[0_0_4px_rgba(207,107,6,0.25),inset_0_1px_2px_rgba(255,255,255,0.12)]"
+          } group-active:translate-y-[0.5px] ${innerSizeClass}`}
         >
-          {/* Multi-Center Organic Mesh Gradient (Lights up on hover) */}
+          {/* Multi-Center Organic Mesh Gradient (Lights up on hover or when active) */}
           <span
-            className={`pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-200 ease-out group-hover:opacity-100 group-active:opacity-100 ${roundedClass}`}
+            className={`pointer-events-none absolute inset-0 transition-opacity duration-200 ease-out ${
+              active
+                ? "opacity-100"
+                : "opacity-0 group-hover:opacity-100 group-active:opacity-100"
+            } ${roundedClass}`}
             style={{
               background: `
                 radial-gradient(circle at 48% 36%, #FFE57F 0%, #FFCC5D 32%, transparent 68%),
@@ -84,9 +107,13 @@ export const ButtonLamp = React.forwardRef<HTMLButtonElement, ButtonLampProps>(
             }}
           />
 
-          {/* Centered Numeral with Font Token font-stetica & text-content-primary (#CCCCCC) */}
+          {/* Centered Numeral: Badge style (text-content-badge) when inactive, text-surface when active/hovered */}
           <span
-            className="pointer-events-none relative z-10 flex h-full w-full items-center justify-center text-center text-[18px] font-medium leading-none tracking-normal text-content-primary font-stetica transition-colors duration-150 group-hover:text-surface group-active:text-surface"
+            className={`pointer-events-none relative z-10 flex h-full w-full items-center justify-center text-center text-[18px] font-medium leading-none tracking-normal font-stetica transition-colors duration-150 ${
+              active
+                ? "text-surface"
+                : "text-content-badge group-hover:text-surface group-active:text-surface"
+            }`}
           >
             <span className="translate-y-[-0.5px]">{children ?? label}</span>
           </span>
