@@ -190,7 +190,7 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
         </div>
 
         {/* 2. INTERACTIVE IMAGE / LED MATRIX (Figma node 46:1646, 564x258px) */}
-        <div className="relative flex w-full max-w-[564px] h-[258px] items-center justify-center overflow-hidden">
+        <div className="relative flex w-full max-w-[564px] h-[258px] my-[8px] sm:my-0 items-center justify-center overflow-hidden">
           <LedMatrix
             images={["/portrait.png", "/portrait-2.png"]}
             interval={8000}
