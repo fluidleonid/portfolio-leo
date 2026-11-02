@@ -97,18 +97,41 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
       }
     };
 
-    const handleKnobSnap = (angle: number) => {
+    const getShortestDelta = (from: number, to: number): number => {
+      let a = (to - from) % 360;
+      if (a > 180) a -= 360;
+      if (a <= -180) a += 360;
+      return a;
+    };
+
+    const handleKnobChange = (angle: number) => {
       let nearest: NavItem = "index";
       let minDiff = Infinity;
 
       (Object.keys(snapMap) as NavItem[]).forEach((key) => {
-        const diff = Math.abs(snapMap[key] - angle);
+        const diff = Math.abs(getShortestDelta(angle, snapMap[key]));
         if (diff < minDiff) {
           minDiff = diff;
           nearest = key;
         }
       });
 
+      setHoveredNav(nearest);
+    };
+
+    const handleKnobSnap = (angle: number) => {
+      let nearest: NavItem = "index";
+      let minDiff = Infinity;
+
+      (Object.keys(snapMap) as NavItem[]).forEach((key) => {
+        const diff = Math.abs(getShortestDelta(angle, snapMap[key]));
+        if (diff < minDiff) {
+          minDiff = diff;
+          nearest = key;
+        }
+      });
+
+      setHoveredNav(null);
       handleSelectNav(nearest);
     };
 
@@ -117,25 +140,33 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
     const cy = navHeight / 2;
     const isDesktopNav = navHeight >= 110;
 
-    const yOffset = isDesktopNav ? 30 : 24;
+    const yOffset = isDesktopNav ? 30 : 23;
     const yTop = cy - yOffset;
     const yBottom = cy + yOffset;
 
-    const dyExit = isDesktopNav ? 22.26 : 16;
-    const dxExit = isDesktopNav ? 35.62 : 25.4;
+    // Radial ray exit coordinates: Knob well radius is 34px.
+    // Exit distance is 42.5px (dx ~36, dy ~22.5), guaranteeing a consistent ~8.5px space between knob well rim and ray start.
+    const dyExit = isDesktopNav ? 22.26 : 22.5;
+    const dxExit = isDesktopNav ? 35.62 : 36.0;
 
-    // Left side: lines become shorter and texts shift slightly horizontally while keeping full 18px text
-    const leftLabelEnd = Math.max(48, Math.min(92, cx - 58));
-    const leftRayEnd = leftLabelEnd + 6;
+    // Left side: lines comfortably exit outwards towards the left labels
+    const leftLabelEnd = isDesktopNav
+      ? Math.max(48, Math.min(92, cx - 58))
+      : 16 + 46;
+    const leftRayEnd = Math.min(cx - dxExit - 6, leftLabelEnd + 6);
     const leftTurnX = Math.max(leftRayEnd + 4, cx - (isDesktopNav ? 48 : 42));
 
-    // Right side: 'career' width ~54px, 'about' width ~44px
-    const rightLabel1Start = Math.min(320, Math.max(cx + 46, navWidth - 16 - 54));
-    const rightRay1End = rightLabel1Start - 6;
+    // Right side: 'career' width ~50px, 'about' width ~44px
+    const rightLabel1Start = isDesktopNav
+      ? Math.min(320, Math.max(cx + 46, navWidth - 16 - 54))
+      : navWidth - 16 - 52;
+    const rightRay1End = Math.max(cx + dxExit + 6, rightLabel1Start - 6);
     const rightTurn1X = Math.min(rightRay1End - 4, cx + (isDesktopNav ? 48 : 42));
 
-    const rightLabel2Start = Math.min(338, Math.max(cx + 46, navWidth - 16 - 44));
-    const rightRay2End = rightLabel2Start - 6;
+    const rightLabel2Start = isDesktopNav
+      ? Math.min(338, Math.max(cx + 46, navWidth - 16 - 44))
+      : navWidth - 16 - 44;
+    const rightRay2End = Math.max(cx + dxExit + 6, rightLabel2Start - 6);
     const rightTurn2X = Math.min(rightRay2End - 4, cx + (isDesktopNav ? 48 : 42));
 
     return (
@@ -249,12 +280,13 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
 
               {/* Centered Rotary Knob - 100% full original size without scaling */}
               <div
-                style={{ left: `${cx}px` }}
-                className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 z-10"
+                style={{ left: `${cx}px`, touchAction: "none" }}
+                className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 touch-none"
               >
                 <Knob
                   value={knobTargetAngle}
                   snapAngles={snapAngles}
+                  onChange={handleKnobChange}
                   onSnap={handleKnobSnap}
                   aria-label="Section Navigation Knob"
                 />

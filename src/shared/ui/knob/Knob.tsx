@@ -123,16 +123,15 @@ export const Knob = React.forwardRef<HTMLDivElement, KnobProps>(
       return normalizeAngle(degrees);
     };
 
-    // Drag handlers
-    const pointerStartAngleRef = useRef<number>(0);
-    const knobStartAngleRef = useRef<number>(0);
+    // Drag handlers - incremental delta tracking for true 360° unconstrained radial slider rotation
+    const lastPointerAngleRef = useRef<number>(0);
 
     const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
       if (disabled || e.button !== 0) return;
+      e.preventDefault();
 
       const pointerAngle = calculateAngleFromPointer(e);
-      pointerStartAngleRef.current = pointerAngle;
-      knobStartAngleRef.current = internalAngleRef.current;
+      lastPointerAngleRef.current = pointerAngle;
 
       setIsDragging(true);
       (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
@@ -140,14 +139,16 @@ export const Knob = React.forwardRef<HTMLDivElement, KnobProps>(
 
     const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
       if (!isDragging || disabled) return;
+      e.preventDefault();
 
       const pointerAngle = calculateAngleFromPointer(e);
-      const angleDelta = getShortestDelta(
-        pointerStartAngleRef.current,
+      const delta = getShortestDelta(
+        lastPointerAngleRef.current,
         pointerAngle
       );
+      lastPointerAngleRef.current = pointerAngle;
 
-      let nextAngle = knobStartAngleRef.current + angleDelta;
+      let nextAngle = internalAngleRef.current + delta;
 
       if (minAngle !== undefined) nextAngle = Math.max(minAngle, nextAngle);
       if (maxAngle !== undefined) nextAngle = Math.min(maxAngle, nextAngle);
@@ -242,9 +243,14 @@ export const Knob = React.forwardRef<HTMLDivElement, KnobProps>(
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
         onPointerCancel={handlePointerUp}
+        onTouchStart={(e) => e.stopPropagation()}
+        onTouchMove={(e) => {
+          if (isDragging) e.preventDefault();
+        }}
         onWheel={handleWheel}
         onKeyDown={handleKeyDown}
-        className={`group relative inline-flex h-[68px] w-[68px] shrink-0 select-none items-center justify-center rounded-full bg-black/15 p-[4px] shadow-[inset_0_4px_4px_rgba(0,0,0,0.12),inset_0_-1px_1px_rgba(255,255,255,0.02)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-500/40 ${
+        style={{ touchAction: "none" }}
+        className={`group relative inline-flex h-[68px] w-[68px] shrink-0 touch-none select-none items-center justify-center rounded-full bg-black/15 p-[4px] shadow-[inset_0_4px_4px_rgba(0,0,0,0.12),inset_0_-1px_1px_rgba(255,255,255,0.02)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-500/40 ${
           disabled
             ? "pointer-events-none opacity-40"
             : isDragging
