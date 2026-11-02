@@ -58,8 +58,9 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
     const scrollContainerRef = useRef<HTMLDivElement | null>(null);
     const [leftOffset, setLeftOffset] = useState<number | null>(null);
     const [viewportWidth, setViewportWidth] = useState<number | null>(null);
+    const [parentWidth, setParentWidth] = useState<number>(564);
 
-    // Calculate breakout dimensions so wrapper is never clipped on left or right by 564px parent
+    // Calculate breakout dimensions so wrapper bleeds cleanly to the right viewport edge
     useEffect(() => {
       if (!bleed) return;
 
@@ -73,6 +74,9 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
         const offset = Math.max(0, parentRect.left);
         setLeftOffset(offset);
         setViewportWidth(clientW);
+        if (parentRect.width > 0) {
+          setParentWidth(parentRect.width);
+        }
       };
 
       updateDimensions();
@@ -202,6 +206,12 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
         : ["/quickaccess.png", "/quickaccess.png", "/quickaccess.png"];
 
     const isMobile = viewportWidth !== null ? viewportWidth <= 640 : false;
+    const desktopBleedWidth =
+      !isMobile && bleed && viewportWidth && leftOffset !== null
+        ? Math.max(parentWidth, viewportWidth - leftOffset)
+        : null;
+    const desktopBleedMarginRight =
+      desktopBleedWidth !== null ? -(desktopBleedWidth - parentWidth) : undefined;
 
     return (
       <div
@@ -209,16 +219,16 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
         className={`relative flex select-none overflow-hidden ${
           isMobile
             ? "w-[calc(100%+32px)] -ml-[16px] -mr-[16px] max-w-[100vw]"
+            : desktopBleedWidth !== null
+            ? "w-full"
             : "w-full max-w-full"
         } ${className}`}
         style={{
-          width:
-            !isMobile && bleed && viewportWidth && leftOffset !== null
-              ? `${Math.max(maxWidth, viewportWidth - leftOffset)}px`
-              : undefined,
-          maxWidth:
-            !isMobile && bleed && viewportWidth && leftOffset !== null
-              ? `${viewportWidth - leftOffset}px`
+          width: desktopBleedWidth !== null ? `${desktopBleedWidth}px` : undefined,
+          maxWidth: desktopBleedWidth !== null ? "none" : undefined,
+          marginRight:
+            desktopBleedMarginRight !== undefined
+              ? `${desktopBleedMarginRight}px`
               : undefined,
           ...style,
         }}
@@ -226,9 +236,9 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
       >
         {/* 
           Horizontal scroll container:
-          - Wheel events: NOT intercepted (page scrolls normally without getting trapped).
-          - overflow-x-hidden: Prevents accidental trackpad wheel translation, allowing ONLY drag/swipe.
-          - touch-action: pan-y: Lets vertical touch scroll page naturally, while horizontal touch swipes gallery.
+          - overflow-x-auto: Allows natural horizontal trackpad two-finger swipe and horizontal scroll.
+          - [scrollbar-width:none]: Keeps scrollbar completely invisible across all browsers.
+          - touch-pan-y: Lets vertical touch scroll page naturally, while horizontal gestures swipe gallery.
         */}
         <div
           ref={scrollContainerRef}
@@ -236,7 +246,7 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
           onPointerCancel={handlePointerUp}
-          className={`relative flex h-full w-full overflow-x-hidden overflow-y-hidden select-none touch-pan-y [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden ${
+          className={`relative flex h-full w-full overflow-x-auto overflow-y-hidden select-none touch-pan-y [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden ${
             isPointerDown ? "cursor-grabbing" : "cursor-grab"
           }`}
           style={{
