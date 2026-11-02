@@ -75,7 +75,7 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
     const snapAngles = [-122, -58, 58, 122];
 
     const activeNav = hoveredNav ?? selectedNav;
-    const knobTargetAngle = snapMap[activeNav];
+    const knobTargetAngle = snapMap[selectedNav];
 
     const handleSelectNav = (item: NavItem) => {
       setSelectedNav(item);
@@ -232,7 +232,7 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
           <div ref={navContainerRef} className="relative flex-1 min-w-0 sm:flex-initial sm:w-[406px]">
             <Section label="NAV" className="relative flex h-[94px] sm:h-[124px] w-full sm:w-[406px] items-center justify-center p-[16px] sm:p-[20px]"
             >
-              {/* Radial guide lines adaptively anchored to centered knob */}
+              {/* Radial guide lines adaptively anchored to centered knob (always constant borderSubtle color) */}
               <svg
                 className="pointer-events-none absolute inset-0 h-full w-full"
                 viewBox={`0 0 ${navWidth} ${navHeight}`}
@@ -241,33 +241,29 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
                 {/* Top-left: works */}
                 <path
                   d={pathWorks}
-                  stroke={activeNav === "works" ? tokens.colors.signalAmber : tokens.colors.borderSubtle}
+                  stroke={tokens.colors.borderSubtle}
                   strokeWidth="1"
-                  className="transition-colors duration-150"
                 />
 
                 {/* Bottom-left: index */}
                 <path
                   d={pathIndex}
-                  stroke={activeNav === "index" ? tokens.colors.signalAmber : tokens.colors.borderSubtle}
+                  stroke={tokens.colors.borderSubtle}
                   strokeWidth="1"
-                  className="transition-colors duration-150"
                 />
 
                 {/* Top-right: career */}
                 <path
                   d={pathCareer}
-                  stroke={activeNav === "career" || activeNav === "experience" ? tokens.colors.signalAmber : tokens.colors.borderSubtle}
+                  stroke={tokens.colors.borderSubtle}
                   strokeWidth="1"
-                  className="transition-colors duration-150"
                 />
 
                 {/* Bottom-right: about */}
                 <path
                   d={pathAbout}
-                  stroke={activeNav === "about" ? tokens.colors.signalAmber : tokens.colors.borderSubtle}
+                  stroke={tokens.colors.borderSubtle}
                   strokeWidth="1"
-                  className="transition-colors duration-150"
                 />
               </svg>
 
@@ -281,7 +277,11 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
                 onMouseEnter={() => setHoveredNav("works")}
                 onMouseLeave={() => setHoveredNav(null)}
                 style={{ top: `${yTop}px` }}
-                className="absolute left-[16px] sm:left-[20px] -translate-y-1/2 cursor-pointer text-left text-[16px] sm:text-[18px] leading-none font-normal text-content-primary font-stetica hover:text-content-contrast transition-colors duration-150 select-none tracking-normal"
+                className={`absolute left-[16px] sm:left-[20px] -translate-y-1/2 cursor-pointer text-left text-[16px] sm:text-[18px] leading-none font-normal font-stetica select-none tracking-normal transition-colors duration-150 ${
+                  activeNav === "works"
+                    ? "text-content-contrast"
+                    : "text-content-secondary hover:text-content-contrast"
+                }`}
               >
                 works
               </a>
@@ -295,7 +295,11 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
                 onMouseEnter={() => setHoveredNav("index")}
                 onMouseLeave={() => setHoveredNav(null)}
                 style={{ top: `${yBottom}px` }}
-                className="absolute left-[16px] sm:left-[20px] -translate-y-1/2 cursor-pointer text-left text-[16px] sm:text-[18px] leading-none font-normal text-content-primary font-stetica hover:text-content-contrast transition-colors duration-150 select-none tracking-normal"
+                className={`absolute left-[16px] sm:left-[20px] -translate-y-1/2 cursor-pointer text-left text-[16px] sm:text-[18px] leading-none font-normal font-stetica select-none tracking-normal transition-colors duration-150 ${
+                  activeNav === "index"
+                    ? "text-content-contrast"
+                    : "text-content-secondary hover:text-content-contrast"
+                }`}
               >
                 index
               </a>
@@ -321,7 +325,11 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
                 onMouseEnter={() => setHoveredNav("career")}
                 onMouseLeave={() => setHoveredNav(null)}
                 style={{ top: `${yTop}px` }}
-                className="absolute right-[16px] sm:right-[20px] -translate-y-1/2 cursor-pointer text-right text-[16px] sm:text-[18px] leading-none font-normal text-content-primary font-stetica hover:text-content-contrast transition-colors duration-150 select-none tracking-normal"
+                className={`absolute right-[16px] sm:right-[20px] -translate-y-1/2 cursor-pointer text-right text-[16px] sm:text-[18px] leading-none font-normal font-stetica select-none tracking-normal transition-colors duration-150 ${
+                  activeNav === "career" || activeNav === "experience"
+                    ? "text-content-contrast"
+                    : "text-content-secondary hover:text-content-contrast"
+                }`}
               >
                 career
               </button>
@@ -332,7 +340,11 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
                 onMouseEnter={() => setHoveredNav("about")}
                 onMouseLeave={() => setHoveredNav(null)}
                 style={{ top: `${yBottom}px` }}
-                className="absolute right-[16px] sm:right-[20px] -translate-y-1/2 cursor-pointer text-right text-[16px] sm:text-[18px] leading-none font-normal text-content-primary font-stetica hover:text-content-contrast transition-colors duration-150 select-none tracking-normal"
+                className={`absolute right-[16px] sm:right-[20px] -translate-y-1/2 cursor-pointer text-right text-[16px] sm:text-[18px] leading-none font-normal font-stetica select-none tracking-normal transition-colors duration-150 ${
+                  activeNav === "about"
+                    ? "text-content-contrast"
+                    : "text-content-secondary hover:text-content-contrast"
+                }`}
               >
                 about
               </button>

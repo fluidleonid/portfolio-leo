@@ -93,9 +93,9 @@ export const Knob = React.forwardRef<HTMLDivElement, KnobProps>(
       [snapAngles]
     );
 
-    // Sync controlledValue updates with shortest path continuous rotation
+    // Sync controlledValue updates with shortest path continuous rotation (only when not actively dragging)
     useEffect(() => {
-      if (controlledValue === undefined) return;
+      if (controlledValue === undefined || isDragging) return;
 
       const current = internalAngleRef.current;
       const delta = getShortestDelta(current, controlledValue);
@@ -103,7 +103,7 @@ export const Knob = React.forwardRef<HTMLDivElement, KnobProps>(
 
       setCurrentAngle(nextContinuousAngle);
       internalAngleRef.current = nextContinuousAngle;
-    }, [controlledValue]);
+    }, [controlledValue, isDragging]);
 
     // Calculate angle from pointer event relative to knob center
     const calculateAngleFromPointer = (
@@ -174,10 +174,9 @@ export const Knob = React.forwardRef<HTMLDivElement, KnobProps>(
       const delta = getShortestDelta(internalAngleRef.current, nearest.angle);
       const snappedAngle = internalAngleRef.current + delta;
 
-      if (!isControlled) {
-        setCurrentAngle(snappedAngle);
-        internalAngleRef.current = snappedAngle;
-      }
+      // Magnetically glide to exact nearest snap position on release
+      setCurrentAngle(snappedAngle);
+      internalAngleRef.current = snappedAngle;
 
       onChange?.(nearest.angle);
       onSnap?.(nearest.angle, nearest.index);
