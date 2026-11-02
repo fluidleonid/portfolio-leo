@@ -80,7 +80,7 @@ export const Project = React.forwardRef<HTMLDivElement, ProjectProps>(
           <h2 className="text-[18px] font-medium leading-[24px] text-content-primary font-hauora tracking-normal">
             {title}
           </h2>
-          <p className="text-[16px] sm:text-[18px] font-normal leading-[22px] sm:leading-[24px] text-content-primary font-hauora whitespace-pre-line tracking-normal">
+          <p className="text-[18px] font-normal leading-[24px] text-content-primary font-hauora whitespace-pre-line tracking-normal">
             {description}
           </p>
         </div>

@@ -185,7 +185,7 @@ export default function Home() {
         <h3 className="font-hauora text-[18px] font-medium text-content-primary">
           Leo Dmitriev
         </h3>
-        <p className="font-hauora text-[15px] leading-relaxed text-content-primary/80">
+        <p className="font-hauora text-[18px] leading-[24px] text-content-primary/80">
           Product Designer with 5+ years of experience taking complex, data-heavy products from
           discovery to production across B2B SaaS, consumer apps, and AI-driven platforms.
           I specialize in turning complex AI logic into intuitive, trust-building B2C experiences and

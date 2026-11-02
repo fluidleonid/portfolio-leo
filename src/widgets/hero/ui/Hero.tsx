@@ -204,7 +204,7 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
           <h1 className="text-[18px] font-medium leading-[24px] text-content-primary font-hauora tracking-normal">
             Leonid Dmitriev
           </h1>
-          <p className="text-[16px] sm:text-[18px] font-medium leading-[22px] sm:leading-[24px] text-content-primary font-hauora whitespace-pre-line tracking-normal">
+          <p className="text-[18px] font-medium leading-[24px] text-content-primary font-hauora whitespace-pre-line tracking-normal">
             Product Designer · Frontend-fluent{"\n"}
             4+ years at B2B(2C) across FinTech,{"\n"}
             Productivity, Entertainment & AI products
