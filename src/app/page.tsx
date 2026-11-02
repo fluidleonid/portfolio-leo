@@ -73,7 +73,7 @@ export default function Home() {
         WORKS: 6 Flagman Project Blocks
         (1 initial project + 5 additional projects matching the 6 project scale blocks in the tuner)
       */}
-      <div className="flex w-full flex-col items-center gap-[80px] sm:gap-[120px] mt-[60px] sm:mt-[100px]">
+      <div className="flex w-full flex-col items-center gap-[80px] sm:gap-[120px] mt-[80px] sm:mt-[100px]">
         {/* Project 1 (Works Flagship) */}
         <Project
           id="works"

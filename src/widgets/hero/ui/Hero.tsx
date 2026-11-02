@@ -142,7 +142,7 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
       <header
         id="top"
         ref={ref}
-        className={`relative flex w-full max-w-[564px] flex-col gap-[24px] sm:gap-[32px] select-none ${className}`}
+        className={`relative flex w-full max-w-[564px] flex-col gap-[12px] sm:gap-[32px] select-none ${className}`}
         aria-label="Portfolio Introduction"
         {...props}
       >
@@ -174,7 +174,7 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
         </div>
 
         {/* 3. ROW 1: NAVIGATION + CV in ONE SINGLE ROW (Preserves 2-row layout, buttons stay full 1:1 size) */}
-        <div className="flex w-full flex-row items-stretch justify-between gap-[8px] sm:gap-[32px]">
+        <div className="flex w-full flex-row items-stretch justify-between gap-[12px] sm:gap-[32px]">
           {/* NAV Section */}
           <div ref={navContainerRef} className="relative flex-1 min-w-0 sm:flex-initial sm:w-[406px]">
             <Section label="NAV" className="relative flex h-[94px] sm:h-[124px] w-full sm:w-[406px] items-center justify-center p-[16px] sm:p-[20px]"
@@ -293,7 +293,7 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
         </div>
 
         {/* 4. ROW 2: CONTACTS (COMM) + PET PROJECTS (PET) in ONE SINGLE ROW (Buttons stay full 44px size) */}
-        <div className="flex w-full flex-row items-stretch justify-between gap-[8px] sm:gap-[32px]">
+        <div className="flex w-full flex-row items-stretch justify-between gap-[12px] sm:gap-[32px]">
           {/* COMM Section with 3 tactile pills (Buttons stay full 44px size) */}
           <Section label="COMM" className="flex h-[94px] sm:h-[124px] flex-1 sm:flex-initial sm:w-[290px] min-w-0 flex-row items-center justify-center gap-[8px] sm:gap-[16px] p-[16px] sm:p-[20px]"
           >
