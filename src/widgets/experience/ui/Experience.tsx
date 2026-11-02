@@ -13,17 +13,8 @@ export interface ExperienceItem {
   description: string;
 }
 
-export interface EducationItem {
-  id: string;
-  startYear: string;
-  endYear: string;
-  institution: string;
-  degree: string;
-}
-
 export interface ExperienceProps extends React.HTMLAttributes<HTMLDivElement> {
   experiences?: ExperienceItem[];
-  education?: EducationItem[];
 }
 
 const DEFAULT_EXPERIENCES: ExperienceItem[] = [
@@ -69,19 +60,8 @@ const DEFAULT_EXPERIENCES: ExperienceItem[] = [
   },
 ];
 
-const DEFAULT_EDUCATION: EducationItem[] = [
-  {
-    id: "spb-bonch",
-    startYear: "2011 –",
-    endYear: "2015",
-    institution: "St. Petersburg State University of Telecommunications",
-    degree: "Bachelor of Information Technology",
-  },
-];
-
 export const Experience: React.FC<ExperienceProps> = ({
   experiences = DEFAULT_EXPERIENCES,
-  education = DEFAULT_EDUCATION,
   className = "",
   id = "career",
   ...props
@@ -90,10 +70,10 @@ export const Experience: React.FC<ExperienceProps> = ({
     <section
       id={id}
       className={`flex w-full max-w-[564px] flex-col select-none scroll-mt-[100px] ${className}`}
-      aria-label="Career and Education"
+      aria-label="Career"
       {...props}
     >
-      {/* 1. Career Block */}
+      {/* Career Block */}
       <div className="flex w-full flex-col">
         <div className="flex w-full flex-col">
           {experiences.map((item) => (
@@ -125,38 +105,6 @@ export const Experience: React.FC<ExperienceProps> = ({
               {/* Right Column: End Date / Status (14px, Regular, #737373) */}
               <div className="w-[70px] sm:w-[84px] shrink-0 text-right font-hauora text-[14px] font-normal leading-[20px] text-content-muted">
                 {item.endDate}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* 2. Education Block */}
-      <div className="mt-[56px] flex w-full flex-col">
-        <h2 className="font-hauora text-[18px] font-medium leading-[24px] text-content-contrast tracking-normal mb-[8px]">
-          Education
-        </h2>
-
-        <div className="flex w-full flex-col">
-          {education.map((item) => (
-            <div
-              key={item.id}
-              className="flex w-full flex-row items-start border-b border-border-hardware py-[20px] transition-colors duration-150 hover:border-content-muted"
-            >
-              {/* Left Column: Period (Start Year – / End Year stacked, 14px, Regular, #737373) */}
-              <div className="flex w-[58px] sm:w-[72px] shrink-0 flex-col font-hauora text-[14px] font-normal leading-[20px] text-content-muted">
-                <span>{item.startYear}</span>
-                <span>{item.endYear}</span>
-              </div>
-
-              {/* Center Column: Institution (Medium 18px #FFFFFF) & Degree (Regular 18px #CCCCCC) */}
-              <div className="flex flex-1 flex-col gap-[2px] pr-[12px] sm:pr-[16px]">
-                <span className="font-hauora text-[18px] font-medium leading-[24px] text-content-contrast">
-                  {item.institution}
-                </span>
-                <span className="font-hauora text-[18px] font-normal leading-[24px] text-content-primary">
-                  {item.degree}
-                </span>
               </div>
             </div>
           ))}
