@@ -101,7 +101,7 @@ export const Project = React.forwardRef<HTMLDivElement, ProjectProps>(
           <Section
             label="KEY"
             direction="column"
-            className="w-full sm:w-[266px] sm:flex-1 justify-center items-stretch gap-[8px] sm:gap-[16px] p-[16px] sm:px-[28px] sm:py-[28px]"
+            className="w-full sm:w-[266px] sm:flex-1 justify-start items-stretch gap-[8px] sm:gap-[16px] p-[16px] sm:px-[28px] sm:py-[28px]"
           >
             {resolvedAchievements.map((item, idx) => {
               const label = typeof item === "string" ? item : item.label;
@@ -127,7 +127,7 @@ export const Project = React.forwardRef<HTMLDivElement, ProjectProps>(
           <Section
             label="CASE"
             direction="column"
-            className="w-full sm:w-[266px] sm:flex-1 justify-center items-stretch gap-[8px] sm:gap-[16px] p-[16px] sm:px-[28px] sm:py-[28px]"
+            className="w-full sm:w-[266px] sm:flex-1 justify-start items-stretch gap-[8px] sm:gap-[16px] p-[16px] sm:px-[28px] sm:py-[28px]"
           >
             {caseStudies.map((item, idx) => {
               const isAvailable = item.active !== false;
