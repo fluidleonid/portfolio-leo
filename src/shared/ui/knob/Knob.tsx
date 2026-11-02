@@ -32,7 +32,7 @@ export const Knob = React.forwardRef<HTMLDivElement, KnobProps>(
   (
     {
       value: controlledValue,
-      defaultValue = -58,
+      defaultValue = -122,
       minAngle,
       maxAngle,
       snapAngles = [-122, -58, 58, 122],
@@ -51,6 +51,15 @@ export const Knob = React.forwardRef<HTMLDivElement, KnobProps>(
       controlledValue !== undefined ? controlledValue : defaultValue
     );
     const [isDragging, setIsDragging] = useState<boolean>(false);
+    const [isMounted, setIsMounted] = useState<boolean>(false);
+
+    useEffect(() => {
+      // Suppress initial transition jump on mount / page load
+      const timer = setTimeout(() => {
+        setIsMounted(true);
+      }, 50);
+      return () => clearTimeout(timer);
+    }, []);
 
     const isControlled = controlledValue !== undefined;
     const internalAngleRef = useRef<number>(currentAngle);
@@ -265,7 +274,7 @@ export const Knob = React.forwardRef<HTMLDivElement, KnobProps>(
           style={{
             background: "linear-gradient(180deg, var(--color-surface-pill, #2c2c2c) 0%, var(--color-surface, #242424) 100%)",
             transform: `rotate(${currentAngle}deg)`,
-            transition: isDragging
+            transition: !isMounted || isDragging
               ? "none"
               : "transform 550ms cubic-bezier(0.22, 1, 0.36, 1)",
             boxShadow:

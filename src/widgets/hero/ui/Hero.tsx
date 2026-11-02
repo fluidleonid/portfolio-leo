@@ -341,10 +341,10 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
                 index
               </a>
 
-              {/* Centered Rotary Knob - 100% full original size without scaling */}
+              {/* Centered Rotary Knob - 100% full original size without scaling, pure CSS centering prevents load jumps */}
               <div
-                style={{ left: `${cx}px`, touchAction: "none" }}
-                className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 touch-none"
+                style={{ touchAction: "none" }}
+                className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 touch-none"
               >
                 <Knob
                   value={knobTargetAngle}
