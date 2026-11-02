@@ -103,31 +103,31 @@ export const Experience: React.FC<ExperienceProps> = ({
           {experiences.map((item) => (
             <div
               key={item.id}
-              className="flex w-full flex-row items-start border-b border-border-subtle py-[20px] transition-colors duration-150 hover:border-content-muted"
+              className="flex w-full flex-row items-start border-b border-border-hardware py-[20px] transition-colors duration-150 hover:border-content-muted"
             >
-              {/* Left Column: Start Date (Month / Year stacked, 14px) */}
-              <div className="flex w-[58px] sm:w-[72px] shrink-0 flex-col font-hauora text-[14px] leading-[20px] text-content-muted">
+              {/* Left Column: Start Date (Month / Year stacked, 14px, Regular, #737373) */}
+              <div className="flex w-[58px] sm:w-[72px] shrink-0 flex-col font-hauora text-[14px] font-normal leading-[20px] text-content-muted">
                 <span>{item.startMonth}</span>
                 <span>{item.startYear}</span>
               </div>
 
-              {/* Center Column: Company, Role, and Header Work Summary (18px) */}
+              {/* Center Column: Company (Medium 18px #FFFFFF), Role (Regular 18px #CCCCCC), Description (Light 18px #737373) */}
               <div className="flex flex-1 flex-col gap-[2px] pr-[12px] sm:pr-[16px]">
                 <span className="font-hauora text-[18px] font-medium leading-[24px] text-content-contrast">
                   {item.company}
                 </span>
-                <span className="font-hauora text-[18px] leading-[24px] text-content-secondary">
+                <span className="font-hauora text-[18px] font-normal leading-[24px] text-content-primary">
                   {item.role}
                 </span>
                 {item.description && (
-                  <p className="mt-[4px] font-hauora text-[18px] leading-[24px] text-content-muted whitespace-pre-line">
+                  <p className="mt-[4px] font-hauora text-[18px] font-light leading-[24px] text-content-muted whitespace-pre-line">
                     {item.description}
                   </p>
                 )}
               </div>
 
-              {/* Right Column: End Date / Status (14px) */}
-              <div className="w-[70px] sm:w-[84px] shrink-0 text-right font-hauora text-[14px] leading-[20px] text-content-muted">
+              {/* Right Column: End Date / Status (14px, Regular, #737373) */}
+              <div className="w-[70px] sm:w-[84px] shrink-0 text-right font-hauora text-[14px] font-normal leading-[20px] text-content-muted">
                 {item.endDate}
               </div>
             </div>
@@ -145,20 +145,20 @@ export const Experience: React.FC<ExperienceProps> = ({
           {education.map((item) => (
             <div
               key={item.id}
-              className="flex w-full flex-row items-start border-b border-border-subtle py-[20px] transition-colors duration-150 hover:border-content-muted"
+              className="flex w-full flex-row items-start border-b border-border-hardware py-[20px] transition-colors duration-150 hover:border-content-muted"
             >
-              {/* Left Column: Period (Start Year – / End Year stacked, 14px) */}
-              <div className="flex w-[58px] sm:w-[72px] shrink-0 flex-col font-hauora text-[14px] leading-[20px] text-content-muted">
+              {/* Left Column: Period (Start Year – / End Year stacked, 14px, Regular, #737373) */}
+              <div className="flex w-[58px] sm:w-[72px] shrink-0 flex-col font-hauora text-[14px] font-normal leading-[20px] text-content-muted">
                 <span>{item.startYear}</span>
                 <span>{item.endYear}</span>
               </div>
 
-              {/* Center Column: Institution & Degree (18px) */}
+              {/* Center Column: Institution (Medium 18px #FFFFFF) & Degree (Regular 18px #CCCCCC) */}
               <div className="flex flex-1 flex-col gap-[2px] pr-[12px] sm:pr-[16px]">
                 <span className="font-hauora text-[18px] font-medium leading-[24px] text-content-contrast">
                   {item.institution}
                 </span>
-                <span className="font-hauora text-[18px] leading-[24px] text-content-secondary">
+                <span className="font-hauora text-[18px] font-normal leading-[24px] text-content-primary">
                   {item.degree}
                 </span>
               </div>

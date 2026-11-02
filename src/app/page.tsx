@@ -172,7 +172,7 @@ export default function Home() {
       </div>
 
       {/* Career & Education Section (FSD Career Widget formatted per reference screenshot & resume) */}
-      <Experience id="career" className="mt-[100px] sm:mt-[140px] pt-[40px] border-t border-border-subtle" />
+      <Experience id="career" className="mt-[100px] sm:mt-[140px] pt-[40px] border-t border-border-hardware" />
 
       {/* About Section Anchor */}
       <section
