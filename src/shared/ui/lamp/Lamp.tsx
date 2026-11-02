@@ -26,10 +26,10 @@ export const Lamp = React.forwardRef<HTMLSpanElement, LampProps>(
       <span
         ref={ref}
         aria-hidden="true"
-        className={`relative inline-flex shrink-0 aspect-square items-center justify-center rounded-full bg-black/[0.12] select-none ${
+        className={`relative inline-flex shrink-0 aspect-square items-center justify-center rounded-full bg-black/[0.12] select-none transition-opacity duration-200 ${
           active
-            ? "shadow-[inset_0_1.5px_2px_rgba(0,0,0,0.35),inset_0_-1px_1px_rgba(255,255,255,0.05)] border border-[#2a2a2f]/60"
-            : "shadow-[inset_0_1.5px_2px_rgba(0,0,0,0.70),inset_0_-1px_1px_rgba(255,255,255,0.04)] border border-[#2a2a2f]/40"
+            ? "opacity-100 shadow-[inset_0_1.5px_2px_rgba(0,0,0,0.35),inset_0_-1px_1px_rgba(255,255,255,0.05)] border border-[#2a2a2f]/60"
+            : "opacity-20 shadow-[inset_0_1.5px_2px_rgba(0,0,0,0.70),inset_0_-1px_1px_rgba(255,255,255,0.04)] border border-[#2a2a2f]/40"
         } ${className}`}
         style={{
           width: `${size}px`,
