@@ -364,7 +364,16 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
           {/* CV Download Section (Buttons stay 100% full 60px original size, section width adapts) */}
           <Section label="CV" className="flex h-[94px] sm:h-[124px] w-[96px] sm:w-[124px] shrink-0 items-center justify-center p-[16px] sm:p-[20px]"
           >
-            <ButtonDownload aria-label="Download CV" />
+            <a
+              href="/cv.pdf"
+              download="Leo_Dmitriev_CV.pdf"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Download CV"
+              className="cursor-pointer"
+            >
+              <ButtonDownload aria-label="Download CV" />
+            </a>
           </Section>
         </div>
 
@@ -374,7 +383,7 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
           <Section label="COMM" className="flex h-[94px] sm:h-[124px] flex-1 sm:flex-initial sm:w-[290px] min-w-0 flex-row items-center justify-center gap-[8px] sm:gap-[16px] p-[16px] sm:p-[20px]"
           >
             <a
-              href="https://linkedin.com/in/leoniddmitriev"
+              href="https://www.linkedin.com/in/leo-dmitriev/"
               target="_blank"
               rel="noopener noreferrer"
               className="cursor-pointer shrink-0"
@@ -382,7 +391,7 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
               <Button label="in" size="responsive" aria-label="LinkedIn Profile" />
             </a>
             <a
-              href="https://t.me/leo_dmitriev"
+              href="https://t.me/hi2leo"
               target="_blank"
               rel="noopener noreferrer"
               className="cursor-pointer shrink-0"
@@ -390,7 +399,7 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
               <Button label="tg" size="responsive" aria-label="Telegram Channel" />
             </a>
             <a
-              href="mailto:contact@leodmitriev.com"
+              href="mailto:leodm.uxui@gmail.com"
               className="cursor-pointer shrink-0"
             >
               <Button label="@" size="responsive" aria-label="Send Email" />
