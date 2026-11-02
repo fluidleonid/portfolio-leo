@@ -81,13 +81,13 @@ export const Experience: React.FC<ExperienceProps> = ({
               key={item.id}
               className="flex w-full flex-row items-start border-b border-border-hardware py-[20px]"
             >
-              {/* Left Column: Start Date (Month / Year stacked, 14px, Regular, #737373) */}
+              {/* Left Column: Start Date (Month / Year stacked, 14px, Regular, #8C8C8C text-content-muted) */}
               <div className="flex w-[58px] sm:w-[72px] shrink-0 flex-col font-hauora text-[14px] font-normal leading-[20px] text-content-muted">
                 <span>{item.startMonth}</span>
                 <span>{item.startYear}</span>
               </div>
 
-              {/* Center Column: Company & Role identical style (Regular 18px #CCCCCC), Description (Light 18px #737373) */}
+              {/* Center Column: Company & Role identical style (Regular 18px #CCCCCC), Description (Light 18px #8C8C8C text-content-muted) */}
               <div className="flex flex-1 flex-col gap-[2px] pr-[12px] sm:pr-[16px]">
                 <span className="font-hauora text-[18px] font-normal leading-[24px] text-content-primary">
                   {item.company}
@@ -102,7 +102,7 @@ export const Experience: React.FC<ExperienceProps> = ({
                 )}
               </div>
 
-              {/* Right Column: End Date / Status (14px, Regular, #737373) */}
+              {/* Right Column: End Date / Status (14px, Regular, #8C8C8C text-content-muted) */}
               <div className="w-[70px] sm:w-[84px] shrink-0 text-right font-hauora text-[14px] font-normal leading-[20px] text-content-muted">
                 {item.endDate}
               </div>

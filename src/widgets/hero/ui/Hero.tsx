@@ -455,17 +455,17 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
           </Section>
         </div>
 
-        {/* Soft Toast Notification: 56px height, 12px radius, #242424 background, no border, font-hauora */}
+        {/* Soft Toast Notification: 56px height, 12px radius, bg-surface background, no border, font-hauora */}
         <div
           role="status"
           aria-live="polite"
-          className={`fixed bottom-[24px] sm:bottom-[32px] left-1/2 -translate-x-1/2 z-50 flex h-[56px] w-auto max-w-[calc(100vw-32px)] items-center justify-center rounded-[12px] bg-[#242424] px-[24px] shadow-[0_12px_36px_rgba(0,0,0,0.5),0_4px_12px_rgba(0,0,0,0.25)] transition-all duration-300 ease-out select-none ${
+          className={`fixed bottom-[24px] sm:bottom-[32px] left-1/2 -translate-x-1/2 z-50 flex h-[56px] w-auto max-w-[calc(100vw-32px)] items-center justify-center rounded-[12px] bg-surface px-[24px] shadow-[0_12px_36px_rgba(0,0,0,0.5),0_4px_12px_rgba(0,0,0,0.25)] transition-all duration-300 ease-out select-none ${
             toastVisible
               ? "opacity-100 translate-y-0 scale-100 pointer-events-auto"
               : "opacity-0 translate-y-[12px] scale-95 pointer-events-none"
           }`}
         >
-          <span className="font-hauora text-[15px] sm:text-[16px] font-normal leading-none text-[#EAEAEA] whitespace-nowrap">
+          <span className="font-hauora text-[15px] sm:text-[16px] font-normal leading-none text-content-contrast whitespace-nowrap">
             Email copied to clipboard
           </span>
         </div>

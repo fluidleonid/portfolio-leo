@@ -22,7 +22,7 @@ export const tokens = {
     contentSecondary: "#8C8C8C",
     contentHover: "#D4D4D4",
     contentContrast: "#FFFFFF",
-    contentMuted: "#737373",
+    contentMuted: "#8C8C8C",
 
     // Signals & Accents
     signalAmber: "#FFAA00",
