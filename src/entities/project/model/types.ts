@@ -2,6 +2,7 @@ export interface CaseItem {
   id?: string | number;
   label: string;
   href?: string;
+  active?: boolean;
   onClick?: () => void;
 }
 

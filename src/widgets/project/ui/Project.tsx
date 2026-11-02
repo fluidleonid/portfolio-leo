@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Section, Button, Gallery, AchievementItem } from "@/shared/ui";
+import { Section, Gallery, Lamp } from "@/shared/ui";
 import type { CaseItem, Achievement } from "@/entities/project";
 
 export interface ProjectProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -87,50 +87,92 @@ export const Project = React.forwardRef<HTMLDivElement, ProjectProps>(
 
         {/* 3. CASES ROW: Responsive (auto-height content on mobile, equalized height on desktop) */}
         <div className="flex w-full flex-col sm:flex-row items-stretch gap-[16px] sm:gap-[32px]">
-          {/* Left Block: KEY - Key Achievements with Glowing Amber Indicator Lamps */}
-          <Section label="KEY" direction="column" className="w-full sm:w-[266px] sm:flex-1 justify-center items-stretch gap-[8px] sm:gap-[18px] p-[16px] sm:px-[28px] sm:py-[28px]"
+          {/* Left Block: KEY - Achievements list with dash in Hauora Light 18 */}
+          <Section
+            label="KEY"
+            direction="column"
+            className="w-full sm:w-[266px] sm:flex-1 justify-center items-stretch gap-[8px] sm:gap-[16px] p-[16px] sm:px-[28px] sm:py-[28px]"
           >
             {resolvedAchievements.map((item, idx) => {
               const label = typeof item === "string" ? item : item.label;
-              const active = typeof item === "string" ? true : item.active !== false;
               const id = typeof item === "object" && item.id ? item.id : idx;
 
               return (
-                <AchievementItem
+                <div
                   key={id}
-                  label={label}
-                  active={active}
-                />
+                  className="flex w-full flex-row items-start gap-[8px] select-none"
+                >
+                  <span className="shrink-0 font-hauora font-light text-[18px] leading-[24px] text-content-primary">
+                    —
+                  </span>
+                  <span className="flex-1 min-w-0 font-hauora font-light text-[18px] leading-[24px] text-content-primary break-words whitespace-normal">
+                    {label}
+                  </span>
+                </div>
               );
             })}
           </Section>
 
-          {/* Right Block: CASE - Interactive Case Study Buttons */}
-          <Section label="CASE" direction="column" className="w-full sm:w-[266px] sm:flex-1 justify-center items-stretch gap-[8px] sm:gap-[16px] p-[16px] sm:px-[28px] sm:py-[28px]"
+          {/* Right Block: CASE - Interactive Case Studies with Small Indicator Lamps in Hauora Light 18 */}
+          <Section
+            label="CASE"
+            direction="column"
+            className="w-full sm:w-[266px] sm:flex-1 justify-center items-stretch gap-[8px] sm:gap-[16px] p-[16px] sm:px-[28px] sm:py-[28px]"
           >
             {caseStudies.map((item, idx) => {
-              const btn = (
-                <Button
-                  key={item.id ?? idx}
-                  label={item.label}
-                  labelPosition="right"
-                  onClick={item.onClick}
-                  aria-label={item.label}
-                  className="w-full"
-                />
+              const isAvailable = item.active !== false;
+              const key = item.id ?? idx;
+
+              const content = (
+                <div
+                  className={`group flex w-full flex-row items-center gap-[10px] select-none transition-colors duration-150 ${
+                    isAvailable ? "cursor-pointer" : "cursor-default opacity-50"
+                  }`}
+                >
+                  {/* Small Indicator Lamp (Jewel LED) */}
+                  <div className="shrink-0 flex items-center justify-center">
+                    <Lamp size={10} active={isAvailable} />
+                  </div>
+
+                  {/* Case Title with Hauora Light 18, color like knob texts, whiter on hover */}
+                  <span className="flex-1 min-w-0 font-hauora font-light text-[18px] leading-[24px] text-content-secondary group-hover:text-content-contrast transition-colors duration-150 break-words whitespace-normal">
+                    {item.label}
+                  </span>
+                </div>
               );
 
-              if (item.href) {
+              if (item.href && isAvailable) {
                 return (
                   <a
-                    key={item.id ?? idx}
+                    key={key}
                     href={item.href}
-                    className="cursor-pointer w-full flex">{btn}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full flex"
+                  >
+                    {content}
                   </a>
                 );
               }
 
-              return btn;
+              if (item.onClick && isAvailable) {
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={item.onClick}
+                    className="w-full flex text-left cursor-pointer bg-transparent border-0 p-0"
+                  >
+                    {content}
+                  </button>
+                );
+              }
+
+              return (
+                <div key={key} className="w-full flex">
+                  {content}
+                </div>
+              );
             })}
           </Section>
         </div>

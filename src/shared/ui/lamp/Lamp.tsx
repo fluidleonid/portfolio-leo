@@ -18,7 +18,8 @@ export interface LampProps extends React.HTMLAttributes<HTMLSpanElement> {
  */
 export const Lamp = React.forwardRef<HTMLSpanElement, LampProps>(
   ({ size = 16, active = true, className = "", style, ...props }, ref) => {
-    const lensSize = Math.max(8, size - 4);
+    const lensSize = Math.max(6, size - 4);
+    const isSmall = size <= 12;
 
     return (
       <span
@@ -42,7 +43,9 @@ export const Lamp = React.forwardRef<HTMLSpanElement, LampProps>(
               ? "radial-gradient(circle at 36% 32%, #FFF4B8 0%, #FFB733 35%, #FFAA00 65%, #C25E00 100%)"
               : "radial-gradient(circle at 40% 36%, #4A3A28 0%, #2E251A 70%, #1A1510 100%)",
             boxShadow: active
-              ? "0 0 6px 1.5px rgba(255, 170, 0, 0.55), 0 0 14px 3px rgba(255, 170, 0, 0.22), inset 0 1px 1.5px rgba(255, 255, 255, 0.45), inset 0 -1px 1px rgba(0, 0, 0, 0.35)"
+              ? isSmall
+                ? "0 0 5px 1px rgba(255, 170, 0, 0.6), 0 0 9px 2px rgba(255, 170, 0, 0.25), inset 0 0.5px 1px rgba(255, 255, 255, 0.5)"
+                : "0 0 6px 1.5px rgba(255, 170, 0, 0.55), 0 0 14px 3px rgba(255, 170, 0, 0.22), inset 0 1px 1.5px rgba(255, 255, 255, 0.45), inset 0 -1px 1px rgba(0, 0, 0, 0.35)"
               : "inset 0 1px 1px rgba(255, 255, 255, 0.08), inset 0 -1px 1px rgba(0, 0, 0, 0.5)",
           }}
         />
