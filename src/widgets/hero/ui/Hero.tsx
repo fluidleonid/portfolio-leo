@@ -48,37 +48,16 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
     const [navWidth, setNavWidth] = useState<number>(406);
     const [navHeight, setNavHeight] = useState<number>(124);
 
-    const worksRef = React.useRef<HTMLAnchorElement | null>(null);
-    const indexRef = React.useRef<HTMLAnchorElement | null>(null);
-    const careerRef = React.useRef<HTMLButtonElement | null>(null);
-    const aboutRef = React.useRef<HTMLButtonElement | null>(null);
-
-    const [labelWidths, setLabelWidths] = useState({
-      works: 46,
-      index: 42,
-      career: 50,
-      about: 42,
-    });
-
-    // Responsive dimension measurement for NAV section to adapt rays and labels to equal section height
+    // Responsive dimension measurement for NAV section on resize
     React.useEffect(() => {
       const updateDimensions = () => {
         if (!navContainerRef.current) return;
-        setNavWidth(navContainerRef.current.clientWidth);
-        if (navContainerRef.current.clientHeight > 0) {
-          setNavHeight(navContainerRef.current.clientHeight);
-        }
-        if (worksRef.current && worksRef.current.offsetWidth > 0) {
-          setLabelWidths({
-            works: worksRef.current.offsetWidth,
-            index: indexRef.current?.offsetWidth || 42,
-            career: careerRef.current?.offsetWidth || 50,
-            about: aboutRef.current?.offsetWidth || 42,
-          });
-        }
+        const w = navContainerRef.current.clientWidth;
+        const h = navContainerRef.current.clientHeight;
+        if (w > 0 && w !== navWidth) setNavWidth(w);
+        if (h > 0 && h !== navHeight) setNavHeight(h);
       };
 
-      updateDimensions();
       const ro = new ResizeObserver(updateDimensions);
       if (navContainerRef.current) ro.observe(navContainerRef.current);
       window.addEventListener("resize", updateDimensions);
@@ -86,7 +65,7 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
         ro.disconnect();
         window.removeEventListener("resize", updateDimensions);
       };
-    }, []);
+    }, [navWidth, navHeight]);
 
     // Return knob to "index" when user scrolls back to the top of the page
     React.useEffect(() => {
@@ -207,12 +186,12 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
 
     const pad = isDesktopNav ? 20 : 16;
 
-    // Label widths and target points where rays connect (with 6px gap to text):
-    const leftTarget1 = pad + (labelWidths.works || (isDesktopNav ? 52 : 46)) + 6;
-    const leftTarget2 = pad + (labelWidths.index || (isDesktopNav ? 47 : 42)) + 6;
+    // Fixed Figma-spec label widths & connection points (zero re-render shift on reload)
+    const leftTarget1 = pad + (isDesktopNav ? 50 : 44) + 6; // works
+    const leftTarget2 = pad + (isDesktopNav ? 45 : 40) + 6; // index
 
-    const rightTarget1 = navWidth - pad - (labelWidths.career || (isDesktopNav ? 58 : 50)) - 6;
-    const rightTarget2 = navWidth - pad - (labelWidths.about || (isDesktopNav ? 50 : 42)) - 6;
+    const rightTarget1 = navWidth - pad - (isDesktopNav ? 55 : 48) - 6; // career
+    const rightTarget2 = navWidth - pad - (isDesktopNav ? 50 : 44) - 6; // about
 
     // Knee turns: diagonal ray comes out from knob at 32° to cx ± 48.
     // As container adapts, the diagonal segment stays fixed as-is, and the horizontal line H compresses/stretches.
@@ -302,9 +281,8 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
                 />
               </svg>
 
-              {/* Left Column: "works" and "index" - always aligned to left edge */}
+              {/* Left Column: "works" and "index" - pure CSS positioning prevents layout jump on reload */}
               <a
-                ref={worksRef}
                 href="#works"
                 onClick={(e) => {
                   e.preventDefault();
@@ -312,8 +290,7 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
                 }}
                 onMouseEnter={() => setHoveredNav("works")}
                 onMouseLeave={() => setHoveredNav(null)}
-                style={{ top: `${yTop}px` }}
-                className={`absolute left-[16px] sm:left-[20px] -translate-y-1/2 cursor-pointer text-left text-[16px] sm:text-[18px] leading-none font-normal font-stetica select-none tracking-normal transition-colors duration-150 ${
+                className={`absolute left-[16px] sm:left-[20px] top-[22px] sm:top-[32px] -translate-y-1/2 cursor-pointer text-left text-[16px] sm:text-[18px] leading-none font-normal font-stetica select-none tracking-normal transition-colors duration-150 ${
                   activeNav === "works"
                     ? "text-content-contrast"
                     : "text-content-secondary hover:text-content-contrast"
@@ -323,7 +300,6 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
               </a>
 
               <a
-                ref={indexRef}
                 href="#top"
                 onClick={(e) => {
                   e.preventDefault();
@@ -331,8 +307,7 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
                 }}
                 onMouseEnter={() => setHoveredNav("index")}
                 onMouseLeave={() => setHoveredNav(null)}
-                style={{ top: `${yBottom}px` }}
-                className={`absolute left-[16px] sm:left-[20px] -translate-y-1/2 cursor-pointer text-left text-[16px] sm:text-[18px] leading-none font-normal font-stetica select-none tracking-normal transition-colors duration-150 ${
+                className={`absolute left-[16px] sm:left-[20px] top-[72px] sm:top-[92px] -translate-y-1/2 cursor-pointer text-left text-[16px] sm:text-[18px] leading-none font-normal font-stetica select-none tracking-normal transition-colors duration-150 ${
                   activeNav === "index"
                     ? "text-content-contrast"
                     : "text-content-secondary hover:text-content-contrast"
@@ -355,15 +330,13 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
                 />
               </div>
 
-              {/* Right Column: "career" and "about" - always aligned to right edge */}
+              {/* Right Column: "career" and "about" - pure CSS positioning prevents layout jump on reload */}
               <button
-                ref={careerRef}
                 type="button"
                 onClick={() => handleSelectNav("career")}
                 onMouseEnter={() => setHoveredNav("career")}
                 onMouseLeave={() => setHoveredNav(null)}
-                style={{ top: `${yTop}px` }}
-                className={`absolute right-[16px] sm:right-[20px] -translate-y-1/2 cursor-pointer text-right text-[16px] sm:text-[18px] leading-none font-normal font-stetica select-none tracking-normal transition-colors duration-150 ${
+                className={`absolute right-[16px] sm:right-[20px] top-[22px] sm:top-[32px] -translate-y-1/2 cursor-pointer text-right text-[16px] sm:text-[18px] leading-none font-normal font-stetica select-none tracking-normal transition-colors duration-150 ${
                   activeNav === "career" || activeNav === "experience"
                     ? "text-content-contrast"
                     : "text-content-secondary hover:text-content-contrast"
@@ -373,13 +346,11 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
               </button>
 
               <button
-                ref={aboutRef}
                 type="button"
                 onClick={() => handleSelectNav("about")}
                 onMouseEnter={() => setHoveredNav("about")}
                 onMouseLeave={() => setHoveredNav(null)}
-                style={{ top: `${yBottom}px` }}
-                className={`absolute right-[16px] sm:right-[20px] -translate-y-1/2 cursor-pointer text-right text-[16px] sm:text-[18px] leading-none font-normal font-stetica select-none tracking-normal transition-colors duration-150 ${
+                className={`absolute right-[16px] sm:right-[20px] top-[72px] sm:top-[92px] -translate-y-1/2 cursor-pointer text-right text-[16px] sm:text-[18px] leading-none font-normal font-stetica select-none tracking-normal transition-colors duration-150 ${
                   activeNav === "about"
                     ? "text-content-contrast"
                     : "text-content-secondary hover:text-content-contrast"
