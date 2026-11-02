@@ -16,7 +16,7 @@ export interface GalleryProps extends React.HTMLAttributes<HTMLDivElement> {
   padding?: number;
   /** Gap between images in px (default 20) */
   gap?: number;
-  /** Wrapper corner radius in px (default 12) */
+  /** Wrapper corner radius in px (default 0) */
   cornerRadius?: number;
   /** Wrapper background color token (default tokens.colors.surface) */
   wrapperBg?: string;
@@ -29,7 +29,7 @@ export interface GalleryProps extends React.HTMLAttributes<HTMLDivElement> {
  *
  * Structure:
  * 1. Outer Container: Full-bleed unclipped track (100vw, marginLeft: -leftOffset)
- * 2. Inner Wrapper (image-scroll): Height 600px, 28px padding, 12px corner radius, and #242424 surface background.
+ * 2. Inner Wrapper (image-scroll): Height 600px, 28px padding, 0px corner radius, and #242424 surface background.
  *    The entire wrapper itself scrolls across the viewport track.
  * 3. Images: Pure images only, filling the 544px inner height while strictly preserving aspect ratio.
  *    Zero shadows, zero texts/captions, zero border radiuses.
@@ -44,7 +44,7 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
       height = tokens.geometry.galleryHeight,
       padding = tokens.geometry.galleryPadding,
       gap = tokens.geometry.galleryGap,
-      cornerRadius = 12,
+      cornerRadius = 0,
       wrapperBg = tokens.colors.surface,
       className = "",
       children,

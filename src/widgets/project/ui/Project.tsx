@@ -71,7 +71,7 @@ export const Project = React.forwardRef<HTMLDivElement, ProjectProps>(
           height={600}
           padding={28}
           gap={20}
-          cornerRadius={12}
+          cornerRadius={0}
           images={images}
         />
 
