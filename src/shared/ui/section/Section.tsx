@@ -36,7 +36,7 @@ export const Section = React.forwardRef<HTMLDivElement, SectionProps>(
         ref={ref}
         className={`relative flex ${
           direction === "column" ? "flex-col" : "flex-row"
-        } items-center rounded-none border border-border-hardware bg-transparent ${className}`}
+        } items-center rounded-[12px] border border-border-hardware bg-transparent ${className}`}
         {...props}
       >
         {children}
