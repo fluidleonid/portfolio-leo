@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { tokens } from "@/shared/config";
 
 export interface TunerFrame {
@@ -10,7 +10,15 @@ export interface TunerFrame {
   isProject?: boolean;
 }
 
+export interface ProjectItemRef {
+  id?: string | number;
+  anchorId?: string;
+  title?: string;
+}
+
 export interface TopBarProps extends React.HTMLAttributes<HTMLDivElement> {
+  /** Dynamic project list from Sanity or seed data to generate tuner frames/notches */
+  projects?: ProjectItemRef[];
   /** Active station or section id */
   activeStation?: string;
   /** Navigation callback */
@@ -19,45 +27,8 @@ export interface TopBarProps extends React.HTMLAttributes<HTMLDivElement> {
   scrollThreshold?: number;
 }
 
-// Exactly 9 Frames 1:1 from Figma Node `Header (Portfolio) (98:1373)`:
-// index -> works (Project 1) -> 5 additional projects without labels -> experience -> about
-const FRAMES: TunerFrame[] = [
-  { id: "index", label: "index", targetId: "top" },
-  { id: "works", label: "works", targetId: "works", isProject: true },
-  { id: "project-2", targetId: "project-2", isProject: true },
-  { id: "project-3", targetId: "project-3", isProject: true },
-  { id: "project-4", targetId: "project-4", isProject: true },
-  { id: "project-5", targetId: "project-5", isProject: true },
-  { id: "project-6", targetId: "project-6", isProject: true },
-  { id: "career", label: "career", targetId: "career" },
-  { id: "about", label: "about", targetId: "about" },
-];
-
-const FRAME_COUNT = FRAMES.length; // 9
-
-// Initial proportional fractions & cumulative ratios matching real section heights
-const DEFAULT_FRACTIONS = [
-  0.08, // index (Hero)
-  0.12, // works (Project 1)
-  0.12, // project-2
-  0.12, // project-3
-  0.12, // project-4
-  0.12, // project-5
-  0.12, // project-6
-  0.09, // career
-  0.11, // about
-];
-
-const DEFAULT_RATIOS = (() => {
-  let cum = 0;
-  return DEFAULT_FRACTIONS.map((_, idx) => {
-    if (idx === 0) return 0;
-    cum += DEFAULT_FRACTIONS[idx - 1];
-    return cum;
-  });
-})();
-
 export const TopBar: React.FC<TopBarProps> = ({
+  projects,
   activeStation = "index",
   onStationChange,
   scrollThreshold = 200,
@@ -67,9 +38,57 @@ export const TopBar: React.FC<TopBarProps> = ({
   const [isVisible, setIsVisible] = useState(false);
   const [needleRatio, setNeedleRatio] = useState<number>(0);
   const [isDragging, setIsDragging] = useState(false);
-  const [frameFractions, setFrameFractions] = useState<number[]>(DEFAULT_FRACTIONS);
-  const [stationRatios, setStationRatios] = useState<number[]>(DEFAULT_RATIOS);
-  const stationRatiosRef = useRef<number[]>(DEFAULT_RATIOS);
+
+  // Dynamically generate tuner frames based on live projects count from Sanity
+  const frames = useMemo<TunerFrame[]>(() => {
+    const list: TunerFrame[] = [
+      { id: "index", label: "index", targetId: "top" },
+    ];
+
+    if (projects && projects.length > 0) {
+      projects.forEach((proj, idx) => {
+        const anchorId =
+          proj.anchorId || (idx === 0 ? "works" : `project-${idx + 1}`);
+        list.push({
+          id: anchorId,
+          label: idx === 0 ? "works" : undefined,
+          targetId: anchorId,
+          isProject: true,
+        });
+      });
+    } else {
+      list.push({
+        id: "works",
+        label: "works",
+        targetId: "works",
+        isProject: true,
+      });
+    }
+
+    list.push({ id: "career", label: "career", targetId: "career" });
+    list.push({ id: "about", label: "about", targetId: "about" });
+
+    return list;
+  }, [projects]);
+
+  const frameCount = frames.length;
+
+  const defaultFractions = useMemo(() => {
+    return frames.map(() => 1 / frameCount);
+  }, [frames, frameCount]);
+
+  const defaultRatios = useMemo(() => {
+    let cum = 0;
+    return defaultFractions.map((_, idx) => {
+      if (idx === 0) return 0;
+      cum += defaultFractions[idx - 1];
+      return cum;
+    });
+  }, [defaultFractions]);
+
+  const [frameFractions, setFrameFractions] = useState<number[]>(defaultFractions);
+  const [stationRatios, setStationRatios] = useState<number[]>(defaultRatios);
+  const stationRatiosRef = useRef<number[]>(defaultRatios);
 
   const trackRef = useRef<HTMLDivElement>(null);
   const sectionScrollsRef = useRef<number[]>([]);
@@ -86,7 +105,7 @@ export const TopBar: React.FC<TopBarProps> = ({
 
     const tops: number[] = [];
 
-    FRAMES.forEach((frame, i) => {
+    frames.forEach((frame, i) => {
       if (i === 0 || frame.targetId === "top") {
         tops.push(0);
         return;
@@ -100,14 +119,14 @@ export const TopBar: React.FC<TopBarProps> = ({
         tops.push(absTop);
       } else {
         // Fallback proportional position if element not yet rendered
-        tops.push((i / (FRAME_COUNT - 1)) * docHeight);
+        tops.push((i / (frameCount - 1 || 1)) * docHeight);
       }
     });
 
     // Compute real height extent for each frame
     const extents: number[] = [];
-    for (let i = 0; i < FRAME_COUNT; i++) {
-      if (i < FRAME_COUNT - 1) {
+    for (let i = 0; i < frameCount; i++) {
+      if (i < frameCount - 1) {
         extents.push(Math.max(100, tops[i + 1] - tops[i]));
       } else {
         extents.push(Math.max(100, docHeight - tops[i]));
@@ -134,13 +153,12 @@ export const TopBar: React.FC<TopBarProps> = ({
     });
 
     sectionScrollsRef.current = positions;
-  }, []);
+  }, [frames, frameCount]);
 
-  // Map real scroll position to needle ratio on the tuner dial:
-  // Each station i arrives at 100px from viewport top when needle reaches STATION_RATIOS[i] = i / 9
+  // Map real scroll position to needle ratio on the tuner dial
   const scrollYToRatio = useCallback((scrollY: number): number => {
     const scrolls = sectionScrollsRef.current;
-    if (!scrolls || scrolls.length < FRAME_COUNT) return 0;
+    if (!scrolls || scrolls.length < frameCount) return 0;
 
     const docHeight = document.documentElement.scrollHeight;
     const winHeight = window.innerHeight;
@@ -150,7 +168,7 @@ export const TopBar: React.FC<TopBarProps> = ({
     if (scrollY <= scrolls[0]) return 0;
 
     const currentRatios = stationRatiosRef.current;
-    const lastIdx = FRAME_COUNT - 1;
+    const lastIdx = frameCount - 1;
 
     // Past the last station (about) towards maximum scroll
     if (scrollY >= scrolls[lastIdx]) {
@@ -173,12 +191,12 @@ export const TopBar: React.FC<TopBarProps> = ({
     }
 
     return 1;
-  }, []);
+  }, [frameCount]);
 
   // Map needle ratio on the tuner dial back to real scroll position
   const ratioToScrollY = useCallback((ratio: number): number => {
     const scrolls = sectionScrollsRef.current;
-    if (!scrolls || scrolls.length < FRAME_COUNT) return 0;
+    if (!scrolls || scrolls.length < frameCount) return 0;
 
     const docHeight = document.documentElement.scrollHeight;
     const winHeight = window.innerHeight;
@@ -186,7 +204,7 @@ export const TopBar: React.FC<TopBarProps> = ({
 
     const r = Math.max(0, Math.min(1, ratio));
     const currentRatios = stationRatiosRef.current;
-    const lastIdx = FRAME_COUNT - 1;
+    const lastIdx = frameCount - 1;
 
     // Right of last station (about)
     if (r >= currentRatios[lastIdx]) {
@@ -207,7 +225,7 @@ export const TopBar: React.FC<TopBarProps> = ({
     }
 
     return scrolls[lastIdx];
-  }, []);
+  }, [frameCount]);
 
   // Synchronize needle with actual page scroll
   useEffect(() => {
@@ -253,46 +271,57 @@ export const TopBar: React.FC<TopBarProps> = ({
       window.removeEventListener("load", updateSectionScrolls);
       resizeObserver.disconnect();
     };
-  }, [scrollThreshold, isDragging, updateSectionScrolls, scrollYToRatio]);
+  }, [isDragging, updateSectionScrolls, scrollYToRatio, scrollThreshold]);
 
-  // Navigate to target section smoothly when clicking a frame/label
-  const handleFrameClick = useCallback(
-    (frameIndex: number) => {
-      updateSectionScrolls();
-      const frame = FRAMES[frameIndex];
-      onStationChange?.(frame.id);
+  // When clicking a frame on the top bar
+  const handleFrameClick = (frameIdx: number) => {
+    const target = frames[frameIdx];
+    if (!target) return;
 
-      const scrolls = sectionScrollsRef.current;
-      const targetScroll = scrolls[frameIndex] ?? 0;
+    if (onStationChange) {
+      onStationChange(target.id);
+    }
 
-      if (typeof window !== "undefined") {
-        window.scrollTo({ top: targetScroll, behavior: "smooth" });
-      }
-    },
-    [onStationChange, updateSectionScrolls]
-  );
+    if (target.id === "index" || target.targetId === "top") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
 
-  // Dragging logic: smooth continuous scrubbing of page scroll mapped to real sections
-  const updateScrollFromClientX = useCallback(
-    (clientX: number) => {
-      if (!trackRef.current) return;
-      const rect = trackRef.current.getBoundingClientRect();
-      const relativeX = clientX - rect.left;
-      const ratio = Math.max(0, Math.min(1, relativeX / rect.width));
-      setNeedleRatio(ratio);
+    const el =
+      document.getElementById(target.targetId) ||
+      (target.targetId === "career" ? document.getElementById("experience") : null);
+    if (el) {
+      const rect = el.getBoundingClientRect();
+      const topOffset = 100;
+      const targetScroll = Math.max(0, rect.top + window.scrollY - topOffset);
+      window.scrollTo({ top: targetScroll, behavior: "smooth" });
+    }
+  };
 
-      const targetScrollY = ratioToScrollY(ratio);
-      if (typeof window !== "undefined") {
-        window.scrollTo({ top: targetScrollY, behavior: "instant" as ScrollBehavior });
-      }
-    },
-    [ratioToScrollY]
-  );
+  // Convert horizontal clientX drag coordinates directly to needle & page scroll
+  const updateScrollFromClientX = (clientX: number) => {
+    if (!trackRef.current) return;
+    const rect = trackRef.current.getBoundingClientRect();
+    const trackWidth = rect.width;
+    if (trackWidth <= 0) return;
+
+    const rawX = clientX - rect.left;
+    const clampedX = Math.max(0, Math.min(trackWidth, rawX));
+    const ratio = clampedX / trackWidth;
+
+    setNeedleRatio(ratio);
+
+    const targetScrollY = ratioToScrollY(ratio);
+    window.scrollTo({ top: targetScrollY, behavior: "auto" });
+  };
 
   const handlePointerDown = (e: React.PointerEvent) => {
-    updateSectionScrolls();
     setIsDragging(true);
-    e.currentTarget.setPointerCapture(e.pointerId);
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {
+      // Ignore
+    }
     updateScrollFromClientX(e.clientX);
   };
 
@@ -320,19 +349,10 @@ export const TopBar: React.FC<TopBarProps> = ({
       } ${className}`}
       {...props}
     >
-      {/* 
-        1:1 Figma Node `Header (Portfolio) (98:1373)` / `Navigation - Portfolio Radio Tuner Navigation (98:1374)`
-        - Dimensions: 100% width, height 57px
-        - Padding: px-[8px] pt-[6px] pb-[4px]
-        - Background: SOLID #242424 (op: 1) -> bg-surface
-        - Border: none, Shadow: none (flush with surface per user request)
-        - CLIPPING: overflow-hidden clips the internal radial glow cleanly inside the 57px bar
-      */}
       <nav
         aria-label="Portfolio Radio Tuner Navigation"
         className="relative w-full overflow-hidden bg-surface select-none border-none px-[16px] pt-[6px] pb-[4px]"
       >
-        {/* Container (98:1375): height 47px */}
         <div
           ref={trackRef}
           onPointerDown={handlePointerDown}
@@ -340,13 +360,12 @@ export const TopBar: React.FC<TopBarProps> = ({
           onPointerUp={handlePointerUp}
           className="relative flex h-[47px] w-full cursor-pointer flex-col overflow-visible"
         >
-          {/* Row 1: Container (98:1376) - Upper dots row (height 6px): 8 dots sitting between the 9 frames (Figma: SOLID #484848) */}
+          {/* Row 1: Calibration dots at dynamic station boundaries */}
           <div className="relative flex h-[6px] w-full items-center">
-            {FRAMES.map((frame, idx) => {
-              if (idx === 0) return null; // No dot before the first frame (index)
-
-              // Exact dot position centered at the seam between frame[idx - 1] and frame[idx]
-              const dotPositionPercent = (stationRatios[idx] ?? (idx / FRAME_COUNT)) * 100;
+            {frames.map((frame, idx) => {
+              if (idx === 0) return null;
+              const boundaryRatio = stationRatios[idx] ?? (idx / frameCount);
+              const dotPositionPercent = boundaryRatio * 100;
 
               return (
                 <div
@@ -358,10 +377,10 @@ export const TopBar: React.FC<TopBarProps> = ({
             })}
           </div>
 
-          {/* Row 2: Container (98:1385) - 9 Central Frames proportional to real page block heights */}
+          {/* Row 2: Central Frames proportional to real page block heights */}
           <div className="relative flex h-[24px] w-full flex-row items-center gap-[2px]">
-            {FRAMES.map((frame, idx) => {
-              const weight = frameFractions[idx] ?? (1 / FRAME_COUNT);
+            {frames.map((frame, idx) => {
+              const weight = frameFractions[idx] ?? (1 / frameCount);
               return (
                 <div
                   key={frame.id}
@@ -376,18 +395,26 @@ export const TopBar: React.FC<TopBarProps> = ({
             })}
           </div>
 
-          {/* Row 3: Container (98:1395) - Labels row proportional to frames */}
+          {/* Row 3: Labels row proportional to dynamic frames */}
           <div className="relative flex h-[17px] w-full flex-row items-start gap-[2px] pt-[3px]">
-            {FRAMES.map((frame, idx) => {
-              const weight = frameFractions[idx] ?? (1 / FRAME_COUNT);
+            {frames.map((frame, idx) => {
+              const weight = frameFractions[idx] ?? (1 / frameCount);
               if (!frame.label) {
-                // Empty container (98:1403-1407) under project frames 2..6 (no labels)
-                return <div key={frame.id} style={{ flex: `${weight} 1 0%` }} className="min-w-0" />;
+                // Empty notch for subsequent project frames
+                return (
+                  <div
+                    key={frame.id}
+                    style={{ flex: `${weight} 1 0%` }}
+                    className="min-w-0"
+                  />
+                );
               }
 
               const isActive =
                 activeStation === frame.id ||
-                (frame.id === "works" && activeStation.startsWith("project"));
+                (frame.id === "works" &&
+                  (activeStation.startsWith("project") ||
+                    activeStation === "works"));
 
               return (
                 <button
@@ -414,14 +441,7 @@ export const TopBar: React.FC<TopBarProps> = ({
             })}
           </div>
 
-          {/* 
-            Figma Node `Container (98:1415)`: Radial Glow
-            - Dimensions: width 300px, height 135px, y = -42px
-            - Stops 1:1 from Figma:
-              rgba(255, 170, 0, 0.18) @ 0% -> rgba(255, 170, 0, 0.05) @ 50% -> transparent @ 80%
-            - Layer Blur: radius 16px (blur-[16px])
-            - Contained cleanly inside nav via overflow-hidden
-          */}
+          {/* Radial Glow */}
           <div
             style={{
               left: `${needleRatio * 100}%`,
@@ -430,13 +450,7 @@ export const TopBar: React.FC<TopBarProps> = ({
             className="pointer-events-none absolute top-[-42px] -translate-x-1/2 z-10 w-[300px] h-[135px] rounded-full bg-[radial-gradient(ellipse_at_center,rgba(255,170,0,0.18)_0%,rgba(255,170,0,0.05)_50%,transparent_80%)] blur-[16px]"
           />
 
-          {/* 
-            Figma Node `Container (98:1416)`: Needle / Grabber
-            - Dimensions: width 2px, height 57px (full height of the 57px navigation bar)
-            - Position: y = -6px (top-[-6px] to cover full 57px height flush)
-            - Drop Shadow 1:1 from Figma: radius 4px, color rgba(255, 170, 0, 0.6)
-            - Color: solid #FFAA00 (signalAmber)
-          */}
+          {/* Tuner Needle */}
           <div
             style={{
               left: `${needleRatio * 100}%`,

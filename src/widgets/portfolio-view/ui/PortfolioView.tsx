@@ -27,12 +27,11 @@ export function PortfolioView({
   useEffect(() => {
     const sectionIds = [
       { id: "top", station: "index" },
-      { id: "works", station: "works" },
-      { id: "project-2", station: "project-2" },
-      { id: "project-3", station: "project-3" },
-      { id: "project-4", station: "project-4" },
-      { id: "project-5", station: "project-5" },
-      { id: "project-6", station: "project-6" },
+      ...projects.map((proj, idx) => {
+        const anchorId =
+          proj.anchorId || (idx === 0 ? "works" : `project-${idx + 1}`);
+        return { id: anchorId, station: anchorId };
+      }),
       { id: "career", station: "career" },
       { id: "about", station: "about" },
     ];
@@ -40,8 +39,8 @@ export function PortfolioView({
     const handleScroll = () => {
       const scrollY = window.scrollY;
 
-      // When works has not reached the top yet, or scroll is near top, active station is "index"
-      const worksEl = document.getElementById("works");
+      const firstProjId = projects[0]?.anchorId || "works";
+      const worksEl = document.getElementById(firstProjId);
       if (worksEl) {
         const rect = worksEl.getBoundingClientRect();
         if (rect.top > 160) {
@@ -69,7 +68,7 @@ export function PortfolioView({
 
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+  }, [projects]);
 
   return (
     <main className="flex min-h-screen w-full flex-col items-center justify-start bg-canvas px-[16px] sm:px-6 py-12 sm:py-16">
@@ -78,6 +77,7 @@ export function PortfolioView({
         Sticks flush to the top of the viewport with no outer border
       */}
       <TopBar
+        projects={projects}
         activeStation={activeStation}
         onStationChange={(st) => setActiveStation(st)}
       />

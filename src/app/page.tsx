@@ -206,12 +206,11 @@ export default function Home() {
   useEffect(() => {
     const sectionIds = [
       { id: "top", station: "index" },
-      { id: "works", station: "works" },
-      { id: "project-2", station: "project-2" },
-      { id: "project-3", station: "project-3" },
-      { id: "project-4", station: "project-4" },
-      { id: "project-5", station: "project-5" },
-      { id: "project-6", station: "project-6" },
+      ...projects.map((proj, idx) => {
+        const anchorId =
+          proj.anchorId || (idx === 0 ? "works" : `project-${idx + 1}`);
+        return { id: anchorId, station: anchorId };
+      }),
       { id: "career", station: "career" },
       { id: "about", station: "about" },
     ];
@@ -219,7 +218,8 @@ export default function Home() {
     const handleScroll = () => {
       const scrollY = window.scrollY;
 
-      const worksEl = document.getElementById("works");
+      const firstProjId = projects[0]?.anchorId || "works";
+      const worksEl = document.getElementById(firstProjId);
       if (worksEl) {
         const rect = worksEl.getBoundingClientRect();
         if (rect.top > 160) {
@@ -246,7 +246,7 @@ export default function Home() {
 
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+  }, [projects]);
 
   const defaultAboutParagraphs = [
     "I design data-dense B2B and B2C systems, FinTech tools, and products where every single detail matters, while keeping interfaces clean and friction-free. My workflow is built on a tight bridge between design and frontend: I don't just sketch in Figma, I build components in React, manage design tokens, and connect design directly to the codebase. I also love sharing this craft and mentoring designers along the way.",
@@ -266,6 +266,7 @@ export default function Home() {
         Sticks flush to the top of the viewport with no outer border
       */}
       <TopBar
+        projects={projects}
         activeStation={activeStation}
         onStationChange={(st) => setActiveStation(st)}
       />
