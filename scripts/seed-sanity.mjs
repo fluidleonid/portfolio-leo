@@ -385,6 +385,19 @@ const siteSettingsDoc = {
   _id: "siteSettings",
   _type: "siteSettings",
   title: "Portfolio Settings",
+  siteTitle: "Leo Rogov — Product Designer",
+  metaDescription:
+    "Portfolio of Leo Rogov: Senior Product Designer specializing in complex B2B platforms, enterprise tools, and FinTech systems.",
+  siteUrl: "https://leo-portfolio-orpin.vercel.app",
+  keywords: [
+    "Leo Rogov",
+    "Product Designer",
+    "Design Systems",
+    "B2B SaaS",
+    "UX Architecture",
+    "FinTech",
+    "Revit CAD",
+  ],
   aboutParagraphs: [
     "I design data-dense B2B and B2C systems, FinTech tools, and products where every single detail matters, while keeping interfaces clean and friction-free. My workflow is built on a tight bridge between design and frontend: I don't just sketch in Figma, I build components in React, manage design tokens, and connect design directly to the codebase. I also love sharing this craft and mentoring designers along the way.",
     "AI agents are integrated into every stage of my pipeline—from brainstorming and rapid component prototyping to automation and writing custom skills. At the same time, I never blindly trust automation; every single artifact, line of code, and design decision goes through my strict manual review and refinement.",

@@ -36,15 +36,18 @@ export function CaseBlockRenderer({ block }: CaseBlockRendererProps) {
       return (
         <div className="flex w-full flex-col gap-[8px] pt-[8px]">
           {b.badge && (
-            <span className="font-hauora text-[13px] font-medium tracking-[0.06em] uppercase text-content-secondary">
+            <span
+              className="text-[14px] font-normal leading-[24px] text-content-badge font-hauora uppercase tracking-normal"
+              style={{ color: "var(--color-content-badge, rgba(204, 204, 204, 0.16))" }}
+            >
               {b.badge}
             </span>
           )}
-          <h2 className="font-hauora text-[20px] sm:text-[22px] font-medium leading-[28px] text-content-primary">
+          <h2 className="text-[18px] font-medium leading-[24px] text-content-primary font-hauora tracking-normal">
             {b.title}
           </h2>
           {b.description && (
-            <p className="font-hauora text-[16px] sm:text-[18px] font-light leading-[24px] text-content-primary">
+            <p className="text-[18px] font-light leading-[24px] text-content-primary font-hauora whitespace-pre-line tracking-normal">
               {b.description}
             </p>
           )}
@@ -55,54 +58,54 @@ export function CaseBlockRenderer({ block }: CaseBlockRendererProps) {
     case "problemList": {
       const b = block as ProblemListBlock;
       return (
-        <div className="flex w-full flex-col gap-[16px]">
-          {b.badge && (
-            <span className="font-hauora text-[13px] font-medium tracking-[0.06em] uppercase text-content-secondary">
-              {b.badge}
-            </span>
-          )}
+        <Section
+          label={b.badge || "PROBLEM"}
+          direction="column"
+          className="w-full justify-start items-stretch gap-[12px] p-[16px] sm:px-[28px] sm:py-[24px]"
+        >
           {b.title && (
-            <h3 className="font-hauora text-[18px] sm:text-[20px] font-medium leading-[26px] text-content-primary">
+            <h3 className="text-[18px] font-medium leading-[24px] text-content-primary font-hauora tracking-normal">
               {b.title}
             </h3>
           )}
-          <div className="flex flex-col gap-[16px]">
+          <div className="flex w-full flex-col gap-[12px]">
             {b.items.map((item, idx) => (
-              <div
-                key={idx}
-                className="flex flex-col gap-[6px] border-l-2 border-border-hardware pl-[16px] py-[2px]"
-              >
-                <div className="flex items-center justify-between gap-[12px]">
-                  <h4 className="font-hauora text-[16px] sm:text-[18px] font-medium text-content-primary leading-[24px]">
-                    {item.title}
-                  </h4>
-                  {item.metric && (
-                    <span className="font-hauora text-[12px] px-[8px] py-[2px] rounded-[4px] border border-border-hardware text-content-secondary shrink-0 select-none">
-                      {item.metric}
+              <div key={idx} className="flex w-full flex-row items-start gap-[8px] select-none">
+                <span className="shrink-0 font-hauora font-light text-[18px] leading-[24px] text-content-primary">
+                  —
+                </span>
+                <div className="flex flex-1 flex-col gap-[2px]">
+                  <div className="flex items-center justify-between gap-[8px]">
+                    <span className="font-hauora font-medium text-[18px] leading-[24px] text-content-primary">
+                      {item.title}
                     </span>
-                  )}
+                    {item.metric && (
+                      <span className="font-hauora font-light text-[14px] text-content-secondary shrink-0">
+                        ({item.metric})
+                      </span>
+                    )}
+                  </div>
+                  <span className="font-hauora font-light text-[18px] leading-[24px] text-content-secondary">
+                    {item.description}
+                  </span>
                 </div>
-                <p className="font-hauora text-[15px] sm:text-[16px] font-light text-content-secondary leading-[22px]">
-                  {item.description}
-                </p>
               </div>
             ))}
           </div>
-        </div>
+        </Section>
       );
     }
 
     case "teamSection": {
       const b = block as TeamSectionBlock;
       return (
-        <div className="flex w-full flex-col gap-[16px]">
-          {b.badge && (
-            <span className="font-hauora text-[13px] font-medium tracking-[0.06em] uppercase text-content-secondary">
-              {b.badge}
-            </span>
-          )}
+        <Section
+          label={b.badge || "TEAM"}
+          direction="column"
+          className="w-full justify-start items-stretch gap-[12px] p-[16px] sm:px-[28px] sm:py-[24px]"
+        >
           {b.title && (
-            <h3 className="font-hauora text-[18px] sm:text-[20px] font-medium leading-[26px] text-content-primary">
+            <h3 className="text-[18px] font-medium leading-[24px] text-content-primary font-hauora tracking-normal">
               {b.title}
             </h3>
           )}
@@ -110,127 +113,127 @@ export function CaseBlockRenderer({ block }: CaseBlockRendererProps) {
             {b.composition.map((member, idx) => (
               <div
                 key={idx}
-                className="flex flex-col justify-between p-[14px] rounded-[8px] border border-border-hardware bg-transparent"
+                className="flex flex-col justify-start rounded-[8px] border border-border-hardware p-[12px]"
               >
-                <span className="font-hauora text-[12px] text-content-secondary uppercase tracking-wider">
+                <span className="font-hauora text-[14px] font-normal leading-[20px] text-content-secondary uppercase">
                   {member.role}
                 </span>
-                <span className="font-hauora text-[15px] sm:text-[16px] font-medium text-content-primary mt-[4px]">
+                <span className="font-hauora font-light text-[18px] leading-[24px] text-content-primary mt-[2px]">
                   {member.name || member.details}
                 </span>
                 {member.name && member.details && (
-                  <span className="font-hauora text-[13px] text-content-secondary mt-[2px]">
+                  <span className="font-hauora font-light text-[14px] leading-[20px] text-content-secondary mt-[2px]">
                     {member.details}
                   </span>
                 )}
               </div>
             ))}
           </div>
-        </div>
+        </Section>
       );
     }
 
     case "discoverySection": {
       const b = block as DiscoverySectionBlock;
       return (
-        <div className="flex w-full flex-col gap-[16px]">
-          {b.badge && (
-            <span className="font-hauora text-[13px] font-medium tracking-[0.06em] uppercase text-content-secondary">
-              {b.badge}
-            </span>
-          )}
+        <Section
+          label={b.badge || "DISCOVERY"}
+          direction="column"
+          className="w-full justify-start items-stretch gap-[12px] p-[16px] sm:px-[28px] sm:py-[24px]"
+        >
           {b.title && (
-            <h3 className="font-hauora text-[18px] sm:text-[20px] font-medium leading-[26px] text-content-primary">
+            <h3 className="text-[18px] font-medium leading-[24px] text-content-primary font-hauora tracking-normal">
               {b.title}
             </h3>
           )}
           {b.method && (
-            <div className="font-hauora text-[14px] text-content-secondary">
-              <span className="text-content-secondary/70">Method: </span>
-              {b.method}
-            </div>
+            <p className="font-hauora font-light text-[18px] leading-[24px] text-content-secondary">
+              Method: {b.method}
+            </p>
           )}
-          <div className="flex flex-col gap-[12px]">
+          <div className="flex w-full flex-col gap-[12px]">
             {b.findings.map((f, idx) => (
-              <div
-                key={idx}
-                className="flex flex-col gap-[4px] border-b border-border-hardware pb-[14px]"
-              >
-                <div className="flex items-baseline justify-between gap-[12px]">
-                  <span className="font-hauora text-[15px] sm:text-[16px] font-medium text-content-primary">
-                    {f.title}
-                  </span>
-                  {f.stat && (
-                    <span className="font-hauora text-[14px] font-medium text-content-primary shrink-0">
-                      {f.stat}
+              <div key={idx} className="flex w-full flex-row items-start gap-[8px] select-none">
+                <span className="shrink-0 font-hauora font-light text-[18px] leading-[24px] text-content-primary">
+                  —
+                </span>
+                <div className="flex flex-1 flex-col gap-[2px]">
+                  <div className="flex items-center justify-between gap-[8px]">
+                    <span className="font-hauora font-medium text-[18px] leading-[24px] text-content-primary">
+                      {f.title}
                     </span>
-                  )}
+                    {f.stat && (
+                      <span className="font-hauora font-medium text-[16px] text-content-primary shrink-0">
+                        {f.stat}
+                      </span>
+                    )}
+                  </div>
+                  <span className="font-hauora font-light text-[18px] leading-[24px] text-content-secondary">
+                    {f.description}
+                  </span>
                 </div>
-                <p className="font-hauora text-[14px] sm:text-[15px] font-light text-content-secondary leading-[22px]">
-                  {f.description}
-                </p>
               </div>
             ))}
           </div>
-        </div>
+        </Section>
       );
     }
 
     case "hypothesesSection": {
       const b = block as HypothesesSectionBlock;
       return (
-        <div className="flex w-full flex-col gap-[16px]">
-          {b.badge && (
-            <span className="font-hauora text-[13px] font-medium tracking-[0.06em] uppercase text-content-secondary">
-              {b.badge}
-            </span>
-          )}
+        <Section
+          label={b.badge || "HYPOTHESES"}
+          direction="column"
+          className="w-full justify-start items-stretch gap-[12px] p-[16px] sm:px-[28px] sm:py-[24px]"
+        >
           {b.title && (
-            <h3 className="font-hauora text-[18px] sm:text-[20px] font-medium leading-[26px] text-content-primary">
+            <h3 className="text-[18px] font-medium leading-[24px] text-content-primary font-hauora tracking-normal">
               {b.title}
             </h3>
           )}
-          <div className="flex flex-col gap-[12px]">
+          <div className="flex w-full flex-col gap-[12px]">
             {b.items.map((hyp, idx) => (
-              <div
-                key={idx}
-                className="flex flex-col gap-[4px] p-[16px] rounded-[10px] border border-border-hardware bg-transparent"
-              >
-                <span className="font-hauora text-[15px] sm:text-[16px] font-medium text-content-primary">
-                  {hyp.title}
+              <div key={idx} className="flex w-full flex-row items-start gap-[8px] select-none">
+                <span className="shrink-0 font-hauora font-light text-[18px] leading-[24px] text-content-primary">
+                  —
                 </span>
-                <p className="font-hauora text-[14px] sm:text-[15px] font-light text-content-secondary leading-[22px]">
-                  {hyp.description}
-                </p>
-                {hyp.expectedOutcome && (
-                  <div className="mt-[4px] font-hauora text-[13px] text-content-secondary flex items-center gap-[6px]">
-                    <span className="w-[6px] h-[6px] rounded-full bg-content-secondary inline-block" />
-                    <span>{hyp.expectedOutcome}</span>
-                  </div>
-                )}
+                <div className="flex flex-1 flex-col gap-[2px]">
+                  <span className="font-hauora font-medium text-[18px] leading-[24px] text-content-primary">
+                    {hyp.title}
+                  </span>
+                  <span className="font-hauora font-light text-[18px] leading-[24px] text-content-secondary">
+                    {hyp.description}
+                  </span>
+                  {hyp.expectedOutcome && (
+                    <span className="font-hauora font-light text-[14px] text-content-secondary/80 mt-[2px]">
+                      Expected outcome: {hyp.expectedOutcome}
+                    </span>
+                  )}
+                </div>
               </div>
             ))}
           </div>
-        </div>
+        </Section>
       );
     }
 
     case "galleryBlock": {
       const b = block as GalleryBlock;
       return (
-        <div className="w-full flex flex-col gap-[10px]">
+        <div className="w-full flex flex-col gap-[8px]">
           <Gallery
             bleed={true}
-            height={b.height || 540}
+            height={b.height || 600}
             padding={28}
             gap={20}
             cornerRadius={0}
             images={b.images}
           />
           {b.caption && (
-            <span className="font-hauora text-[14px] font-light text-content-secondary italic px-[4px]">
+            <p className="font-hauora font-light text-[18px] leading-[24px] text-content-secondary px-[4px]">
               {b.caption}
-            </span>
+            </p>
           )}
         </div>
       );
@@ -239,31 +242,34 @@ export function CaseBlockRenderer({ block }: CaseBlockRendererProps) {
     case "metricsBlock": {
       const b = block as MetricsBlock;
       return (
-        <div className="flex w-full flex-col gap-[16px]">
+        <div className="flex w-full flex-col gap-[12px]">
           {b.badge && (
-            <span className="font-hauora text-[13px] font-medium tracking-[0.06em] uppercase text-content-secondary">
+            <span
+              className="text-[14px] font-normal leading-[24px] text-content-badge font-hauora uppercase tracking-normal"
+              style={{ color: "var(--color-content-badge, rgba(204, 204, 204, 0.16))" }}
+            >
               {b.badge}
             </span>
           )}
           {b.title && (
-            <h3 className="font-hauora text-[18px] sm:text-[20px] font-medium leading-[26px] text-content-primary">
+            <h3 className="text-[18px] font-medium leading-[24px] text-content-primary font-hauora tracking-normal">
               {b.title}
             </h3>
           )}
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-[14px] w-full">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-[12px] w-full">
             {b.items.map((m, idx) => (
               <div
                 key={idx}
-                className="flex flex-col gap-[4px] p-[16px] rounded-[10px] border border-border-hardware bg-transparent"
+                className="flex flex-col gap-[4px] rounded-[10px] border border-border-hardware p-[16px] bg-transparent"
               >
-                <span className="font-hauora text-[26px] sm:text-[32px] font-medium leading-[32px] sm:leading-[38px] text-content-primary tracking-tight">
+                <span className="font-hauora text-[28px] sm:text-[34px] font-medium leading-[34px] sm:leading-[40px] text-content-primary tracking-tight">
                   {m.value}
                 </span>
-                <span className="font-hauora text-[13px] sm:text-[14px] font-medium text-content-secondary">
+                <span className="font-hauora font-medium text-[14px] leading-[20px] text-content-secondary">
                   {m.label}
                 </span>
                 {m.description && (
-                  <span className="font-hauora text-[12px] text-content-secondary/70 leading-[16px]">
+                  <span className="font-hauora font-light text-[14px] leading-[18px] text-content-secondary/80">
                     {m.description}
                   </span>
                 )}
@@ -277,14 +283,14 @@ export function CaseBlockRenderer({ block }: CaseBlockRendererProps) {
     case "textBlock": {
       const b = block as TextBlock;
       return (
-        <div className="flex w-full flex-col gap-[8px]">
+        <div className="flex w-full flex-col gap-[4px]">
           {b.content
             .split(/\n{2,}/)
             .filter(Boolean)
             .map((para, idx) => (
               <p
                 key={idx}
-                className="font-hauora text-[16px] sm:text-[18px] font-light leading-[24px] sm:leading-[26px] text-content-primary whitespace-pre-line"
+                className="text-[18px] font-light leading-[24px] text-content-primary font-hauora whitespace-pre-line tracking-normal"
               >
                 {para}
               </p>
@@ -296,13 +302,13 @@ export function CaseBlockRenderer({ block }: CaseBlockRendererProps) {
     case "quoteCallout": {
       const b = block as QuoteCalloutBlock;
       return (
-        <div className="flex w-full flex-col gap-[8px] p-[20px] sm:p-[24px] rounded-[10px] border border-border-hardware bg-canvas-soft/30">
-          <p className="font-hauora text-[16px] sm:text-[18px] font-normal italic leading-[24px] sm:leading-[26px] text-content-primary">
+        <div className="flex w-full flex-col gap-[8px] rounded-[10px] border border-border-hardware p-[20px] sm:p-[24px] bg-canvas-soft/30">
+          <p className="font-hauora font-light italic text-[18px] leading-[24px] text-content-primary">
             &ldquo;{b.quote}&rdquo;
           </p>
           {(b.author || b.role) && (
-            <div className="flex items-center gap-[6px] font-hauora text-[13px] text-content-secondary">
-              {b.author && <span className="font-medium text-content-primary">{b.author}</span>}
+            <div className="flex items-center gap-[6px] font-hauora text-[14px] font-normal text-content-secondary">
+              {b.author && <span className="text-content-primary">{b.author}</span>}
               {b.author && b.role && <span>·</span>}
               {b.role && <span>{b.role}</span>}
             </div>

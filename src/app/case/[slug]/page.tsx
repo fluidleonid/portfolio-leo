@@ -15,14 +15,32 @@ export async function generateStaticParams() {
 export async function generateMetadata({ params }: PageProps) {
   const { slug } = await params;
   const caseData = seedCases[slug];
-  if (caseData) {
-    return {
-      title: `${caseData.title} — Leo Rogov`,
-      description: caseData.tagline || `${caseData.title} Case Study`,
-    };
-  }
+  const title = caseData?.title || "Case Study";
+  const description = caseData?.tagline || `${title} — Leo Rogov`;
+  const image = caseData?.coverImage || "/quickaccess.png";
+
   return {
-    title: "Case Study — Leo Rogov",
+    title,
+    description,
+    openGraph: {
+      title: `${title} — Leo Rogov`,
+      description,
+      type: "article",
+      images: [
+        {
+          url: image,
+          width: 1200,
+          height: 630,
+          alt: title,
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `${title} — Leo Rogov`,
+      description,
+      images: [image],
+    },
   };
 }
 
