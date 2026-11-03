@@ -44,6 +44,19 @@ export default function Home() {
               "url": coalesce(asset->url, url, @)
             }.url,
             keyAchievements,
+            // 1. Direct linked case study and toggle switch
+            "caseStudyRef": caseStudy._ref,
+            "mainCaseTitle": caseStudy->title,
+            "mainCaseSlug": caseStudy->slug.current,
+            isCaseActive,
+            customCaseLabel,
+            customCaseUrl,
+            // 2. Second button slot
+            "secondCaseAutoTitle": secondCaseStudy->title,
+            "secondCaseSlug": secondCaseStudy->slug.current,
+            secondCaseTitle,
+            secondCaseActive,
+            // 3. Fallback array
             caseStudies[]{
               _key,
               _type,
@@ -91,24 +104,70 @@ export default function Home() {
                     ? p.images.filter(Boolean)
                     : ["/quickaccess.png", "/quickaccess.png", "/quickaccess.png"],
                 keyAchievements: p.keyAchievements || [],
-                caseStudies: (p.caseStudies || []).map((cs: any) => {
-                  const isDirectRef = Boolean(
-                    cs._ref || cs.refTitle || cs._type === "reference"
+                caseStudies: (() => {
+                  const hasDirectCase = Boolean(
+                    p.caseStudyRef ||
+                    p.isCaseActive !== undefined ||
+                    p.customCaseUrl
                   );
-                  const label =
-                    cs.label ||
-                    (isDirectRef ? cs.refTitle : cs.caseTitle) ||
-                    "Case Study";
-                  const slug = isDirectRef ? cs.refSlug : cs.caseSlug;
-                  const href = slug ? `/case/${slug}` : cs.externalUrl;
-                  const active = cs.active !== false;
 
-                  return {
-                    label,
-                    active,
-                    href,
-                  };
-                }),
+                  if (hasDirectCase) {
+                    const result: any[] = [];
+                    // Main button (auto title from case study, or custom fallback)
+                    const mainActive = p.isCaseActive !== false;
+                    const mainLabel =
+                      p.customCaseLabel ||
+                      p.mainCaseTitle ||
+                      "Case Study";
+                    const mainHref = p.mainCaseSlug
+                      ? `/case/${p.mainCaseSlug}`
+                      : p.customCaseUrl;
+
+                    result.push({
+                      label: mainLabel,
+                      active: mainActive,
+                      href: mainActive ? mainHref : undefined,
+                    });
+
+                    // Second button (if configured)
+                    const secondLabel =
+                      p.secondCaseTitle || p.secondCaseAutoTitle;
+                    if (secondLabel) {
+                      const secondActive = p.secondCaseActive === true;
+                      const secondHref = p.secondCaseSlug
+                        ? `/case/${p.secondCaseSlug}`
+                        : undefined;
+
+                      result.push({
+                        label: secondLabel,
+                        active: secondActive,
+                        href: secondActive ? secondHref : undefined,
+                      });
+                    }
+
+                    return result;
+                  }
+
+                  // Legacy array fallback
+                  return (p.caseStudies || []).map((cs: any) => {
+                    const isDirectRef = Boolean(
+                      cs._ref || cs.refTitle || cs._type === "reference"
+                    );
+                    const label =
+                      cs.label ||
+                      (isDirectRef ? cs.refTitle : cs.caseTitle) ||
+                      "Case Study";
+                    const slug = isDirectRef ? cs.refSlug : cs.caseSlug;
+                    const href = slug ? `/case/${slug}` : cs.externalUrl;
+                    const active = cs.active !== false;
+
+                    return {
+                      label,
+                      active,
+                      href,
+                    };
+                  });
+                })(),
               }))
             );
           }

@@ -217,6 +217,10 @@ const initialProjects = [
     anchorId: "works",
     order: 1,
     projectType: ["B2B"],
+    caseStudy: { _type: "reference", _ref: "case-ribbon-builder" },
+    isCaseActive: true,
+    secondCaseTitle: "Enterprise Design System",
+    secondCaseActive: false,
     description:
       "Modular B2B SaaS platform for enterprise architectural firms and BIM teams to orchestrate and deploy CAD ribbons and custom computational scripts.\n\nAs Product Designer, I designed the visual no-code Ribbon Builder, structured data-dense analytics dashboards, and built the design system from scratch.",
     images: ["/quickaccess.png", "/quickaccess.png", "/quickaccess.png"],
@@ -224,19 +228,6 @@ const initialProjects = [
       "Cut CAD toolbar setup from days of manual coding to 15 minutes",
       "Eliminated configuration errors to zero via visual layout validation",
       "Real-time script versioning and execution observability",
-    ],
-    caseStudies: [
-      {
-        _key: "cs1",
-        label: "Zero-Code Ribbon Builder",
-        caseStudy: { _type: "reference", _ref: "case-ribbon-builder" },
-        active: true,
-      },
-      {
-        _key: "cs2",
-        label: "Enterprise Design System",
-        active: false,
-      },
     ],
   },
   {
@@ -246,6 +237,11 @@ const initialProjects = [
     anchorId: "project-2",
     order: 2,
     projectType: ["B2C"],
+    customCaseLabel: "Highlight Detection Engine",
+    customCaseUrl: "https://leodmitriev.framer.website/work/vlog-editor",
+    isCaseActive: true,
+    secondCaseTitle: "Transcript-Based Editing",
+    secondCaseActive: false,
     description:
       "Mobile-first AI video editor turning raw match footage\ninto ready-to-publish vertical vlogs with auto-highlights.",
     images: [
@@ -260,19 +256,6 @@ const initialProjects = [
       "Auto-cut highlight detection from raw footage by audio peaks",
       "Bi-directional transcript editing trimming pauses directly from text",
     ],
-    caseStudies: [
-      {
-        _key: "cs1",
-        label: "Highlight Detection Engine",
-        externalUrl: "https://leodmitriev.framer.website/work/vlog-editor",
-        active: true,
-      },
-      {
-        _key: "cs2",
-        label: "Transcript-Based Editing",
-        active: false,
-      },
-    ],
   },
   {
     _id: "project-trace-ai",
@@ -281,25 +264,16 @@ const initialProjects = [
     anchorId: "project-3",
     order: 3,
     projectType: ["B2B"],
+    caseStudy: { _type: "reference", _ref: "case-ai-workflow" },
+    isCaseActive: true,
+    secondCaseTitle: "State Tree Engine",
+    secondCaseActive: false,
     description:
       "Generative UI observability & prompt debugger\nwith real-time state tree inspection.",
     images: ["/quickaccess.png", "/quickaccess.png", "/quickaccess.png"],
     keyAchievements: [
       "Visual token graph & agent decision tree",
       "Interactive step-by-step diff playback",
-    ],
-    caseStudies: [
-      {
-        _key: "cs1",
-        label: "Agent Tracing Console",
-        caseStudy: { _type: "reference", _ref: "case-ai-workflow" },
-        active: true,
-      },
-      {
-        _key: "cs2",
-        label: "State Tree Engine",
-        active: false,
-      },
     ],
   },
   {
@@ -309,25 +283,16 @@ const initialProjects = [
     anchorId: "project-4",
     order: 4,
     projectType: ["B2B"],
+    caseStudy: { _type: "reference", _ref: "case-payment-routing" },
+    isCaseActive: true,
+    secondCaseTitle: "Circuit Breaker Console",
+    secondCaseActive: false,
     description:
       "Zero-downtime multi-acquirer transaction routing engine with automated failovers and real-time ledger recovery.",
     images: ["/quickaccess.png", "/quickaccess.png", "/quickaccess.png"],
     keyAchievements: [
       "Sub-400ms failover latency during peak acquirer outages",
       "99.98% authorization approval rate across $120M+ monthly volume",
-    ],
-    caseStudies: [
-      {
-        _key: "cs1",
-        label: "Emergency Payment Fallbacks",
-        caseStudy: { _type: "reference", _ref: "case-payment-routing" },
-        active: true,
-      },
-      {
-        _key: "cs2",
-        label: "Circuit Breaker Console",
-        active: false,
-      },
     ],
   },
   {
@@ -337,25 +302,16 @@ const initialProjects = [
     anchorId: "project-5",
     order: 5,
     projectType: ["B2C"],
+    caseStudy: { _type: "reference", _ref: "case-dangdi" },
+    isCaseActive: true,
+    secondCaseTitle: "Livestream Interface",
+    secondCaseActive: false,
     description:
       "Mobile-first social commerce application bridging livestream shopping, localized curation, and tactile 3D assets.",
     images: ["/quickaccess.png", "/quickaccess.png", "/quickaccess.png"],
     keyAchievements: [
       "Custom 3D asset pipeline for tactile product cards",
       "End-to-end interactive purchase flow in Figma",
-    ],
-    caseStudies: [
-      {
-        _key: "cs1",
-        label: "Social Commerce Experience",
-        caseStudy: { _type: "reference", _ref: "case-dangdi" },
-        active: true,
-      },
-      {
-        _key: "cs2",
-        label: "Livestream Interface",
-        active: false,
-      },
     ],
   },
   {
@@ -365,24 +321,16 @@ const initialProjects = [
     anchorId: "project-6",
     order: 6,
     projectType: ["B2B", "B2C"],
+    customCaseLabel: "Spatial Tokens",
+    isCaseActive: true,
+    secondCaseTitle: "System Sound",
+    secondCaseActive: false,
     description:
       "Spatial operating system design system\nwith responsive depth hierarchy and micro-acoustics.",
     images: ["/quickaccess.png", "/quickaccess.png", "/quickaccess.png"],
     keyAchievements: [
       "Unified light-source specular tokens",
       "Haptic audio feedback system integration",
-    ],
-    caseStudies: [
-      {
-        _key: "cs1",
-        label: "Spatial Tokens",
-        active: true,
-      },
-      {
-        _key: "cs2",
-        label: "System Sound",
-        active: false,
-      },
     ],
   },
 ];

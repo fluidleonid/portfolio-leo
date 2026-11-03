@@ -88,70 +88,95 @@ export const projectType = defineType({
       of: [defineArrayMember({ type: "string" })],
     }),
     defineField({
+      name: "caseStudy",
+      title: "Linked Case Study (Привязанный кейс)",
+      type: "reference",
+      to: [{ type: "caseStudy" }],
+      description:
+        "Кейс, привязанный к этому проекту. Название кнопки и ссылка на страницу /case/[slug] берутся из него автоматически.",
+    }),
+    defineField({
+      name: "isCaseActive",
+      title: "Кнопка кейса включена (Индикатор горит)",
+      type: "boolean",
+      description:
+        "Включает или выключает кнопку кейса на главной странице (лампа горит и переход в кейс активен).",
+      initialValue: true,
+    }),
+    defineField({
+      name: "customCaseLabel",
+      title: "Кастомный текст кнопки (необязательно)",
+      type: "string",
+      description:
+        "Оставьте пустым, чтобы название кнопки бралось автоматически из заголовка кейса.",
+    }),
+    defineField({
+      name: "customCaseUrl",
+      title: "Внешняя ссылка (если кейс на Framer / Figma)",
+      type: "url",
+      description: "Например: https://leodmitriev.framer.website/work/vlog-editor",
+    }),
+    defineField({
+      name: "secondCaseTitle",
+      title: "Второй кейс / драфт (название второй кнопки)",
+      type: "string",
+      description:
+        "Например: Enterprise Design System (опционально для второго слота кнопки).",
+    }),
+    defineField({
+      name: "secondCaseActive",
+      title: "Вторая кнопка включена",
+      type: "boolean",
+      description: "Включена ли вторая кнопка (лампа горит / погашена).",
+      initialValue: false,
+    }),
+    defineField({
+      name: "secondCaseStudy",
+      title: "Второй кейс Sanity (если есть второй кейс)",
+      type: "reference",
+      to: [{ type: "caseStudy" }],
+    }),
+    defineField({
       name: "caseStudies",
-      title: "Case Studies (Right 'CASE' Section)",
+      title: "Advanced Case Studies Array (Legacy / Дополнительно)",
       type: "array",
       description:
-        "Case studies attached to this project. You can either pick a Case Study directly (title & link are 100% automated), or use Custom Link for overrides / external URLs.",
+        "Используйте только если нужно добавить больше 2 кнопок вручную.",
       of: [
         defineArrayMember({
           type: "reference",
           name: "caseStudyRef",
-          title: "Direct Case Study (1-Click Auto)",
+          title: "Direct Case Study",
           to: [{ type: "caseStudy" }],
         }),
         defineArrayMember({
           type: "object",
           name: "caseLink",
-          title: "Custom Case Link / Override",
+          title: "Custom Case Link",
           fields: [
             defineField({
               name: "caseStudy",
               title: "Linked Sanity Case Study",
               type: "reference",
               to: [{ type: "caseStudy" }],
-              description:
-                "Select a Case Study — button title and link are pulled automatically!",
             }),
             defineField({
               name: "label",
-              title: "Custom Button Label (Optional override)",
+              title: "Button Label",
               type: "string",
-              description:
-                "Leave empty to automatically use the title of the linked Case Study",
             }),
             defineField({
               name: "externalUrl",
-              title: "External URL (if not a Sanity case)",
+              title: "External URL",
               type: "url",
-              description: "E.g. Framer, Figma, or prototype link",
             }),
             defineField({
               name: "active",
               title: "Indicator Lamp Active",
               type: "boolean",
-              description: "Turn on (amber glow) or dim the indicator lamp",
               initialValue: true,
             }),
           ],
-          preview: {
-            select: {
-              customLabel: "label",
-              caseTitle: "caseStudy.title",
-              active: "active",
-            },
-            prepare({ customLabel, caseTitle, active }) {
-              const displayTitle = customLabel || caseTitle || "Untitled Case Link";
-              return {
-                title: displayTitle,
-                subtitle: caseTitle
-                  ? customLabel
-                    ? `Linked: ${caseTitle} (Custom label)`
-                    : `Auto-titled from: ${caseTitle} (${active ? "Lamp ON" : "Dim"})`
-                  : `Custom link (${active ? "Lamp ON" : "Dim"})`,
-              };
-            },
-          },
         }),
       ],
     }),
@@ -169,14 +194,19 @@ export const projectType = defineType({
       subtitle: "anchorId",
       order: "order",
       projectType: "projectType",
+      isCaseActive: "isCaseActive",
+      caseTitle: "caseStudy.title",
     },
-    prepare({ title, subtitle, order, projectType }) {
+    prepare({ title, subtitle, order, projectType, isCaseActive, caseTitle }) {
       const types = Array.isArray(projectType)
         ? projectType.join(" / ")
         : projectType || "";
+      const status =
+        isCaseActive !== false ? "🟢 Case ON" : "⚪ Case OFF";
+      const caseInfo = caseTitle ? ` · [${caseTitle}]` : "";
       return {
         title: `${order ? `#${order} ` : ""}${title}${types ? ` · [${types}]` : ""}`,
-        subtitle: `Anchor: #${subtitle}`,
+        subtitle: `Anchor: #${subtitle} · ${status}${caseInfo}`,
       };
     },
   },
