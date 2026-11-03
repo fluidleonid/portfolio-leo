@@ -9,6 +9,8 @@ import { client } from "@/sanity/lib/client";
 import { seedProjects, type ProjectData } from "@/entities/project";
 
 interface SiteSettingsData {
+  heroName?: string;
+  heroBio?: string;
   siteTitle?: string;
   metaDescription?: string;
   faviconUrl?: string;
@@ -49,6 +51,8 @@ export default function Home() {
             }
           }`),
           client.fetch(`*[_type == "siteSettings"][0]{
+            heroName,
+            heroBio,
             siteTitle,
             metaDescription,
             "faviconUrl": favicon.asset->url,
@@ -181,6 +185,8 @@ export default function Home() {
 
       {/* 1:1 Complete Hero Section from Figma */}
       <Hero
+        name={siteSettings?.heroName}
+        bio={siteSettings?.heroBio}
         defaultNav="index"
         activeNav={
           activeStation === "career"

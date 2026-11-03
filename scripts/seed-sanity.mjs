@@ -385,6 +385,9 @@ const siteSettingsDoc = {
   _id: "siteSettings",
   _type: "siteSettings",
   title: "Portfolio Settings",
+  heroName: "Leonid Dmitriev",
+  heroBio:
+    "Product Designer · Frontend-fluent\n4+ years at B2B(2C) across FinTech,\nProductivity, Entertainment & AI products",
   siteTitle: "Leo Rogov — Product Designer",
   metaDescription:
     "Portfolio of Leo Rogov: Senior Product Designer specializing in complex B2B platforms, enterprise tools, and FinTech systems.",

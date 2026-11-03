@@ -14,6 +14,10 @@ import { tokens } from "@/shared/config";
 export type NavItem = "works" | "index" | "career" | "about" | "experience";
 
 export interface HeroProps extends Omit<React.HTMLAttributes<HTMLDivElement>, "onNavChange"> {
+  /** Name displayed in the hero title block (default: "Leonid Dmitriev") */
+  name?: string;
+  /** Bio text displayed in the hero title block */
+  bio?: string;
   /** Initial navigation selection (default "index") */
   defaultNav?: NavItem;
   /** Active navigation selection (controlled from parent) */
@@ -31,6 +35,8 @@ export interface HeroProps extends Omit<React.HTMLAttributes<HTMLDivElement>, "o
 export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
   (
     {
+      name = "Leonid Dmitriev",
+      bio = "Product Designer · Frontend-fluent\n4+ years at B2B(2C) across FinTech,\nProductivity, Entertainment & AI products",
       defaultNav = "index",
       activeNav: controlledActiveNav,
       onNavChange,
@@ -255,12 +261,10 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
         {/* 1. TITLE BLOCK (Figma node 46:1454, 564x104px) */}
         <div className="flex w-full flex-col gap-[8px]">
           <h1 className="text-[18px] font-medium leading-[24px] text-content-primary font-hauora tracking-normal">
-            Leonid Dmitriev
+            {name}
           </h1>
           <p className="text-[18px] font-medium leading-[24px] text-content-primary font-hauora whitespace-pre-line tracking-normal">
-            Product Designer · Frontend-fluent{"\n"}
-            4+ years at B2B(2C) across FinTech,{"\n"}
-            Productivity, Entertainment & AI products
+            {bio}
           </p>
         </div>
 

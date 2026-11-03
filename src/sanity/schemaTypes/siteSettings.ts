@@ -12,6 +12,22 @@ export const siteSettingsType = defineType({
       initialValue: "Portfolio Settings",
     }),
     defineField({
+      name: "heroName",
+      title: "Hero Name (Heading on main page)",
+      type: "string",
+      initialValue: "Leonid Dmitriev",
+      validation: (Rule) => Rule.required(),
+    }),
+    defineField({
+      name: "heroBio",
+      title: "Hero Bio (Under name on main page)",
+      type: "text",
+      rows: 3,
+      initialValue:
+        "Product Designer · Frontend-fluent\n4+ years at B2B(2C) across FinTech,\nProductivity, Entertainment & AI products",
+      validation: (Rule) => Rule.required(),
+    }),
+    defineField({
       name: "siteTitle",
       title: "Page Title (displayed in browser tab & Google search)",
       type: "string",
