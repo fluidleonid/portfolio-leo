@@ -27,6 +27,22 @@ export const projectType = defineType({
       initialValue: 1,
     }),
     defineField({
+      name: "projectType",
+      title: "Project Type (B2B / B2C)",
+      type: "array",
+      of: [defineArrayMember({ type: "string" })],
+      options: {
+        list: [
+          { title: "B2B (Business-to-Business)", value: "B2B" },
+          { title: "B2C (Business-to-Consumer)", value: "B2C" },
+        ],
+      },
+      description: "Tags used for filtering (select B2B, B2C, or both)",
+      initialValue: ["B2B"],
+      validation: (Rule) =>
+        Rule.required().min(1).error("Select at least one type: B2B or B2C"),
+    }),
+    defineField({
       name: "description",
       title: "Project Description / Pitch",
       type: "text",
@@ -140,10 +156,14 @@ export const projectType = defineType({
       title: "title",
       subtitle: "anchorId",
       order: "order",
+      projectType: "projectType",
     },
-    prepare({ title, subtitle, order }) {
+    prepare({ title, subtitle, order, projectType }) {
+      const types = Array.isArray(projectType)
+        ? projectType.join(" / ")
+        : projectType || "";
       return {
-        title: `${order ? `#${order} ` : ""}${title}`,
+        title: `${order ? `#${order} ` : ""}${title}${types ? ` · [${types}]` : ""}`,
         subtitle: `Anchor: #${subtitle}`,
       };
     },

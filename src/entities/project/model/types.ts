@@ -19,6 +19,7 @@ export interface ProjectData {
   title: string;
   description: string;
   roleDescription?: string;
+  projectType?: ("B2B" | "B2C" | string)[];
   images: string[];
   keyAchievements?: (string | Achievement)[];
   caseStudies: CaseItem[];

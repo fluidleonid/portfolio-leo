@@ -36,6 +36,7 @@ export default function Home() {
             title,
             anchorId,
             order,
+            projectType,
             description,
             roleDescription,
             "images": images[]{
@@ -69,6 +70,11 @@ export default function Home() {
                 anchorId: p.anchorId,
                 order: p.order,
                 title: p.title,
+                projectType: Array.isArray(p.projectType)
+                  ? p.projectType
+                  : p.projectType
+                  ? [p.projectType]
+                  : ["B2B"],
                 description: p.description,
                 roleDescription: p.roleDescription,
                 images:
@@ -213,6 +219,7 @@ export default function Home() {
               key={proj.id || anchorId}
               id={anchorId}
               title={proj.title}
+              projectType={proj.projectType}
               description={proj.description}
               roleDescription={proj.roleDescription}
               images={proj.images && proj.images.length > 0 ? proj.images : ["/quickaccess.png", "/quickaccess.png", "/quickaccess.png"]}

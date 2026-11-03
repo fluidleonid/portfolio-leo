@@ -6,6 +6,7 @@ export const seedProjects: ProjectData[] = [
     anchorId: "works",
     order: 1,
     title: "Orkestra",
+    projectType: ["B2B"],
     description:
       "Modular B2B SaaS platform for enterprise architectural firms and BIM teams to orchestrate and deploy CAD ribbons and custom computational scripts.\n\nAs Product Designer, I designed the visual no-code Ribbon Builder, structured data-dense analytics dashboards, and built the design system from scratch.",
     images: ["/quickaccess.png", "/quickaccess.png", "/quickaccess.png"],
@@ -31,6 +32,7 @@ export const seedProjects: ProjectData[] = [
     anchorId: "project-2",
     order: 2,
     title: "NDA",
+    projectType: ["B2C"],
     description:
       "Mobile-first AI video editor turning raw match footage\ninto ready-to-publish vertical vlogs with auto-highlights.",
     images: [
@@ -62,6 +64,7 @@ export const seedProjects: ProjectData[] = [
     anchorId: "project-3",
     order: 3,
     title: "Trace AI Console",
+    projectType: ["B2B"],
     description:
       "Generative UI observability & prompt debugger\nwith real-time state tree inspection.",
     images: ["/quickaccess.png", "/quickaccess.png", "/quickaccess.png"],
@@ -86,6 +89,7 @@ export const seedProjects: ProjectData[] = [
     anchorId: "project-4",
     order: 4,
     title: "Scorpex",
+    projectType: ["B2B"],
     description:
       "Zero-downtime multi-acquirer transaction routing engine with automated failovers and real-time ledger recovery.",
     images: ["/quickaccess.png", "/quickaccess.png", "/quickaccess.png"],
@@ -110,6 +114,7 @@ export const seedProjects: ProjectData[] = [
     anchorId: "project-5",
     order: 5,
     title: "Dangdi",
+    projectType: ["B2C"],
     description:
       "Mobile-first social commerce application bridging livestream shopping, localized curation, and tactile 3D assets.",
     images: ["/quickaccess.png", "/quickaccess.png", "/quickaccess.png"],
@@ -134,6 +139,7 @@ export const seedProjects: ProjectData[] = [
     anchorId: "project-6",
     order: 6,
     title: "Aether OS Interface",
+    projectType: ["B2B", "B2C"],
     description:
       "Spatial operating system design system\nwith responsive depth hierarchy and micro-acoustics.",
     images: ["/quickaccess.png", "/quickaccess.png", "/quickaccess.png"],

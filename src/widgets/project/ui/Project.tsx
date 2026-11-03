@@ -17,6 +17,8 @@ export interface ProjectProps extends React.HTMLAttributes<HTMLDivElement> {
   keyAchievements?: (string | Achievement)[];
   /** Backwards compatibility alias for key achievements */
   keyCases?: CaseItem[];
+  /** Segment types for filtering (e.g. ["B2B"], ["B2C"]) */
+  projectType?: ("B2B" | "B2C" | string)[];
   /** Detailed case study items (rendered in the right "CASE" Section) */
   caseStudies?: CaseItem[];
 }
@@ -45,6 +47,7 @@ export const Project = React.forwardRef<HTMLDivElement, ProjectProps>(
       keyAchievements,
       keyCases,
       caseStudies = [{ label: "Case 1" }, { label: "Case 2" }],
+      projectType,
       className = "",
       ...props
     },
@@ -61,6 +64,7 @@ export const Project = React.forwardRef<HTMLDivElement, ProjectProps>(
     return (
       <section
         ref={ref}
+        data-project-type={projectType ? projectType.join(" ") : undefined}
         className={`relative flex w-full max-w-[564px] flex-col gap-[16px] sm:gap-[32px] select-none scroll-mt-[100px] ${className}`}
         aria-label={title}
         {...props}
