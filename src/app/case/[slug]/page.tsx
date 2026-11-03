@@ -16,14 +16,14 @@ export async function generateMetadata({ params }: PageProps) {
   const { slug } = await params;
   const caseData = seedCases[slug];
   const title = caseData?.title || "Case Study";
-  const description = caseData?.tagline || `${title} — Leo Rogov`;
+  const description = caseData?.tagline || `${title} — Leonid Dmitriev`;
   const image = caseData?.coverImage || "/quickaccess.png";
 
   return {
     title,
     description,
     openGraph: {
-      title: `${title} — Leo Rogov`,
+      title: `${title} — Leonid Dmitriev`,
       description,
       type: "article",
       images: [
@@ -37,7 +37,7 @@ export async function generateMetadata({ params }: PageProps) {
     },
     twitter: {
       card: "summary_large_image",
-      title: `${title} — Leo Rogov`,
+      title: `${title} — Leonid Dmitriev`,
       description,
       images: [image],
     },

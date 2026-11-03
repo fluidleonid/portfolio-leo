@@ -398,12 +398,13 @@ const siteSettingsDoc = {
     { _key: "led1", _type: "imagePath", url: "/portrait.png" },
     { _key: "led2", _type: "imagePath", url: "/portrait-2.png" },
   ],
-  siteTitle: "Leo Rogov — Product Designer",
+  siteTitle: "Leonid Dmitriev — Product Designer",
   metaDescription:
-    "Portfolio of Leo Rogov: Senior Product Designer specializing in complex B2B platforms, enterprise tools, and FinTech systems.",
+    "Portfolio of Leonid Dmitriev: Product Designer specializing in complex B2B platforms, enterprise tools, and FinTech systems.",
   siteUrl: "https://leo-portfolio-orpin.vercel.app",
   keywords: [
-    "Leo Rogov",
+    "Leonid Dmitriev",
+    "Leo Dmitriev",
     "Product Designer",
     "Design Systems",
     "B2B SaaS",

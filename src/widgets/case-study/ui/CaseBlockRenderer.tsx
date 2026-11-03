@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Gallery, MetadataTable, Section } from "@/shared/ui";
+import { Gallery, MetadataTable } from "@/shared/ui";
 import type {
   CaseContentBlock,
   MetadataTableBlock,
@@ -25,7 +25,7 @@ export function CaseBlockRenderer({ block }: CaseBlockRendererProps) {
     case "metadataTable": {
       const b = block as MetadataTableBlock;
       return (
-        <div className="w-full">
+        <div className="w-full mt-[40px] sm:mt-[60px]">
           <MetadataTable rows={b.rows} />
         </div>
       );
@@ -34,7 +34,7 @@ export function CaseBlockRenderer({ block }: CaseBlockRendererProps) {
     case "sectionHeading": {
       const b = block as SectionHeadingBlock;
       return (
-        <div className="flex w-full flex-col gap-[8px] pt-[8px]">
+        <div className="flex w-full flex-col gap-[8px] mt-[60px] sm:mt-[100px]">
           {b.badge && (
             <span
               className="text-[14px] font-normal leading-[24px] text-content-badge font-hauora uppercase tracking-normal"
@@ -58,17 +58,21 @@ export function CaseBlockRenderer({ block }: CaseBlockRendererProps) {
     case "problemList": {
       const b = block as ProblemListBlock;
       return (
-        <Section
-          label={b.badge || "PROBLEM"}
-          direction="column"
-          className="w-full justify-start items-stretch gap-[12px] p-[16px] sm:px-[28px] sm:py-[24px]"
-        >
+        <div className="flex w-full flex-col gap-[12px] mt-[60px] sm:mt-[100px]">
+          {b.badge && (
+            <span
+              className="text-[14px] font-normal leading-[24px] text-content-badge font-hauora uppercase tracking-normal"
+              style={{ color: "var(--color-content-badge, rgba(204, 204, 204, 0.16))" }}
+            >
+              {b.badge}
+            </span>
+          )}
           {b.title && (
             <h3 className="text-[18px] font-medium leading-[24px] text-content-primary font-hauora tracking-normal">
               {b.title}
             </h3>
           )}
-          <div className="flex w-full flex-col gap-[12px]">
+          <div className="flex w-full flex-col gap-[8px]">
             {b.items.map((item, idx) => (
               <div key={idx} className="flex w-full flex-row items-start gap-[8px] select-none">
                 <span className="shrink-0 font-hauora font-light text-[18px] leading-[24px] text-content-primary">
@@ -92,55 +96,60 @@ export function CaseBlockRenderer({ block }: CaseBlockRendererProps) {
               </div>
             ))}
           </div>
-        </Section>
+        </div>
       );
     }
 
     case "teamSection": {
       const b = block as TeamSectionBlock;
       return (
-        <Section
-          label={b.badge || "TEAM"}
-          direction="column"
-          className="w-full justify-start items-stretch gap-[12px] p-[16px] sm:px-[28px] sm:py-[24px]"
-        >
+        <div className="flex w-full flex-col gap-[12px] mt-[60px] sm:mt-[100px]">
+          {b.badge && (
+            <span
+              className="text-[14px] font-normal leading-[24px] text-content-badge font-hauora uppercase tracking-normal"
+              style={{ color: "var(--color-content-badge, rgba(204, 204, 204, 0.16))" }}
+            >
+              {b.badge}
+            </span>
+          )}
           {b.title && (
             <h3 className="text-[18px] font-medium leading-[24px] text-content-primary font-hauora tracking-normal">
               {b.title}
             </h3>
           )}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-[12px] w-full">
+          <div className="flex w-full flex-col gap-[8px]">
             {b.composition.map((member, idx) => (
-              <div
-                key={idx}
-                className="flex flex-col justify-start rounded-[8px] border border-border-hardware p-[12px]"
-              >
-                <span className="font-hauora text-[14px] font-normal leading-[20px] text-content-secondary uppercase">
-                  {member.role}
+              <div key={idx} className="flex w-full flex-row items-start gap-[8px]">
+                <span className="shrink-0 font-hauora font-light text-[18px] leading-[24px] text-content-primary">
+                  —
                 </span>
-                <span className="font-hauora font-light text-[18px] leading-[24px] text-content-primary mt-[2px]">
-                  {member.name || member.details}
-                </span>
-                {member.name && member.details && (
-                  <span className="font-hauora font-light text-[14px] leading-[20px] text-content-secondary mt-[2px]">
-                    {member.details}
+                <div className="flex flex-1 flex-row flex-wrap items-baseline gap-[8px]">
+                  <span className="font-hauora text-[18px] font-medium leading-[24px] text-content-primary">
+                    {member.role}:
                   </span>
-                )}
+                  <span className="font-hauora font-light text-[18px] leading-[24px] text-content-secondary">
+                    {member.name || member.details}
+                  </span>
+                </div>
               </div>
             ))}
           </div>
-        </Section>
+        </div>
       );
     }
 
     case "discoverySection": {
       const b = block as DiscoverySectionBlock;
       return (
-        <Section
-          label={b.badge || "DISCOVERY"}
-          direction="column"
-          className="w-full justify-start items-stretch gap-[12px] p-[16px] sm:px-[28px] sm:py-[24px]"
-        >
+        <div className="flex w-full flex-col gap-[12px] mt-[60px] sm:mt-[100px]">
+          {b.badge && (
+            <span
+              className="text-[14px] font-normal leading-[24px] text-content-badge font-hauora uppercase tracking-normal"
+              style={{ color: "var(--color-content-badge, rgba(204, 204, 204, 0.16))" }}
+            >
+              {b.badge}
+            </span>
+          )}
           {b.title && (
             <h3 className="text-[18px] font-medium leading-[24px] text-content-primary font-hauora tracking-normal">
               {b.title}
@@ -151,7 +160,7 @@ export function CaseBlockRenderer({ block }: CaseBlockRendererProps) {
               Method: {b.method}
             </p>
           )}
-          <div className="flex w-full flex-col gap-[12px]">
+          <div className="flex w-full flex-col gap-[8px]">
             {b.findings.map((f, idx) => (
               <div key={idx} className="flex w-full flex-row items-start gap-[8px] select-none">
                 <span className="shrink-0 font-hauora font-light text-[18px] leading-[24px] text-content-primary">
@@ -175,24 +184,28 @@ export function CaseBlockRenderer({ block }: CaseBlockRendererProps) {
               </div>
             ))}
           </div>
-        </Section>
+        </div>
       );
     }
 
     case "hypothesesSection": {
       const b = block as HypothesesSectionBlock;
       return (
-        <Section
-          label={b.badge || "HYPOTHESES"}
-          direction="column"
-          className="w-full justify-start items-stretch gap-[12px] p-[16px] sm:px-[28px] sm:py-[24px]"
-        >
+        <div className="flex w-full flex-col gap-[12px] mt-[60px] sm:mt-[100px]">
+          {b.badge && (
+            <span
+              className="text-[14px] font-normal leading-[24px] text-content-badge font-hauora uppercase tracking-normal"
+              style={{ color: "var(--color-content-badge, rgba(204, 204, 204, 0.16))" }}
+            >
+              {b.badge}
+            </span>
+          )}
           {b.title && (
             <h3 className="text-[18px] font-medium leading-[24px] text-content-primary font-hauora tracking-normal">
               {b.title}
             </h3>
           )}
-          <div className="flex w-full flex-col gap-[12px]">
+          <div className="flex w-full flex-col gap-[8px]">
             {b.items.map((hyp, idx) => (
               <div key={idx} className="flex w-full flex-row items-start gap-[8px] select-none">
                 <span className="shrink-0 font-hauora font-light text-[18px] leading-[24px] text-content-primary">
@@ -214,14 +227,14 @@ export function CaseBlockRenderer({ block }: CaseBlockRendererProps) {
               </div>
             ))}
           </div>
-        </Section>
+        </div>
       );
     }
 
     case "galleryBlock": {
       const b = block as GalleryBlock;
       return (
-        <div className="w-full flex flex-col gap-[8px]">
+        <div className="w-full flex flex-col gap-[8px] mt-[24px] sm:mt-[40px]">
           <Gallery
             bleed={true}
             height={b.height || 600}
@@ -242,7 +255,7 @@ export function CaseBlockRenderer({ block }: CaseBlockRendererProps) {
     case "metricsBlock": {
       const b = block as MetricsBlock;
       return (
-        <div className="flex w-full flex-col gap-[12px]">
+        <div className="flex w-full flex-col gap-[12px] mt-[60px] sm:mt-[100px]">
           {b.badge && (
             <span
               className="text-[14px] font-normal leading-[24px] text-content-badge font-hauora uppercase tracking-normal"
@@ -256,12 +269,9 @@ export function CaseBlockRenderer({ block }: CaseBlockRendererProps) {
               {b.title}
             </h3>
           )}
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-[12px] w-full">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-[24px] sm:gap-[32px] w-full pt-[8px]">
             {b.items.map((m, idx) => (
-              <div
-                key={idx}
-                className="flex flex-col gap-[4px] rounded-[10px] border border-border-hardware p-[16px] bg-transparent"
-              >
+              <div key={idx} className="flex flex-col gap-[4px]">
                 <span className="font-hauora text-[28px] sm:text-[34px] font-medium leading-[34px] sm:leading-[40px] text-content-primary tracking-tight">
                   {m.value}
                 </span>
@@ -283,7 +293,7 @@ export function CaseBlockRenderer({ block }: CaseBlockRendererProps) {
     case "textBlock": {
       const b = block as TextBlock;
       return (
-        <div className="flex w-full flex-col gap-[4px]">
+        <div className="flex w-full flex-col gap-[8px] mt-[60px] sm:mt-[100px]">
           {b.content
             .split(/\n{2,}/)
             .filter(Boolean)
@@ -302,7 +312,7 @@ export function CaseBlockRenderer({ block }: CaseBlockRendererProps) {
     case "quoteCallout": {
       const b = block as QuoteCalloutBlock;
       return (
-        <div className="flex w-full flex-col gap-[8px] rounded-[10px] border border-border-hardware p-[20px] sm:p-[24px] bg-canvas-soft/30">
+        <div className="flex w-full flex-col gap-[8px] mt-[60px] sm:mt-[100px]">
           <p className="font-hauora font-light italic text-[18px] leading-[24px] text-content-primary">
             &ldquo;{b.quote}&rdquo;
           </p>

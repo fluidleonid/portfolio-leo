@@ -60,7 +60,7 @@ export const siteSettingsType = defineType({
       name: "siteTitle",
       title: "Page Title (displayed in browser tab & Google search)",
       type: "string",
-      initialValue: "Leo Rogov — Product Designer",
+      initialValue: "Leonid Dmitriev — Product Designer",
       validation: (Rule) => Rule.required(),
     }),
     defineField({
@@ -69,7 +69,7 @@ export const siteSettingsType = defineType({
       type: "text",
       rows: 3,
       initialValue:
-        "Portfolio of Leo Rogov: Senior Product Designer specializing in complex B2B platforms, enterprise tools, and FinTech systems.",
+        "Portfolio of Leonid Dmitriev: Product Designer specializing in complex B2B platforms, enterprise tools, and FinTech systems.",
       validation: (Rule) => Rule.required(),
     }),
     defineField({
@@ -99,7 +99,8 @@ export const siteSettingsType = defineType({
       type: "array",
       of: [defineArrayMember({ type: "string" })],
       initialValue: [
-        "Leo Rogov",
+        "Leonid Dmitriev",
+        "Leo Dmitriev",
         "Product Designer",
         "Design Systems",
         "B2B SaaS",
