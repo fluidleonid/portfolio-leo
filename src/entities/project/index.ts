@@ -1,1 +1,2 @@
-export type { CaseItem, Achievement, ProjectData } from "./model/types";
+export * from "./model/types";
+export * from "./model/seedProjects";

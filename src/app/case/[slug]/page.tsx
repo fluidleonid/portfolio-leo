@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { seedCases, type CaseStudyData } from "@/entities/case-study";
 import { CaseStudyView } from "@/widgets/case-study";
@@ -26,7 +27,6 @@ export async function generateMetadata({ params }: PageProps) {
 }
 
 async function getCaseStudy(slug: string): Promise<CaseStudyData | null> {
-  // 1. If user has connected their Sanity project, fetch live CMS data
   if (
     process.env.NEXT_PUBLIC_SANITY_PROJECT_ID &&
     process.env.NEXT_PUBLIC_SANITY_PROJECT_ID !== "demo-project"
@@ -44,21 +44,28 @@ async function getCaseStudy(slug: string): Promise<CaseStudyData | null> {
     }
   }
 
-  // 2. Fall back to high-craft seed cases from cases.pdf
   return seedCases[slug] ?? null;
 }
 
-export default async function CaseStudyPage({ params }: PageProps) {
-  const { slug } = await params;
+async function CaseStudyContent({ slug }: { slug: string }) {
   const caseData = await getCaseStudy(slug);
 
   if (!caseData) {
     notFound();
   }
 
+  return <CaseStudyView caseData={caseData} />;
+}
+
+export default async function CaseStudyPage({ params }: PageProps) {
+  const { slug } = await params;
+  const fallbackCase = seedCases[slug];
+
   return (
     <main className="flex min-h-screen w-full flex-col items-center justify-start bg-canvas px-[16px] sm:px-6 py-8 sm:py-12">
-      <CaseStudyView caseData={caseData} />
+      <Suspense fallback={fallbackCase ? <CaseStudyView caseData={fallbackCase} /> : null}>
+        <CaseStudyContent slug={slug} />
+      </Suspense>
     </main>
   );
 }

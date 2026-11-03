@@ -209,17 +209,221 @@ const initialCases = [
   },
 ];
 
+const initialProjects = [
+  {
+    _id: "project-orkestra",
+    _type: "project",
+    title: "Orkestra",
+    anchorId: "works",
+    order: 1,
+    description:
+      "Modular B2B SaaS platform for enterprise architectural firms and BIM teams to orchestrate and deploy CAD ribbons and custom computational scripts.\n\nAs Product Designer, I designed the visual no-code Ribbon Builder, structured data-dense analytics dashboards, and built the design system from scratch.",
+    images: ["/quickaccess.png", "/quickaccess.png", "/quickaccess.png"],
+    keyAchievements: [
+      "Cut CAD toolbar setup from days of manual coding to 15 minutes",
+      "Eliminated configuration errors to zero via visual layout validation",
+      "Real-time script versioning and execution observability",
+    ],
+    caseStudies: [
+      {
+        _key: "cs1",
+        label: "Zero-Code Ribbon Builder",
+        caseStudy: { _type: "reference", _ref: "case-ribbon-builder" },
+        active: true,
+      },
+      {
+        _key: "cs2",
+        label: "Enterprise Design System",
+        active: false,
+      },
+    ],
+  },
+  {
+    _id: "project-nda",
+    _type: "project",
+    title: "NDA",
+    anchorId: "project-2",
+    order: 2,
+    description:
+      "Mobile-first AI video editor turning raw match footage\ninto ready-to-publish vertical vlogs with auto-highlights.",
+    images: [
+      "/aivlog/Projects.png",
+      "/aivlog/Projects-1.png",
+      "/aivlog/Projects-2.png",
+      "/aivlog/Projects-3.png",
+      "/aivlog/Projects-4.png",
+      "/aivlog/Projects-5.png",
+    ],
+    keyAchievements: [
+      "Auto-cut highlight detection from raw footage by audio peaks",
+      "Bi-directional transcript editing trimming pauses directly from text",
+    ],
+    caseStudies: [
+      {
+        _key: "cs1",
+        label: "Highlight Detection Engine",
+        externalUrl: "https://leodmitriev.framer.website/work/vlog-editor",
+        active: true,
+      },
+      {
+        _key: "cs2",
+        label: "Transcript-Based Editing",
+        active: false,
+      },
+    ],
+  },
+  {
+    _id: "project-trace-ai",
+    _type: "project",
+    title: "Trace AI Console",
+    anchorId: "project-3",
+    order: 3,
+    description:
+      "Generative UI observability & prompt debugger\nwith real-time state tree inspection.",
+    images: ["/quickaccess.png", "/quickaccess.png", "/quickaccess.png"],
+    keyAchievements: [
+      "Visual token graph & agent decision tree",
+      "Interactive step-by-step diff playback",
+    ],
+    caseStudies: [
+      {
+        _key: "cs1",
+        label: "Agent Tracing Console",
+        caseStudy: { _type: "reference", _ref: "case-ai-workflow" },
+        active: true,
+      },
+      {
+        _key: "cs2",
+        label: "State Tree Engine",
+        active: false,
+      },
+    ],
+  },
+  {
+    _id: "project-scorpex",
+    _type: "project",
+    title: "Scorpex",
+    anchorId: "project-4",
+    order: 4,
+    description:
+      "Zero-downtime multi-acquirer transaction routing engine with automated failovers and real-time ledger recovery.",
+    images: ["/quickaccess.png", "/quickaccess.png", "/quickaccess.png"],
+    keyAchievements: [
+      "Sub-400ms failover latency during peak acquirer outages",
+      "99.98% authorization approval rate across $120M+ monthly volume",
+    ],
+    caseStudies: [
+      {
+        _key: "cs1",
+        label: "Emergency Payment Fallbacks",
+        caseStudy: { _type: "reference", _ref: "case-payment-routing" },
+        active: true,
+      },
+      {
+        _key: "cs2",
+        label: "Circuit Breaker Console",
+        active: false,
+      },
+    ],
+  },
+  {
+    _id: "project-dangdi",
+    _type: "project",
+    title: "Dangdi",
+    anchorId: "project-5",
+    order: 5,
+    description:
+      "Mobile-first social commerce application bridging livestream shopping, localized curation, and tactile 3D assets.",
+    images: ["/quickaccess.png", "/quickaccess.png", "/quickaccess.png"],
+    keyAchievements: [
+      "Custom 3D asset pipeline for tactile product cards",
+      "End-to-end interactive purchase flow in Figma",
+    ],
+    caseStudies: [
+      {
+        _key: "cs1",
+        label: "Social Commerce Experience",
+        caseStudy: { _type: "reference", _ref: "case-dangdi" },
+        active: true,
+      },
+      {
+        _key: "cs2",
+        label: "Livestream Interface",
+        active: false,
+      },
+    ],
+  },
+  {
+    _id: "project-aether",
+    _type: "project",
+    title: "Aether OS Interface",
+    anchorId: "project-6",
+    order: 6,
+    description:
+      "Spatial operating system design system\nwith responsive depth hierarchy and micro-acoustics.",
+    images: ["/quickaccess.png", "/quickaccess.png", "/quickaccess.png"],
+    keyAchievements: [
+      "Unified light-source specular tokens",
+      "Haptic audio feedback system integration",
+    ],
+    caseStudies: [
+      {
+        _key: "cs1",
+        label: "Spatial Tokens",
+        active: true,
+      },
+      {
+        _key: "cs2",
+        label: "System Sound",
+        active: false,
+      },
+    ],
+  },
+];
+
+const siteSettingsDoc = {
+  _id: "siteSettings",
+  _type: "siteSettings",
+  title: "Portfolio Settings",
+  aboutParagraphs: [
+    "I design data-dense B2B and B2C systems, FinTech tools, and products where every single detail matters, while keeping interfaces clean and friction-free. My workflow is built on a tight bridge between design and frontend: I don't just sketch in Figma, I build components in React, manage design tokens, and connect design directly to the codebase. I also love sharing this craft and mentoring designers along the way.",
+    "AI agents are integrated into every stage of my pipeline—from brainstorming and rapid component prototyping to automation and writing custom skills. At the same time, I never blindly trust automation; every single artifact, line of code, and design decision goes through my strict manual review and refinement.",
+    "Outside of design, I recharge on the badminton court, hitting mountain trails with friends, and spending time with my wife and our dog. I'm genuinely driven by building cool, lively products and connecting with passionate people.",
+  ],
+};
+
 async function seed() {
   console.log(`[Sanity Seed] Connecting to project: ${projectId}, dataset: ${dataset}...`);
+
+  // 1. Seed Case Studies
   for (const doc of initialCases) {
     try {
       const res = await client.createOrReplace(doc);
-      console.log(`✓ Created/Updated case: ${res.title} (slug: ${res.slug?.current})`);
+      console.log(`✓ Case Study: ${res.title} (slug: ${res.slug?.current})`);
     } catch (err) {
-      console.error(`✗ Error creating ${doc.title}:`, err.message);
+      console.error(`✗ Error creating case ${doc.title}:`, err.message);
     }
   }
-  console.log("[Sanity Seed] All cases seeded successfully!");
+
+  // 2. Seed Main Page Projects (with references to Case Studies)
+  for (const doc of initialProjects) {
+    try {
+      const res = await client.createOrReplace(doc);
+      console.log(`✓ Main Page Project: ${res.title} (anchor: #${res.anchorId})`);
+    } catch (err) {
+      console.error(`✗ Error creating project ${doc.title}:`, err.message);
+    }
+  }
+
+  // 3. Seed Site Settings / About text
+  try {
+    const res = await client.createOrReplace(siteSettingsDoc);
+    console.log(`✓ Site Settings & About created successfully`);
+  } catch (err) {
+    console.error(`✗ Error creating siteSettings:`, err.message);
+  }
+
+  console.log("[Sanity Seed] Entire portfolio content synced with Sanity Cloud!");
 }
 
 seed();

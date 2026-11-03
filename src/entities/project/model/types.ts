@@ -14,6 +14,8 @@ export interface Achievement {
 
 export interface ProjectData {
   id?: string | number;
+  anchorId?: string;
+  order?: number;
   title: string;
   description: string;
   roleDescription?: string;
