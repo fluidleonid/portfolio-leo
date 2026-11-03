@@ -11,6 +11,7 @@ import { seedProjects, type ProjectData } from "@/entities/project";
 interface SiteSettingsData {
   heroName?: string;
   heroBio?: string;
+  ledImages?: string[];
   siteTitle?: string;
   metaDescription?: string;
   faviconUrl?: string;
@@ -58,7 +59,10 @@ export default function Home() {
             metaDescription,
             "faviconUrl": favicon.asset->url,
             "ogImageUrl": ogImage.asset->url,
-            aboutParagraphs
+            aboutParagraphs,
+            "ledImages": ledImages[]{
+              "url": coalesce(asset->url, url, @)
+            }.url
           }`),
         ]);
 
@@ -193,6 +197,7 @@ export default function Home() {
       <Hero
         name={siteSettings?.heroName}
         bio={siteSettings?.heroBio}
+        ledImages={siteSettings?.ledImages?.filter(Boolean)}
         defaultNav="index"
         activeNav={
           activeStation === "career"

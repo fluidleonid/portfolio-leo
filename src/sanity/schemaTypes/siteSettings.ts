@@ -28,6 +28,35 @@ export const siteSettingsType = defineType({
       validation: (Rule) => Rule.required(),
     }),
     defineField({
+      name: "ledImages",
+      title: "Hero LED Matrix Images",
+      type: "array",
+      description:
+        "Upload images (WebP/PNG) or specify image paths for the animated LED matrix in the Hero section. Rotates automatically.",
+      of: [
+        defineArrayMember({
+          type: "image",
+          options: { hotspot: true },
+        }),
+        defineArrayMember({
+          type: "object",
+          name: "imagePath",
+          title: "Custom Image Path / URL",
+          fields: [
+            defineField({
+              name: "url",
+              title: "Path or URL (e.g. /portrait.webp or /portrait.png)",
+              type: "string",
+              validation: (Rule) => Rule.required(),
+            }),
+          ],
+          preview: {
+            select: { title: "url" },
+          },
+        }),
+      ],
+    }),
+    defineField({
       name: "siteTitle",
       title: "Page Title (displayed in browser tab & Google search)",
       type: "string",

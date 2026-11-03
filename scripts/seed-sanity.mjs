@@ -394,6 +394,10 @@ const siteSettingsDoc = {
   heroName: "Leonid Dmitriev",
   heroBio:
     "Product Designer · Frontend-fluent\n4+ years at B2B(2C) across FinTech,\nProductivity, Entertainment & AI products",
+  ledImages: [
+    { _key: "led1", _type: "imagePath", url: "/portrait.png" },
+    { _key: "led2", _type: "imagePath", url: "/portrait-2.png" },
+  ],
   siteTitle: "Leo Rogov — Product Designer",
   metaDescription:
     "Portfolio of Leo Rogov: Senior Product Designer specializing in complex B2B platforms, enterprise tools, and FinTech systems.",

@@ -18,6 +18,8 @@ export interface HeroProps extends Omit<React.HTMLAttributes<HTMLDivElement>, "o
   name?: string;
   /** Bio text displayed in the hero title block */
   bio?: string;
+  /** Images (WebP/PNG/CDN) for the LED matrix slideshow */
+  ledImages?: string[];
   /** Initial navigation selection (default "index") */
   defaultNav?: NavItem;
   /** Active navigation selection (controlled from parent) */
@@ -37,6 +39,7 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
     {
       name = "Leonid Dmitriev",
       bio = "Product Designer · Frontend-fluent\n4+ years at B2B(2C) across FinTech,\nProductivity, Entertainment & AI products",
+      ledImages,
       defaultNav = "index",
       activeNav: controlledActiveNav,
       onNavChange,
@@ -271,7 +274,11 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
         {/* 2. INTERACTIVE IMAGE / LED MATRIX (Figma node 46:1646, 564x258px) */}
         <div className="relative flex w-full max-w-[564px] h-[258px] my-[8px] sm:my-0 items-center justify-center overflow-hidden">
           <LedMatrix
-            images={["/portrait.png", "/portrait-2.png"]}
+            images={
+              ledImages && ledImages.length > 0
+                ? ledImages
+                : ["/portrait.png", "/portrait-2.png"]
+            }
             interval={8000}
             cols={28}
             rows={13}

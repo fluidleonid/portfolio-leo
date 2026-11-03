@@ -6,3 +6,4 @@ export * from "./led-matrix";
 export * from "./lamp";
 export * from "./case-link";
 export * from "./metadata-table";
+export * from "./asset-protection";
