@@ -46,10 +46,15 @@ export default function Home() {
             keyAchievements,
             caseStudies[]{
               _key,
+              _type,
+              _ref,
+              "refTitle": @->title,
+              "refSlug": @->slug.current,
               label,
-              active,
+              "caseTitle": caseStudy->title,
+              "caseSlug": caseStudy->slug.current,
               externalUrl,
-              "caseSlug": caseStudy->slug.current
+              active
             }
           }`),
           client.fetch(`*[_type == "siteSettings"][0]{
@@ -86,11 +91,24 @@ export default function Home() {
                     ? p.images.filter(Boolean)
                     : ["/quickaccess.png", "/quickaccess.png", "/quickaccess.png"],
                 keyAchievements: p.keyAchievements || [],
-                caseStudies: (p.caseStudies || []).map((cs: any) => ({
-                  label: cs.label,
-                  active: cs.active !== false,
-                  href: cs.caseSlug ? `/case/${cs.caseSlug}` : cs.externalUrl,
-                })),
+                caseStudies: (p.caseStudies || []).map((cs: any) => {
+                  const isDirectRef = Boolean(
+                    cs._ref || cs.refTitle || cs._type === "reference"
+                  );
+                  const label =
+                    cs.label ||
+                    (isDirectRef ? cs.refTitle : cs.caseTitle) ||
+                    "Case Study";
+                  const slug = isDirectRef ? cs.refSlug : cs.caseSlug;
+                  const href = slug ? `/case/${slug}` : cs.externalUrl;
+                  const active = cs.active !== false;
+
+                  return {
+                    label,
+                    active,
+                    href,
+                  };
+                }),
               }))
             );
           }

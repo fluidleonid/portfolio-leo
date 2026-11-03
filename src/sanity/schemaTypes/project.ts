@@ -91,25 +91,34 @@ export const projectType = defineType({
       name: "caseStudies",
       title: "Case Studies (Right 'CASE' Section)",
       type: "array",
+      description:
+        "Case studies attached to this project. You can either pick a Case Study directly (title & link are 100% automated), or use Custom Link for overrides / external URLs.",
       of: [
+        defineArrayMember({
+          type: "reference",
+          name: "caseStudyRef",
+          title: "Direct Case Study (1-Click Auto)",
+          to: [{ type: "caseStudy" }],
+        }),
         defineArrayMember({
           type: "object",
           name: "caseLink",
-          title: "Case Study Link",
+          title: "Custom Case Link / Override",
           fields: [
-            defineField({
-              name: "label",
-              title: "Button Label",
-              type: "string",
-              description: "Text shown on the button (e.g. Zero-Code Ribbon Builder)",
-              validation: (Rule) => Rule.required(),
-            }),
             defineField({
               name: "caseStudy",
               title: "Linked Sanity Case Study",
               type: "reference",
               to: [{ type: "caseStudy" }],
-              description: "Select a Case Study document to automatically link to /case/[slug]",
+              description:
+                "Select a Case Study — button title and link are pulled automatically!",
+            }),
+            defineField({
+              name: "label",
+              title: "Custom Button Label (Optional override)",
+              type: "string",
+              description:
+                "Leave empty to automatically use the title of the linked Case Study",
             }),
             defineField({
               name: "externalUrl",
@@ -127,15 +136,18 @@ export const projectType = defineType({
           ],
           preview: {
             select: {
-              title: "label",
+              customLabel: "label",
               caseTitle: "caseStudy.title",
               active: "active",
             },
-            prepare({ title, caseTitle, active }) {
+            prepare({ customLabel, caseTitle, active }) {
+              const displayTitle = customLabel || caseTitle || "Untitled Case Link";
               return {
-                title: title || caseTitle,
+                title: displayTitle,
                 subtitle: caseTitle
-                  ? `Linked to: ${caseTitle} (${active ? "Lamp ON" : "Dim"})`
+                  ? customLabel
+                    ? `Linked: ${caseTitle} (Custom label)`
+                    : `Auto-titled from: ${caseTitle} (${active ? "Lamp ON" : "Dim"})`
                   : `Custom link (${active ? "Lamp ON" : "Dim"})`,
               };
             },
