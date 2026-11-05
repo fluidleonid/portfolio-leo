@@ -517,19 +517,58 @@ export const LedMatrix = React.forwardRef<HTMLDivElement, LedMatrixProps>(
         className={`relative flex w-full max-w-[564px] h-[258px] items-center justify-center overflow-hidden select-none bg-transparent p-0 border-0 shadow-none ${className}`}
         {...props}
       >
-        <canvas
-          ref={canvasRef}
-          onPointerMove={handlePointerMove}
-          onPointerLeave={handlePointerLeave}
-          className="rounded-[2px] shadow-none shrink-0"
+        <div
+          className="relative shrink-0 overflow-hidden"
           style={{
             width: `${totalWidth}px`,
             height: `${totalHeight}px`,
-            maxWidth: "none",
-            display: "block",
-            cursor: interactive ? "crosshair" : "default",
+            backgroundColor: tokens.colors.canvas,
           }}
-        />
+        >
+          {/* Permanent tactile #242424 matrix underlay - renders immediately on SSR & client */}
+          <svg
+            width={totalWidth}
+            height={totalHeight}
+            viewBox={`0 0 ${totalWidth} ${totalHeight}`}
+            className="absolute inset-0 pointer-events-none select-none"
+            aria-hidden="true"
+          >
+            <defs>
+              <pattern
+                id="led-matrix-permanent-bg"
+                width={pixelSize + gap}
+                height={pixelSize + gap}
+                patternUnits="userSpaceOnUse"
+              >
+                <rect
+                  width={pixelSize}
+                  height={pixelSize}
+                  fill={tokens.colors.surface}
+                />
+              </pattern>
+            </defs>
+            <rect
+              width={totalWidth}
+              height={totalHeight}
+              fill="url(#led-matrix-permanent-bg)"
+            />
+          </svg>
+
+          {/* Interactive animated canvas on top */}
+          <canvas
+            ref={canvasRef}
+            onPointerMove={handlePointerMove}
+            onPointerLeave={handlePointerLeave}
+            className="absolute inset-0 rounded-[2px] shadow-none"
+            style={{
+              width: `${totalWidth}px`,
+              height: `${totalHeight}px`,
+              maxWidth: "none",
+              display: "block",
+              cursor: interactive ? "crosshair" : "default",
+            }}
+          />
+        </div>
       </div>
     );
   }
