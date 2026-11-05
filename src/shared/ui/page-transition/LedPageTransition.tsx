@@ -7,49 +7,51 @@ export interface LedPageTransitionProps {
   children?: React.ReactNode;
 }
 
-interface EqualizerBand {
-  currentHeight: number; // 0 to 1
-  targetHeight: number;
-  peakHeight: number; // 0 to 1
-  peakHoldTime: number; // frames left to hold peak
+interface ColumnPeak {
+  peakRow: number;
   velocity: number;
+  holdFrames: number;
 }
 
 /**
- * Hi-Fi Stereo LED Spectrum Analyzer Page Transition
+ * Full-Viewport Hi-Fi LED Player Wave Page Transition
  *
- * Simulates a vintage Hi-Fi graphic equalizer / player visualizer constructed
- * from square amber/orange/red LED blocks.
+ * Covers 100% of the viewport (100vw x 100vh) in a tactile matrix of square LED blocks.
  *
- * Phases:
- * 1. "entering": Triggered on internal page link click. Spectrum analyzer surges with
- *    high-energy bouncing LED columns and peak meters (~300ms).
- * 2. Next.js router switches route.
- * 3. "leaving": When pathname updates, levels decay with authentic logarithmic falloff (~250ms).
- * 4. "idle": Hidden and inactive.
+ * Dynamic Phases:
+ * 1. "entering" (Wave Surge):
+ *    Pulsing player equalizer wave sweeps upward from the bottom of the screen,
+ *    covering the current page in a dynamic, undulating wall of amber/orange/red LED squares.
+ * 2. Route Navigation:
+ *    When fully covered, router switches to the new page.
+ * 3. "leaving" (Wave Recede & Reveal):
+ *    The LED wave drops back down to the bottom with energetic bouncing peaks,
+ *    revealing the new page underneath square-by-square.
+ * 4. "idle":
+ *    Completely cleared and hidden with zero DOM/pointer interference.
  */
 export function LedPageTransition({ children }: LedPageTransitionProps) {
   const pathname = usePathname();
   const router = useRouter();
 
   const [phase, setPhase] = useState<"idle" | "entering" | "leaving">("idle");
-  const [targetLabel, setTargetLabel] = useState<string>("CASE STUDY");
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const animFrameRef = useRef<number>(0);
   const startTimeRef = useRef<number>(0);
-  const bandsRef = useRef<EqualizerBand[]>([]);
+  const peaksRef = useRef<ColumnPeak[]>([]);
+  const pendingHrefRef = useRef<string | null>(null);
+  const isNavigatingRef = useRef<boolean>(false);
 
-  // Intercept all internal Next.js link clicks to trigger the visualizer
+  // Intercept internal Next.js link clicks
   useEffect(() => {
     const handleDocumentClick = (e: MouseEvent) => {
-      // Find closest anchor tag
       const anchor = (e.target as HTMLElement).closest("a");
       if (!anchor) return;
 
       const href = anchor.getAttribute("href");
       if (!href) return;
 
-      // Ignore external links, in-page hash links, mailto/tel, or modified clicks
+      // Ignore external links, in-page hash anchors, mailto/tel, or modified clicks
       if (
         href.startsWith("http") ||
         href.startsWith("//") ||
@@ -65,31 +67,20 @@ export function LedPageTransition({ children }: LedPageTransitionProps) {
         return;
       }
 
-      // Check if target is a different route
       const currentPath = window.location.pathname;
       const targetPath = href.split("?")[0].split("#")[0];
       if (targetPath === currentPath) return;
 
-      // Determine label based on destination
-      let label = "INITIALIZING";
-      if (targetPath.startsWith("/case/")) {
-        const slug = targetPath.replace("/case/", "");
-        label = `TAPE // ${slug.toUpperCase().replace(/-/g, " ")}`;
-      } else if (targetPath === "/") {
-        label = "DECK // MAIN INDEX";
-      } else {
-        label = `ROUTE // ${targetPath.toUpperCase()}`;
-      }
-
       e.preventDefault();
-      setTargetLabel(label);
-      setPhase("entering");
+      pendingHrefRef.current = href;
+      isNavigatingRef.current = true;
       startTimeRef.current = performance.now();
+      setPhase("entering");
 
-      // Navigate after quick high-energy audio burst
+      // Once the surge reaches full screen coverage (~340ms), perform router.push
       setTimeout(() => {
         router.push(href);
-      }, 320);
+      }, 340);
     };
 
     document.addEventListener("click", handleDocumentClick, { capture: true });
@@ -98,21 +89,37 @@ export function LedPageTransition({ children }: LedPageTransitionProps) {
     };
   }, [router]);
 
-  // When pathname changes, transition to "leaving" phase
+  // When pathname updates on the new page, trigger "leaving" (wave recedes and reveals new page)
   const prevPathnameRef = useRef(pathname);
   useEffect(() => {
     if (prevPathnameRef.current !== pathname) {
       prevPathnameRef.current = pathname;
-      if (phase === "entering") {
-        setPhase("leaving");
-        startTimeRef.current = performance.now();
-        const timer = setTimeout(() => {
-          setPhase("idle");
-        }, 280);
-        return () => clearTimeout(timer);
-      }
+      isNavigatingRef.current = false;
+      startTimeRef.current = performance.now();
+      setPhase("leaving");
+
+      const timer = setTimeout(() => {
+        setPhase("idle");
+      }, 320);
+
+      return () => clearTimeout(timer);
     }
-  }, [pathname, phase]);
+  }, [pathname]);
+
+  // Safety fallback timeout to prevent getting stuck
+  useEffect(() => {
+    if (phase === "entering") {
+      const safetyTimer = setTimeout(() => {
+        if (isNavigatingRef.current) {
+          isNavigatingRef.current = false;
+          setPhase("leaving");
+          startTimeRef.current = performance.now();
+          setTimeout(() => setPhase("idle"), 300);
+        }
+      }, 1400);
+      return () => clearTimeout(safetyTimer);
+    }
+  }, [phase]);
 
   // Canvas Equalizer Animation Loop
   useEffect(() => {
@@ -123,7 +130,6 @@ export function LedPageTransition({ children }: LedPageTransitionProps) {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    // Resize canvas to viewport with devicePixelRatio
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     const width = window.innerWidth;
     const height = window.innerHeight;
@@ -133,167 +139,117 @@ export function LedPageTransition({ children }: LedPageTransitionProps) {
     canvas.style.height = `${height}px`;
     ctx.scale(dpr, dpr);
 
-    // Number of frequency bands based on screen width
+    // Geometry of LED squares: 18px square modules with 2px gap (matching the Hero LED matrix)
     const isMobile = width < 640;
-    const numBands = isMobile ? 18 : 28;
-    const numRows = isMobile ? 14 : 18;
+    const pixelSize = isMobile ? 12 : 16;
+    const gap = 2;
+    const step = pixelSize + gap;
 
-    // Initialize bands if empty or resized
-    if (bandsRef.current.length !== numBands) {
-      bandsRef.current = Array.from({ length: numBands }, (_, i) => ({
-        currentHeight: 0.1 + Math.random() * 0.2,
-        targetHeight: 0.2,
-        peakHeight: 0.2,
-        peakHoldTime: 0,
+    const cols = Math.ceil(width / step);
+    const rows = Math.ceil(height / step);
+
+    // Initialize peaks array for columns
+    if (peaksRef.current.length !== cols) {
+      peaksRef.current = Array.from({ length: cols }, () => ({
+        peakRow: 0,
         velocity: 0,
+        holdFrames: 0,
       }));
     }
 
     let running = true;
-    let frame = 0;
 
-    const render = (time: number) => {
+    const render = () => {
       if (!running) return;
-      frame++;
 
-      const elapsed = time - startTimeRef.current;
-      const isEntering = phase === "entering";
+      const now = performance.now();
+      const elapsed = now - startTimeRef.current;
+      const t = now * 0.001; // seconds
 
-      // Calculate master amplitude envelope
-      // In "entering": rapidly ramps from 0 to 1 within 180ms
-      // In "leaving": smoothly decays from 1 to 0 within 260ms
-      let masterGain = 1.0;
-      if (isEntering) {
-        masterGain = Math.min(1.0, elapsed / 180);
+      let progress = 0;
+      if (phase === "entering") {
+        // Surge in: 0 to 1 in 340ms with smooth ease-in-out
+        const linear = Math.min(1.0, elapsed / 340);
+        progress = linear * linear * (3 - 2 * linear); // smoothstep
       } else {
-        masterGain = Math.max(0, 1.0 - elapsed / 260);
+        // Recede out: 1 to 0 in 300ms
+        const linear = Math.min(1.0, elapsed / 300);
+        const smooth = linear * linear * (3 - 2 * linear);
+        progress = Math.max(0, 1.0 - smooth);
       }
 
       ctx.clearRect(0, 0, width, height);
 
-      // 1. Semi-translucent dark background with subtle blur
-      ctx.fillStyle = `rgba(12, 13, 16, ${0.92 * masterGain})`;
+      // Dark backdrop that covers the old page as the wave rises, and reveals the new page as it recedes
+      const bgOpacity = Math.min(1.0, progress * 1.35);
+      ctx.fillStyle = `rgba(12, 13, 16, ${bgOpacity})`;
       ctx.fillRect(0, 0, width, height);
 
-      // 2. Equalizer geometry calculation
-      // Display in a center-aligned rack container
-      const maxEqualizerWidth = Math.min(width - 32, 600);
-      const blockSize = isMobile ? 10 : 14;
-      const gap = isMobile ? 2 : 2.5;
+      const peaks = peaksRef.current;
 
-      const totalBandWidth = maxEqualizerWidth / numBands;
-      const cellWidth = Math.max(blockSize, totalBandWidth - gap);
-      const cellHeight = isMobile ? 8 : 10;
-      const rowGap = 2;
+      // Draw each column of LED squares from bottom to top
+      for (let c = 0; c < cols; c++) {
+        const colRatio = c / cols;
+        const peak = peaks[c];
 
-      const equalizerHeight = numRows * (cellHeight + rowGap);
-      const startX = (width - numBands * (cellWidth + gap)) / 2;
-      const startY = (height - equalizerHeight) / 2;
+        // Complex multi-harmonic player wave formula (Bass kick + mid undulating ripple + stereo panning)
+        const wave1 = Math.sin(colRatio * Math.PI * 4 + t * 9) * 3.5;
+        const wave2 = Math.cos(colRatio * Math.PI * 7 - t * 14) * 2.2;
+        const wave3 = Math.sin(colRatio * Math.PI * 12 + t * 20) * 1.4;
+        const bassThump = Math.sin(t * 11) * 1.8;
+        const totalWaveOffset = wave1 + wave2 + wave3 + bassThump;
 
-      // 3. Audio spectrum synthesis (procedural music energy)
-      const bands = bandsRef.current;
-      for (let i = 0; i < numBands; i++) {
-        const band = bands[i];
+        // Target height in rows for this column
+        // When progress = 1: targetRows exceeds rows, completely covering the screen
+        // When progress = 0: targetRows = 0
+        const rawTargetRows = progress * (rows + 6) + totalWaveOffset * Math.sin(progress * Math.PI);
+        const litRowsCount = Math.max(0, Math.min(rows, Math.round(rawTargetRows)));
 
-        // Harmonic simulation: bass kick (low i) + mid snare sweeps + high hi-hat sparkle
-        const bassFreq = Math.sin(time * 0.009) * 0.4 + 0.5;
-        const midFreq = Math.sin(time * 0.015 + i * 0.4) * 0.35 + 0.45;
-        const trebleFreq = Math.cos(time * 0.022 - i * 0.3) * 0.3 + 0.4;
-
-        // Weight across spectrum: bass heavier on left, sparkle on right
-        const freqWeight =
-          i < numBands * 0.3
-            ? bassFreq * 1.2
-            : i < numBands * 0.7
-            ? midFreq
-            : trebleFreq * 0.9;
-
-        const jitter = (Math.random() - 0.5) * 0.25;
-        const target = Math.max(
-          0.05,
-          Math.min(0.98, (freqWeight + jitter) * masterGain)
-        );
-
-        // Smooth physics-based tracking
-        band.currentHeight += (target - band.currentHeight) * 0.35;
-
-        // Peak Hold logic (LED dot that drops with simulated gravity)
-        if (band.currentHeight >= band.peakHeight) {
-          band.peakHeight = band.currentHeight;
-          band.peakHoldTime = 12; // hold for 12 frames
-          band.velocity = 0;
+        // Peak Hold logic for this column
+        if (litRowsCount >= peak.peakRow) {
+          peak.peakRow = litRowsCount;
+          peak.holdFrames = 8;
+          peak.velocity = 0;
         } else {
-          if (band.peakHoldTime > 0) {
-            band.peakHoldTime--;
+          if (peak.holdFrames > 0) {
+            peak.holdFrames--;
           } else {
-            band.velocity += 0.002; // gravity acceleration
-            band.peakHeight = Math.max(0, band.peakHeight - band.velocity);
+            peak.velocity += 0.35; // gravity acceleration
+            peak.peakRow = Math.max(0, Math.round(peak.peakRow - peak.velocity));
           }
         }
 
-        // Draw individual LED square blocks for this column
-        const colX = startX + i * (cellWidth + gap);
-        const litBlocksCount = Math.round(band.currentHeight * numRows);
-        const peakBlockIndex = Math.round(band.peakHeight * numRows);
+        const colX = c * step;
 
-        for (let r = 0; r < numRows; r++) {
-          // Bottom-up indexing: r = 0 is bottom row, r = numRows - 1 is top peak row
-          const blockY = startY + (numRows - 1 - r) * (cellHeight + rowGap);
-          const isLit = r < litBlocksCount;
-          const isPeak = r === peakBlockIndex && r > 0;
+        // Render the column's vertical stack of LED squares from bottom up
+        for (let r = 0; r < rows; r++) {
+          const isLit = r < litRowsCount;
+          const isPeak = r === peak.peakRow && r > 0 && r < rows;
 
-          // LED Color gradient:
-          // Lower 60% = Classic Hi-Fi Warm Amber (#FFB000)
-          // Next 25% = Warm Orange (#FF7700)
-          // Top 15% = Peak Red-Orange (#FF3E00)
-          const ratio = r / numRows;
-          let ledColor = "#202124"; // unlit dark phosphor
-          let ledGlow = false;
+          if (!isLit && !isPeak) continue;
 
-          if (isLit || isPeak) {
-            ledGlow = true;
-            if (ratio < 0.6) {
-              ledColor = "#FFB000"; // warm amber
-            } else if (ratio < 0.85) {
-              ledColor = "#FF8000"; // amber-orange
-            } else {
-              ledColor = "#FF3E00"; // peak red-orange
-            }
+          // Inverted Y: r = 0 is at screen bottom, r = rows - 1 is at screen top
+          const blockY = height - (r + 1) * step;
+
+          // LED color gradient based on height ratio
+          const rowRatio = r / rows;
+          let ledColor = "#FFB000"; // Lower part = Vintage Hi-Fi Amber
+
+          if (rowRatio > 0.82) {
+            ledColor = "#FF3300"; // Top peak = Signal Red-Orange
+          } else if (rowRatio > 0.55) {
+            ledColor = "#FF8000"; // Mid part = Vivid Orange
           }
 
+          // Main LED square body
           ctx.fillStyle = ledColor;
-          ctx.fillRect(colX, blockY, cellWidth, cellHeight);
+          ctx.fillRect(colX, blockY, pixelSize, pixelSize);
 
-          // Subtle illumination glow for active LEDs
-          if (ledGlow && masterGain > 0.3) {
-            ctx.fillStyle = "rgba(255, 255, 255, 0.22)";
-            ctx.fillRect(colX, blockY, cellWidth, 1.5);
-          }
+          // Subtle tactile 3D sub-pixel highlight on top edge of each square
+          ctx.fillStyle = "rgba(255, 255, 255, 0.35)";
+          ctx.fillRect(colX, blockY, pixelSize, 1.5);
         }
       }
-
-      // 4. Vintage Hi-Fi status readouts (matching topbar & tuner aesthetic)
-      const readoutY = startY + equalizerHeight + 32;
-      ctx.textAlign = "center";
-
-      // Equalizer Header / Status
-      ctx.font = "500 11px system-ui, -apple-system, sans-serif";
-      ctx.fillStyle = `rgba(255, 176, 0, ${0.9 * masterGain})`;
-      ctx.fillText("● HI-FI EQUALIZER // 28-BAND STEREO SPECTRUM", width / 2, startY - 24);
-
-      // Destination Track Name
-      ctx.font = "300 15px system-ui, -apple-system, sans-serif";
-      ctx.fillStyle = `rgba(235, 235, 235, ${0.95 * masterGain})`;
-      ctx.fillText(targetLabel, width / 2, readoutY);
-
-      // Decibel Scale markers
-      ctx.font = "300 10px monospace";
-      ctx.fillStyle = `rgba(140, 140, 140, ${0.75 * masterGain})`;
-      ctx.fillText(
-        "-24dB    -18dB    -12dB    -6dB    0dB    +3dB (PEAK)",
-        width / 2,
-        readoutY + 22
-      );
 
       if (running) {
         animFrameRef.current = requestAnimationFrame(render);
@@ -306,16 +262,16 @@ export function LedPageTransition({ children }: LedPageTransitionProps) {
       running = false;
       cancelAnimationFrame(animFrameRef.current);
     };
-  }, [phase, targetLabel]);
+  }, [phase]);
 
   return (
     <>
       {children}
 
-      {/* Full-Screen LED Equalizer Overlay */}
+      {/* Full-Screen LED Equalizer Wave Overlay */}
       <div
         aria-hidden="true"
-        className={`fixed inset-0 z-[9999] pointer-events-none transition-opacity duration-200 ${
+        className={`fixed inset-0 z-[9999] pointer-events-none transition-opacity duration-150 ${
           phase === "idle" ? "opacity-0 pointer-events-none" : "opacity-100"
         }`}
       >
