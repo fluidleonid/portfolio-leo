@@ -9,8 +9,6 @@ export interface ProjectProps extends React.HTMLAttributes<HTMLDivElement> {
   title?: string;
   /** Project summary / pitch (default: "Project description") */
   description?: string;
-  /** Role contribution summary (optional) */
-  roleDescription?: string;
   /** List of image URLs for the horizontal gallery */
   images?: string[];
   /** Key achievements list with glowing amber lamps (rendered in the left "KEY" Section) */
@@ -42,7 +40,6 @@ export const Project = React.forwardRef<HTMLDivElement, ProjectProps>(
     {
       title = "Project name",
       description = "Project description",
-      roleDescription,
       images = ["/quickaccess.png", "/quickaccess.png", "/quickaccess.png"],
       keyAchievements,
       keyCases,

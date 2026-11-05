@@ -113,7 +113,6 @@ export function PortfolioView({
               id={anchorId}
               title={proj.title}
               description={proj.description}
-              roleDescription={proj.roleDescription}
               images={proj.images && proj.images.length > 0 ? proj.images : ["/quickaccess.png", "/quickaccess.png", "/quickaccess.png"]}
               keyAchievements={proj.keyAchievements}
               caseStudies={proj.caseStudies}

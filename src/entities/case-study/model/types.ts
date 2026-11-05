@@ -136,7 +136,8 @@ export interface CaseStudyData {
   _id?: string;
   title: string;
   slug: string;
-  projectTag: string;
+  order?: number;
+  projectTag?: string;
   tagline?: string;
   coverImage?: string;
   blocks: CaseContentBlock[];

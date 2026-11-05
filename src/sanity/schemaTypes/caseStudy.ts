@@ -31,6 +31,14 @@ export const caseStudyType = defineType({
       validation: (Rule) => Rule.required(),
     }),
     defineField({
+      name: "order",
+      title: "Display Order (Порядок кнопки в проекте)",
+      type: "number",
+      description:
+        "Порядковый номер кнопки внутри блока проекта (1 — первая кнопка, 2 — вторая и т.д.)",
+      initialValue: 1,
+    }),
+    defineField({
       name: "buttonLabel",
       title: "Button Label (Опциональный текст кнопки)",
       type: "string",
@@ -51,11 +59,6 @@ export const caseStudyType = defineType({
       type: "url",
       description:
         "Если заполнено, кнопка на главной странице ведет на внешнюю ссылку (например Framer/Figma), а не на /case/[slug].",
-    }),
-    defineField({
-      name: "projectTag",
-      title: "Project / Product Tag (e.g. ORKESTRA / 2024)",
-      type: "string",
     }),
     defineField({
       name: "tagline",
@@ -282,19 +285,28 @@ export const caseStudyType = defineType({
       ],
     }),
   ],
+  orderings: [
+    {
+      title: "Display Order",
+      name: "orderAsc",
+      by: [{ field: "order", direction: "asc" }],
+    },
+  ],
   preview: {
     select: {
       title: "title",
+      order: "order",
       projectName: "project.title",
       buttonLabel: "buttonLabel",
       isButtonActive: "isButtonActive",
       media: "coverImage",
     },
-    prepare({ title, projectName, buttonLabel, isButtonActive, media }) {
+    prepare({ title, order, projectName, buttonLabel, isButtonActive, media }) {
       const status = isButtonActive !== false ? "🟢 ON" : "⚪ OFF";
       const btn = buttonLabel ? ` [Btn: ${buttonLabel}]` : "";
+      const orderPrefix = order ? `#${order} ` : "";
       return {
-        title,
+        title: `${orderPrefix}${title}`,
         subtitle: `Project: ${projectName || "Unassigned"}${btn} · ${status}`,
         media,
       };

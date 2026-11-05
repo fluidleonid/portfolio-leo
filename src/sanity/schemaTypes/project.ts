@@ -50,11 +50,6 @@ export const projectDocumentType = defineType({
       validation: (Rule) => Rule.required(),
     }),
     defineField({
-      name: "roleDescription",
-      title: "Role Description (Optional)",
-      type: "string",
-    }),
-    defineField({
       name: "images",
       title: "Horizontal Gallery Images",
       type: "array",

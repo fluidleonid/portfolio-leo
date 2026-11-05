@@ -126,9 +126,9 @@ const initialCases = [
     title: "Zero-Code Ribbon Builder",
     slug: { _type: "slug", current: "ribbon-builder" },
     project: { _type: "reference", _ref: "project-orkestra" },
+    order: 1,
     buttonLabel: "Zero-Code Ribbon Builder",
     isButtonActive: true,
-    projectTag: "ORKESTRA / 2024",
     tagline:
       "Visual drag-and-drop ribbon constructor replacing manual C# and XML toolbar coding across Autodesk Revit ecosystems.",
     blocks: [
@@ -226,9 +226,9 @@ const initialCases = [
     title: "Emergency Payment Fallbacks & Routing Engine",
     slug: { _type: "slug", current: "payment-routing" },
     project: { _type: "reference", _ref: "project-scorpex" },
+    order: 1,
     buttonLabel: "Emergency Payment Fallbacks",
     isButtonActive: true,
-    projectTag: "SCORPEX / 2024",
     tagline:
       "Zero-downtime multi-acquirer transaction routing engine with automated failovers and real-time ledger recovery.",
     blocks: [
@@ -272,9 +272,9 @@ const initialCases = [
     title: "Multimodal AI Workspace & Intent Classifier",
     slug: { _type: "slug", current: "ai-workflow" },
     project: { _type: "reference", _ref: "project-trace-ai" },
+    order: 1,
     buttonLabel: "Multimodal AI Workspace",
     isButtonActive: true,
-    projectTag: "QUIDZI / 2024",
     tagline:
       "Interactive workspace orchestrating multi-agent LLM pipelines, prompt tracing, and contextual artifact trees.",
     blocks: [
@@ -299,9 +299,9 @@ const initialCases = [
     title: "Dangdi Social Commerce Experience",
     slug: { _type: "slug", current: "dangdi" },
     project: { _type: "reference", _ref: "project-dangdi" },
+    order: 1,
     buttonLabel: "Social Commerce Experience",
     isButtonActive: true,
-    projectTag: "DANGDI / 2024",
     tagline:
       "Mobile-first social commerce application bridging livestream shopping, localized curation, and tactile 3D assets.",
     blocks: [

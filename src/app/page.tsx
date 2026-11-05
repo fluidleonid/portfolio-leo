@@ -51,14 +51,14 @@ export default function Home() {
             order,
             projectType,
             description,
-            roleDescription,
             "images": images[]{
               "url": coalesce(asset->url, url, @)
             }.url,
             keyAchievements,
-            "caseStudies": *[_type == "caseStudy" && (project._ref == ^._id || references(^._id))] | order(_createdAt asc) {
+            "caseStudies": *[_type == "caseStudy" && (project._ref == ^._id || references(^._id))] | order(order asc, _createdAt asc) {
               _id,
               title,
+              order,
               "caseSlug": slug.current,
               buttonLabel,
               isButtonActive,
@@ -93,7 +93,6 @@ export default function Home() {
                   ? [p.projectType]
                   : ["B2B"],
                 description: p.description,
-                roleDescription: p.roleDescription,
                 images:
                   p.images && p.images.length > 0
                     ? p.images.filter(Boolean)
@@ -268,7 +267,6 @@ export default function Home() {
               title={proj.title}
               projectType={proj.projectType}
               description={proj.description}
-              roleDescription={proj.roleDescription}
               images={proj.images && proj.images.length > 0 ? proj.images : ["/quickaccess.png", "/quickaccess.png", "/quickaccess.png"]}
               keyAchievements={proj.keyAchievements}
               caseStudies={proj.caseStudies}
