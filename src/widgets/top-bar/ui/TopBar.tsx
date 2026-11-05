@@ -17,6 +17,8 @@ export interface ProjectItemRef {
 }
 
 export interface TopBarProps extends React.HTMLAttributes<HTMLDivElement> {
+  /** Optional custom stations / notches (e.g. for Case Study page blocks) */
+  stations?: TunerFrame[];
   /** Dynamic project list from Sanity or seed data to generate tuner frames/notches */
   projects?: ProjectItemRef[];
   /** Active station or section id */
@@ -28,8 +30,9 @@ export interface TopBarProps extends React.HTMLAttributes<HTMLDivElement> {
 }
 
 export const TopBar: React.FC<TopBarProps> = ({
+  stations,
   projects,
-  activeStation = "index",
+  activeStation,
   onStationChange,
   scrollThreshold = 200,
   className = "",
@@ -39,8 +42,12 @@ export const TopBar: React.FC<TopBarProps> = ({
   const [needleRatio, setNeedleRatio] = useState<number>(0);
   const [isDragging, setIsDragging] = useState(false);
 
-  // Dynamically generate tuner frames based on live projects count from Sanity
+  // Dynamically generate tuner frames based on custom stations or live projects count from Sanity
   const frames = useMemo<TunerFrame[]>(() => {
+    if (stations && stations.length > 0) {
+      return stations;
+    }
+
     const list: TunerFrame[] = [
       { id: "index", label: "index", targetId: "top" },
     ];
@@ -69,7 +76,10 @@ export const TopBar: React.FC<TopBarProps> = ({
     list.push({ id: "about", label: "about", targetId: "about" });
 
     return list;
-  }, [projects]);
+  }, [stations, projects]);
+
+  const currentActiveStation =
+    activeStation ?? (stations && stations.length > 0 ? stations[0].id : "index");
 
   const frameCount = frames.length;
 
@@ -411,10 +421,11 @@ export const TopBar: React.FC<TopBarProps> = ({
               }
 
               const isActive =
-                activeStation === frame.id ||
-                (frame.id === "works" &&
-                  (activeStation.startsWith("project") ||
-                    activeStation === "works"));
+                currentActiveStation === frame.id ||
+                (!stations &&
+                  frame.id === "works" &&
+                  (currentActiveStation.startsWith("project") ||
+                    currentActiveStation === "works"));
 
               return (
                 <button

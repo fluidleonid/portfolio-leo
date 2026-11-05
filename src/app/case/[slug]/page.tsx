@@ -82,6 +82,7 @@ async function getCaseStudy(slug: string): Promise<CaseStudyData | null> {
         "slug": slug.current,
         tagline,
         "coverImage": coverImage.asset->url,
+        "projectAnchor": project->anchorId,
         blocks
       }`,
       { slug }

@@ -18,14 +18,15 @@ import type {
 
 export interface CaseBlockRendererProps {
   block: CaseContentBlock;
+  id?: string;
 }
 
-export function CaseBlockRenderer({ block }: CaseBlockRendererProps) {
+export function CaseBlockRenderer({ block, id }: CaseBlockRendererProps) {
   switch (block._type) {
     case "metadataTable": {
       const b = block as MetadataTableBlock;
       return (
-        <div className="w-full mt-[40px] sm:mt-[60px]">
+        <div id={id} className="w-full mt-[40px] sm:mt-[60px] scroll-mt-[100px]">
           <MetadataTable rows={b.rows} />
         </div>
       );
@@ -34,7 +35,7 @@ export function CaseBlockRenderer({ block }: CaseBlockRendererProps) {
     case "sectionHeading": {
       const b = block as SectionHeadingBlock;
       return (
-        <div className="flex w-full flex-col gap-[8px] mt-[60px] sm:mt-[100px]">
+        <div id={id} className="flex w-full flex-col gap-[8px] mt-[60px] sm:mt-[100px] scroll-mt-[100px]">
           {b.badge && (
             <span
               className="text-[14px] font-normal leading-[24px] text-content-badge font-hauora uppercase tracking-normal"
@@ -58,7 +59,7 @@ export function CaseBlockRenderer({ block }: CaseBlockRendererProps) {
     case "problemList": {
       const b = block as ProblemListBlock;
       return (
-        <div className="flex w-full flex-col gap-[12px] mt-[60px] sm:mt-[100px]">
+        <div id={id} className="flex w-full flex-col gap-[12px] mt-[60px] sm:mt-[100px] scroll-mt-[100px]">
           {b.badge && (
             <span
               className="text-[14px] font-normal leading-[24px] text-content-badge font-hauora uppercase tracking-normal"
@@ -103,7 +104,7 @@ export function CaseBlockRenderer({ block }: CaseBlockRendererProps) {
     case "teamSection": {
       const b = block as TeamSectionBlock;
       return (
-        <div className="flex w-full flex-col gap-[12px] mt-[60px] sm:mt-[100px]">
+        <div id={id} className="flex w-full flex-col gap-[12px] mt-[60px] sm:mt-[100px] scroll-mt-[100px]">
           {b.badge && (
             <span
               className="text-[14px] font-normal leading-[24px] text-content-badge font-hauora uppercase tracking-normal"
@@ -141,7 +142,7 @@ export function CaseBlockRenderer({ block }: CaseBlockRendererProps) {
     case "discoverySection": {
       const b = block as DiscoverySectionBlock;
       return (
-        <div className="flex w-full flex-col gap-[12px] mt-[60px] sm:mt-[100px]">
+        <div id={id} className="flex w-full flex-col gap-[12px] mt-[60px] sm:mt-[100px] scroll-mt-[100px]">
           {b.badge && (
             <span
               className="text-[14px] font-normal leading-[24px] text-content-badge font-hauora uppercase tracking-normal"
@@ -191,7 +192,7 @@ export function CaseBlockRenderer({ block }: CaseBlockRendererProps) {
     case "hypothesesSection": {
       const b = block as HypothesesSectionBlock;
       return (
-        <div className="flex w-full flex-col gap-[12px] mt-[60px] sm:mt-[100px]">
+        <div id={id} className="flex w-full flex-col gap-[12px] mt-[60px] sm:mt-[100px] scroll-mt-[100px]">
           {b.badge && (
             <span
               className="text-[14px] font-normal leading-[24px] text-content-badge font-hauora uppercase tracking-normal"
@@ -234,7 +235,7 @@ export function CaseBlockRenderer({ block }: CaseBlockRendererProps) {
     case "galleryBlock": {
       const b = block as GalleryBlock;
       return (
-        <div className="w-full flex flex-col gap-[8px] mt-[24px] sm:mt-[40px]">
+        <div id={id} className="w-full flex flex-col gap-[8px] mt-[24px] sm:mt-[40px]">
           <Gallery
             bleed={true}
             height={b.height || 600}
@@ -255,7 +256,7 @@ export function CaseBlockRenderer({ block }: CaseBlockRendererProps) {
     case "metricsBlock": {
       const b = block as MetricsBlock;
       return (
-        <div className="flex w-full flex-col gap-[12px] mt-[60px] sm:mt-[100px]">
+        <div id={id} className="flex w-full flex-col gap-[12px] mt-[60px] sm:mt-[100px] scroll-mt-[100px]">
           {b.badge && (
             <span
               className="text-[14px] font-normal leading-[24px] text-content-badge font-hauora uppercase tracking-normal"
@@ -293,7 +294,7 @@ export function CaseBlockRenderer({ block }: CaseBlockRendererProps) {
     case "textBlock": {
       const b = block as TextBlock;
       return (
-        <div className="flex w-full flex-col gap-[8px] mt-[60px] sm:mt-[100px]">
+        <div id={id} className="flex w-full flex-col gap-[8px] mt-[60px] sm:mt-[100px] scroll-mt-[100px]">
           {b.content
             .split(/\n{2,}/)
             .filter(Boolean)
@@ -312,7 +313,7 @@ export function CaseBlockRenderer({ block }: CaseBlockRendererProps) {
     case "quoteCallout": {
       const b = block as QuoteCalloutBlock;
       return (
-        <div className="flex w-full flex-col gap-[8px] mt-[60px] sm:mt-[100px]">
+        <div id={id} className="flex w-full flex-col gap-[8px] mt-[60px] sm:mt-[100px] scroll-mt-[100px]">
           <p className="font-hauora font-light italic text-[18px] leading-[24px] text-content-primary">
             &ldquo;{b.quote}&rdquo;
           </p>
