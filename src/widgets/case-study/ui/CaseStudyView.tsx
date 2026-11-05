@@ -11,44 +11,84 @@ export interface CaseStudyViewProps {
 }
 
 export function CaseStudyView({ caseData }: CaseStudyViewProps) {
-  const [activeStation, setActiveStation] = useState<string>("case-header");
+  const [activeStation, setActiveStation] = useState<string>("overview");
 
   // Destination on the main page: back to the specific project block we came from
   const backHref = caseData.projectAnchor ? `/#${caseData.projectAnchor}` : "/";
 
-  // Generate tuner stations from non-gallery blocks (excluding gallery blocks per user request)
+  // Generate tuner stations:
+  // First station is always 'overview' (encompassing title, description, metadata table, and initial problem)
+  // Subsequent stations are distinct major chapters, strictly excluding horizontal breakout galleries
   const caseStations = useMemo<TunerFrame[]>(() => {
     const list: TunerFrame[] = [
-      { id: "case-header", label: "top", targetId: "case-header" },
+      { id: "overview", label: "overview", targetId: "overview" },
     ];
 
+    const isOverviewContext = (badgeOrTitle: string) => {
+      const lower = badgeOrTitle.toLowerCase();
+      return (
+        lower.includes("overview") ||
+        lower.includes("challenge") ||
+        lower.includes("problem") ||
+        lower.includes("context") ||
+        lower.includes("intro")
+      );
+    };
+
+    let passedOverview = false;
+    let lastLabel = "overview";
+
     (caseData.blocks || []).forEach((block, idx) => {
-      // Exclude horizontal breakout galleries from the tuner bar
+      // 1. Strictly exclude horizontal breakout galleries from the tuner bar
       if (block._type === "galleryBlock") return;
 
-      const blockId = `block-${idx}`;
-      let label = "section";
+      // 2. Metadata table is always part of the overview block
+      if (block._type === "metadataTable") return;
 
+      // Extract candidate badge
+      let rawBadge = "";
       if ("badge" in block && typeof block.badge === "string" && block.badge.trim()) {
-        label = block.badge.trim().toLowerCase();
-      } else if (block._type === "metadataTable") {
-        label = "meta";
-      } else if (block._type === "textBlock") {
-        label = "story";
-      } else if (block._type === "quoteCallout") {
-        label = "quote";
-      } else {
-        label = block._type
-          .replace("Section", "")
-          .replace("Block", "")
-          .toLowerCase();
+        rawBadge = block.badge.trim();
       }
 
-      list.push({
-        id: blockId,
-        label,
-        targetId: blockId,
-      });
+      // Check if this block is part of the introductory problem/overview
+      if (!passedOverview) {
+        if (
+          (rawBadge && isOverviewContext(rawBadge)) ||
+          block._type === "problemList"
+        ) {
+          return;
+        }
+        passedOverview = true;
+      }
+
+      // Determine clean chapter label
+      let label = rawBadge.toLowerCase();
+      if (!label) {
+        if (block._type === "teamSection") label = "team";
+        else if (block._type === "discoverySection") label = "discovery";
+        else if (block._type === "hypothesesSection") label = "hypotheses";
+        else if (block._type === "metricsBlock") label = "impact";
+        else if (block._type === "sectionHeading" && "title" in block && typeof block.title === "string") {
+          label = block.title.split(" ")[0].toLowerCase();
+        } else {
+          label = block._type
+            .replace("Section", "")
+            .replace("Block", "")
+            .toLowerCase();
+        }
+      }
+
+      // Avoid consecutive duplicate stations (e.g. sectionHeading "discovery" + discoverySection)
+      if (label && label !== lastLabel) {
+        const blockId = `block-${idx}`;
+        list.push({
+          id: blockId,
+          label,
+          targetId: blockId,
+        });
+        lastLabel = label;
+      }
     });
 
     return list;
@@ -57,14 +97,7 @@ export function CaseStudyView({ caseData }: CaseStudyViewProps) {
   // Synchronize active station based on scroll position within the case study
   useEffect(() => {
     const handleScroll = () => {
-      const scrollY = window.scrollY;
-
-      if (scrollY < 160) {
-        setActiveStation("case-header");
-        return;
-      }
-
-      for (let i = caseStations.length - 1; i >= 0; i--) {
+      for (let i = caseStations.length - 1; i >= 1; i--) {
         const item = caseStations[i];
         const el = document.getElementById(item.targetId);
         if (el) {
@@ -75,9 +108,11 @@ export function CaseStudyView({ caseData }: CaseStudyViewProps) {
           }
         }
       }
+      setActiveStation("overview");
     };
 
     window.addEventListener("scroll", handleScroll, { passive: true });
+    handleScroll();
     return () => window.removeEventListener("scroll", handleScroll);
   }, [caseStations]);
 
@@ -116,9 +151,9 @@ export function CaseStudyView({ caseData }: CaseStudyViewProps) {
           </Link>
         </nav>
 
-        {/* 2. CASE STUDY HEADER (Matching main page project title & description styles) */}
+        {/* 2. CASE STUDY HEADER (Part of overview: title & description) */}
         <header
-          id="case-header"
+          id="overview"
           className="flex w-full flex-col gap-[8px] mt-[40px] sm:mt-[60px] scroll-mt-[100px]"
         >
           <h1 className="text-[18px] font-medium leading-[24px] text-content-primary font-hauora tracking-normal">
