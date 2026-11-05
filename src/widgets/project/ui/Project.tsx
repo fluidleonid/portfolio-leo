@@ -83,7 +83,7 @@ export const Project = React.forwardRef<HTMLDivElement, ProjectProps>(
           <h2 className="text-[18px] font-medium leading-[24px] text-content-primary font-hauora tracking-normal">
             {title}
           </h2>
-          <div className="flex flex-col gap-[4px]">
+          <div className="flex flex-col gap-[8px]">
             {description
               .split(/\n{2,}/)
               .filter(Boolean)
