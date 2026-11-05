@@ -7,3 +7,4 @@ export * from "./lamp";
 export * from "./case-link";
 export * from "./metadata-table";
 export * from "./asset-protection";
+export * from "./page-transition";

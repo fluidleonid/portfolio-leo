@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { AssetProtection } from "@/shared/ui";
+import { AssetProtection, LedPageTransition } from "@/shared/ui";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -51,7 +51,7 @@ export default function RootLayout({
     <html lang="ru" className="overflow-x-hidden max-w-full">
       <body className="bg-canvas text-white antialiased overflow-x-hidden max-w-full">
         <AssetProtection />
-        {children}
+        <LedPageTransition>{children}</LedPageTransition>
       </body>
     </html>
   );

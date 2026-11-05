@@ -1,4 +1,5 @@
 import React from "react";
+import Link from "next/link";
 import { Lamp } from "@/shared/ui/lamp";
 
 export interface CaseLinkProps extends React.HTMLAttributes<HTMLElement> {
@@ -68,6 +69,21 @@ export const CaseLink = React.forwardRef<HTMLElement, CaseLinkProps>(
     } ${className}`;
 
     if (href && isAvailable) {
+      const isInternal = href.startsWith("/");
+
+      if (isInternal) {
+        return (
+          <Link
+            ref={ref as React.Ref<HTMLAnchorElement>}
+            href={href}
+            className={baseClasses}
+            {...(props as any)}
+          >
+            {innerContent}
+          </Link>
+        );
+      }
+
       return (
         <a
           ref={ref as React.Ref<HTMLAnchorElement>}
