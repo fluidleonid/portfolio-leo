@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Hero } from "@/widgets/hero";
 import { Project } from "@/widgets/project";
 import { TopBar } from "@/widgets/top-bar";
@@ -24,6 +24,18 @@ export default function Home() {
   const [theme, setTheme] = useState<"monochrome" | "amber">("amber");
   const [projects, setProjects] = useState<ProjectData[]>(seedProjects);
   const [siteSettings, setSiteSettings] = useState<SiteSettingsData | null>(null);
+  const isInitialScrollDone = useRef(false);
+
+  // Helper to safely synchronize hash in browser address bar without jarring navigation
+  const syncAddressBarHash = (station: string) => {
+    if (typeof window === "undefined") return;
+    const targetHash = station === "index" ? "" : `#${station}`;
+    const currentHash = window.location.hash;
+    if (currentHash !== targetHash) {
+      const newUrl = `${window.location.pathname}${window.location.search}${targetHash}`;
+      window.history.replaceState(null, "", newUrl);
+    }
+  };
 
   // 1. Fetch live projects and site settings from Sanity Cloud
   useEffect(() => {
@@ -44,30 +56,13 @@ export default function Home() {
               "url": coalesce(asset->url, url, @)
             }.url,
             keyAchievements,
-            // 1. Direct linked case study and toggle switch
-            "caseStudyRef": caseStudy._ref,
-            "mainCaseTitle": caseStudy->title,
-            "mainCaseSlug": caseStudy->slug.current,
-            isCaseActive,
-            customCaseLabel,
-            customCaseUrl,
-            // 2. Second button slot
-            "secondCaseAutoTitle": secondCaseStudy->title,
-            "secondCaseSlug": secondCaseStudy->slug.current,
-            secondCaseTitle,
-            secondCaseActive,
-            // 3. Fallback array
-            caseStudies[]{
-              _key,
-              _type,
-              _ref,
-              "refTitle": @->title,
-              "refSlug": @->slug.current,
-              label,
-              "caseTitle": caseStudy->title,
-              "caseSlug": caseStudy->slug.current,
-              externalUrl,
-              active
+            "caseStudies": *[_type == "caseStudy" && (project._ref == ^._id || references(^._id))] | order(_createdAt asc) {
+              _id,
+              title,
+              "caseSlug": slug.current,
+              buttonLabel,
+              isButtonActive,
+              externalUrl
             }
           }`),
           client.fetch(`*[_type == "siteSettings"][0]{
@@ -104,70 +99,17 @@ export default function Home() {
                     ? p.images.filter(Boolean)
                     : ["/quickaccess.png", "/quickaccess.png", "/quickaccess.png"],
                 keyAchievements: p.keyAchievements || [],
-                caseStudies: (() => {
-                  const hasDirectCase = Boolean(
-                    p.caseStudyRef ||
-                    p.isCaseActive !== undefined ||
-                    p.customCaseUrl
-                  );
-
-                  if (hasDirectCase) {
-                    const result: any[] = [];
-                    // Main button (auto title from case study, or custom fallback)
-                    const mainActive = p.isCaseActive !== false;
-                    const mainLabel =
-                      p.customCaseLabel ||
-                      p.mainCaseTitle ||
-                      "Case Study";
-                    const mainHref = p.mainCaseSlug
-                      ? `/case/${p.mainCaseSlug}`
-                      : p.customCaseUrl;
-
-                    result.push({
-                      label: mainLabel,
-                      active: mainActive,
-                      href: mainActive ? mainHref : undefined,
-                    });
-
-                    // Second button (if configured)
-                    const secondLabel =
-                      p.secondCaseTitle || p.secondCaseAutoTitle;
-                    if (secondLabel) {
-                      const secondActive = p.secondCaseActive === true;
-                      const secondHref = p.secondCaseSlug
-                        ? `/case/${p.secondCaseSlug}`
-                        : undefined;
-
-                      result.push({
-                        label: secondLabel,
-                        active: secondActive,
-                        href: secondActive ? secondHref : undefined,
-                      });
-                    }
-
-                    return result;
-                  }
-
-                  // Legacy array fallback
-                  return (p.caseStudies || []).map((cs: any) => {
-                    const isDirectRef = Boolean(
-                      cs._ref || cs.refTitle || cs._type === "reference"
-                    );
-                    const label =
-                      cs.label ||
-                      (isDirectRef ? cs.refTitle : cs.caseTitle) ||
-                      "Case Study";
-                    const slug = isDirectRef ? cs.refSlug : cs.caseSlug;
-                    const href = slug ? `/case/${slug}` : cs.externalUrl;
-                    const active = cs.active !== false;
-
-                    return {
-                      label,
-                      active,
-                      href,
-                    };
-                  });
-                })(),
+                caseStudies: (p.caseStudies || []).map((cs: any) => {
+                  const label = cs.buttonLabel?.trim() || cs.title || "Case Study";
+                  const href = cs.externalUrl || (cs.caseSlug ? `/case/${cs.caseSlug}` : undefined);
+                  const active = cs.isButtonActive !== false;
+                  return {
+                    id: cs._id,
+                    label,
+                    href: active ? href : undefined,
+                    active,
+                  };
+                }),
               }))
             );
           }
@@ -202,7 +144,21 @@ export default function Home() {
     };
   }, []);
 
-  // 2. Synchronize active station based on viewport scroll position
+  // 2. Initial hash scroll support (e.g. landing on #works or #about directly)
+  useEffect(() => {
+    if (isInitialScrollDone.current || typeof window === "undefined") return;
+    const initialHash = window.location.hash.replace("#", "");
+    if (initialHash) {
+      const el = document.getElementById(initialHash);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth" });
+        setActiveStation(initialHash);
+        isInitialScrollDone.current = true;
+      }
+    }
+  }, [projects]);
+
+  // 3. Synchronize active station and address bar URL hash based on viewport scroll position
   useEffect(() => {
     const sectionIds = [
       { id: "top", station: "index" },
@@ -224,10 +180,12 @@ export default function Home() {
         const rect = worksEl.getBoundingClientRect();
         if (rect.top > 160) {
           setActiveStation("index");
+          syncAddressBarHash("index");
           return;
         }
       } else if (scrollY < 260) {
         setActiveStation("index");
+        syncAddressBarHash("index");
         return;
       }
 
@@ -238,6 +196,7 @@ export default function Home() {
           const rect = el.getBoundingClientRect();
           if (rect.top <= 160) {
             setActiveStation(item.station);
+            syncAddressBarHash(item.station);
             return;
           }
         }
@@ -259,6 +218,11 @@ export default function Home() {
       ? siteSettings.aboutParagraphs
       : defaultAboutParagraphs;
 
+  const handleStationClick = (st: string) => {
+    setActiveStation(st);
+    syncAddressBarHash(st);
+  };
+
   return (
     <main className="flex min-h-screen w-full flex-col items-center justify-start bg-canvas px-[16px] sm:px-6 py-12 sm:py-16">
       {/* 
@@ -268,7 +232,7 @@ export default function Home() {
       <TopBar
         projects={projects}
         activeStation={activeStation}
-        onStationChange={(st) => setActiveStation(st)}
+        onStationChange={handleStationClick}
       />
 
       {/* 1:1 Complete Hero Section from Figma */}
@@ -286,12 +250,12 @@ export default function Home() {
             ? "index"
             : "works"
         }
-        onNavChange={(nav) => setActiveStation(nav)}
+        onNavChange={handleStationClick}
         theme={theme}
       />
 
       {/* 
-        WORKS: 6 Flagman Project Blocks loaded dynamically from Sanity CMS
+        WORKS: Flagman Project Blocks loaded dynamically from Sanity CMS
       */}
       <div className="flex w-full flex-col items-center gap-[80px] sm:gap-[120px] mt-[80px] sm:mt-[100px]">
         {projects.map((proj, idx) => {

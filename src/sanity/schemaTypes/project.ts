@@ -1,6 +1,6 @@
 import { defineType, defineField, defineArrayMember } from "sanity";
 
-export const projectType = defineType({
+export const projectDocumentType = defineType({
   name: "project",
   title: "Main Page Project",
   type: "document",
@@ -87,99 +87,6 @@ export const projectType = defineType({
       type: "array",
       of: [defineArrayMember({ type: "string" })],
     }),
-    defineField({
-      name: "caseStudy",
-      title: "Linked Case Study (Привязанный кейс)",
-      type: "reference",
-      to: [{ type: "caseStudy" }],
-      description:
-        "Кейс, привязанный к этому проекту. Название кнопки и ссылка на страницу /case/[slug] берутся из него автоматически.",
-    }),
-    defineField({
-      name: "isCaseActive",
-      title: "Кнопка кейса включена (Индикатор горит)",
-      type: "boolean",
-      description:
-        "Включает или выключает кнопку кейса на главной странице (лампа горит и переход в кейс активен).",
-      initialValue: true,
-    }),
-    defineField({
-      name: "customCaseLabel",
-      title: "Кастомный текст кнопки (необязательно)",
-      type: "string",
-      description:
-        "Оставьте пустым, чтобы название кнопки бралось автоматически из заголовка кейса.",
-    }),
-    defineField({
-      name: "customCaseUrl",
-      title: "Внешняя ссылка (если кейс на Framer / Figma)",
-      type: "url",
-      description: "Например: https://leodmitriev.framer.website/work/vlog-editor",
-    }),
-    defineField({
-      name: "secondCaseTitle",
-      title: "Второй кейс / драфт (название второй кнопки)",
-      type: "string",
-      description:
-        "Например: Enterprise Design System (опционально для второго слота кнопки).",
-    }),
-    defineField({
-      name: "secondCaseActive",
-      title: "Вторая кнопка включена",
-      type: "boolean",
-      description: "Включена ли вторая кнопка (лампа горит / погашена).",
-      initialValue: false,
-    }),
-    defineField({
-      name: "secondCaseStudy",
-      title: "Второй кейс Sanity (если есть второй кейс)",
-      type: "reference",
-      to: [{ type: "caseStudy" }],
-    }),
-    defineField({
-      name: "caseStudies",
-      title: "Advanced Case Studies Array (Legacy / Дополнительно)",
-      type: "array",
-      description:
-        "Используйте только если нужно добавить больше 2 кнопок вручную.",
-      of: [
-        defineArrayMember({
-          type: "reference",
-          name: "caseStudyRef",
-          title: "Direct Case Study",
-          to: [{ type: "caseStudy" }],
-        }),
-        defineArrayMember({
-          type: "object",
-          name: "caseLink",
-          title: "Custom Case Link",
-          fields: [
-            defineField({
-              name: "caseStudy",
-              title: "Linked Sanity Case Study",
-              type: "reference",
-              to: [{ type: "caseStudy" }],
-            }),
-            defineField({
-              name: "label",
-              title: "Button Label",
-              type: "string",
-            }),
-            defineField({
-              name: "externalUrl",
-              title: "External URL",
-              type: "url",
-            }),
-            defineField({
-              name: "active",
-              title: "Indicator Lamp Active",
-              type: "boolean",
-              initialValue: true,
-            }),
-          ],
-        }),
-      ],
-    }),
   ],
   orderings: [
     {
@@ -194,20 +101,17 @@ export const projectType = defineType({
       subtitle: "anchorId",
       order: "order",
       projectType: "projectType",
-      isCaseActive: "isCaseActive",
-      caseTitle: "caseStudy.title",
     },
-    prepare({ title, subtitle, order, projectType, isCaseActive, caseTitle }) {
+    prepare({ title, subtitle, order, projectType }) {
       const types = Array.isArray(projectType)
         ? projectType.join(" / ")
         : projectType || "";
-      const status =
-        isCaseActive !== false ? "🟢 Case ON" : "⚪ Case OFF";
-      const caseInfo = caseTitle ? ` · [${caseTitle}]` : "";
       return {
         title: `${order ? `#${order} ` : ""}${title}${types ? ` · [${types}]` : ""}`,
-        subtitle: `Anchor: #${subtitle} · ${status}${caseInfo}`,
+        subtitle: `Anchor: #${subtitle}`,
       };
     },
   },
 });
+
+export const projectType = projectDocumentType;

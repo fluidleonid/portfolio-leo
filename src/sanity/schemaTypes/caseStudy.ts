@@ -22,10 +22,40 @@ export const caseStudyType = defineType({
       validation: (Rule) => Rule.required(),
     }),
     defineField({
-      name: "projectTag",
-      title: "Project / Product Tag (e.g. Orkestra, Scorpex, Quidzi, Dangdi)",
-      type: "string",
+      name: "project",
+      title: "Target Project (Проект, в котором появится кнопка)",
+      type: "reference",
+      to: [{ type: "project" }],
+      description:
+        "Проект на главной странице, внутри которого появится кнопка для перехода в этот кейс.",
       validation: (Rule) => Rule.required(),
+    }),
+    defineField({
+      name: "buttonLabel",
+      title: "Button Label (Опциональный текст кнопки)",
+      type: "string",
+      description:
+        "Оставьте пустым, чтобы название кнопки бралось автоматически из заголовка кейса.",
+    }),
+    defineField({
+      name: "isButtonActive",
+      title: "Кнопка включена (Статус индикатора)",
+      type: "boolean",
+      initialValue: true,
+      description:
+        "Включена ли кнопка на главной странице (зеленая лампа горит и ссылка активна).",
+    }),
+    defineField({
+      name: "externalUrl",
+      title: "External URL (Опционально)",
+      type: "url",
+      description:
+        "Если заполнено, кнопка на главной странице ведет на внешнюю ссылку (например Framer/Figma), а не на /case/[slug].",
+    }),
+    defineField({
+      name: "projectTag",
+      title: "Project / Product Tag (e.g. ORKESTRA / 2024)",
+      type: "string",
     }),
     defineField({
       name: "tagline",
@@ -252,4 +282,22 @@ export const caseStudyType = defineType({
       ],
     }),
   ],
+  preview: {
+    select: {
+      title: "title",
+      projectName: "project.title",
+      buttonLabel: "buttonLabel",
+      isButtonActive: "isButtonActive",
+      media: "coverImage",
+    },
+    prepare({ title, projectName, buttonLabel, isButtonActive, media }) {
+      const status = isButtonActive !== false ? "🟢 ON" : "⚪ OFF";
+      const btn = buttonLabel ? ` [Btn: ${buttonLabel}]` : "";
+      return {
+        title,
+        subtitle: `Project: ${projectName || "Unassigned"}${btn} · ${status}`,
+        media,
+      };
+    },
+  },
 });

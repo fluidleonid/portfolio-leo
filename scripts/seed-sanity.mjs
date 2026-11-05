@@ -18,12 +18,116 @@ const client = createClient({
   useCdn: false,
 });
 
+const initialProjects = [
+  {
+    _id: "project-orkestra",
+    _type: "project",
+    title: "Orkestra",
+    anchorId: "works",
+    order: 1,
+    projectType: ["B2B"],
+    description:
+      "Modular B2B SaaS platform for enterprise architectural firms and BIM teams to orchestrate and deploy CAD ribbons and custom computational scripts.\n\nAs Product Designer, I designed the visual no-code Ribbon Builder, structured data-dense analytics dashboards, and built the design system from scratch.",
+    images: ["/quickaccess.png", "/quickaccess.png", "/quickaccess.png"],
+    keyAchievements: [
+      "Cut CAD toolbar setup from days of manual coding to 15 minutes",
+      "Eliminated configuration errors to zero via visual layout validation",
+      "Real-time script versioning and execution observability",
+    ],
+  },
+  {
+    _id: "project-nda",
+    _type: "project",
+    title: "NDA",
+    anchorId: "project-2",
+    order: 2,
+    projectType: ["B2C"],
+    description:
+      "Mobile-first AI video editor turning raw match footage\ninto ready-to-publish vertical vlogs with auto-highlights.",
+    images: [
+      "/aivlog/Projects.png",
+      "/aivlog/Projects-1.png",
+      "/aivlog/Projects-2.png",
+      "/aivlog/Projects-3.png",
+      "/aivlog/Projects-4.png",
+      "/aivlog/Projects-5.png",
+    ],
+    keyAchievements: [
+      "Auto-cut highlight detection from raw footage by audio peaks",
+      "Bi-directional transcript editing trimming pauses directly from text",
+    ],
+  },
+  {
+    _id: "project-trace-ai",
+    _type: "project",
+    title: "Trace AI Console",
+    anchorId: "project-3",
+    order: 3,
+    projectType: ["B2B"],
+    description:
+      "Generative UI observability & prompt debugger\nwith real-time state tree inspection.",
+    images: ["/quickaccess.png", "/quickaccess.png", "/quickaccess.png"],
+    keyAchievements: [
+      "Visual token graph & agent decision tree",
+      "Interactive step-by-step diff playback",
+    ],
+  },
+  {
+    _id: "project-scorpex",
+    _type: "project",
+    title: "Scorpex",
+    anchorId: "project-4",
+    order: 4,
+    projectType: ["B2B"],
+    description:
+      "Zero-downtime multi-acquirer transaction routing engine with automated failovers and real-time ledger recovery.",
+    images: ["/quickaccess.png", "/quickaccess.png", "/quickaccess.png"],
+    keyAchievements: [
+      "Sub-400ms failover latency during peak acquirer outages",
+      "99.98% authorization approval rate across $120M+ monthly volume",
+    ],
+  },
+  {
+    _id: "project-dangdi",
+    _type: "project",
+    title: "Dangdi",
+    anchorId: "project-5",
+    order: 5,
+    projectType: ["B2C"],
+    description:
+      "Mobile-first social commerce application bridging livestream shopping, localized curation, and tactile 3D assets.",
+    images: ["/quickaccess.png", "/quickaccess.png", "/quickaccess.png"],
+    keyAchievements: [
+      "Custom 3D asset pipeline for tactile product cards",
+      "End-to-end interactive purchase flow in Figma",
+    ],
+  },
+  {
+    _id: "project-aether",
+    _type: "project",
+    title: "Aether OS Interface",
+    anchorId: "project-6",
+    order: 6,
+    projectType: ["B2B", "B2C"],
+    description:
+      "Spatial operating system design system\nwith responsive depth hierarchy and micro-acoustics.",
+    images: ["/quickaccess.png", "/quickaccess.png", "/quickaccess.png"],
+    keyAchievements: [
+      "Unified light-source specular tokens",
+      "Haptic audio feedback system integration",
+    ],
+  },
+];
+
 const initialCases = [
   {
     _id: "case-ribbon-builder",
     _type: "caseStudy",
     title: "Zero-Code Ribbon Builder",
     slug: { _type: "slug", current: "ribbon-builder" },
+    project: { _type: "reference", _ref: "project-orkestra" },
+    buttonLabel: "Zero-Code Ribbon Builder",
+    isButtonActive: true,
     projectTag: "ORKESTRA / 2024",
     tagline:
       "Visual drag-and-drop ribbon constructor replacing manual C# and XML toolbar coding across Autodesk Revit ecosystems.",
@@ -121,6 +225,9 @@ const initialCases = [
     _type: "caseStudy",
     title: "Emergency Payment Fallbacks & Routing Engine",
     slug: { _type: "slug", current: "payment-routing" },
+    project: { _type: "reference", _ref: "project-scorpex" },
+    buttonLabel: "Emergency Payment Fallbacks",
+    isButtonActive: true,
     projectTag: "SCORPEX / 2024",
     tagline:
       "Zero-downtime multi-acquirer transaction routing engine with automated failovers and real-time ledger recovery.",
@@ -164,6 +271,9 @@ const initialCases = [
     _type: "caseStudy",
     title: "Multimodal AI Workspace & Intent Classifier",
     slug: { _type: "slug", current: "ai-workflow" },
+    project: { _type: "reference", _ref: "project-trace-ai" },
+    buttonLabel: "Multimodal AI Workspace",
+    isButtonActive: true,
     projectTag: "QUIDZI / 2024",
     tagline:
       "Interactive workspace orchestrating multi-agent LLM pipelines, prompt tracing, and contextual artifact trees.",
@@ -188,6 +298,9 @@ const initialCases = [
     _type: "caseStudy",
     title: "Dangdi Social Commerce Experience",
     slug: { _type: "slug", current: "dangdi" },
+    project: { _type: "reference", _ref: "project-dangdi" },
+    buttonLabel: "Social Commerce Experience",
+    isButtonActive: true,
     projectTag: "DANGDI / 2024",
     tagline:
       "Mobile-first social commerce application bridging livestream shopping, localized curation, and tactile 3D assets.",
@@ -205,132 +318,6 @@ const initialCases = [
           { _key: "r7", label: "Status", value: "Pitch, not selected" },
         ],
       },
-    ],
-  },
-];
-
-const initialProjects = [
-  {
-    _id: "project-orkestra",
-    _type: "project",
-    title: "Orkestra",
-    anchorId: "works",
-    order: 1,
-    projectType: ["B2B"],
-    caseStudy: { _type: "reference", _ref: "case-ribbon-builder" },
-    isCaseActive: true,
-    secondCaseTitle: "Enterprise Design System",
-    secondCaseActive: false,
-    description:
-      "Modular B2B SaaS platform for enterprise architectural firms and BIM teams to orchestrate and deploy CAD ribbons and custom computational scripts.\n\nAs Product Designer, I designed the visual no-code Ribbon Builder, structured data-dense analytics dashboards, and built the design system from scratch.",
-    images: ["/quickaccess.png", "/quickaccess.png", "/quickaccess.png"],
-    keyAchievements: [
-      "Cut CAD toolbar setup from days of manual coding to 15 minutes",
-      "Eliminated configuration errors to zero via visual layout validation",
-      "Real-time script versioning and execution observability",
-    ],
-  },
-  {
-    _id: "project-nda",
-    _type: "project",
-    title: "NDA",
-    anchorId: "project-2",
-    order: 2,
-    projectType: ["B2C"],
-    customCaseLabel: "Highlight Detection Engine",
-    customCaseUrl: "https://leodmitriev.framer.website/work/vlog-editor",
-    isCaseActive: true,
-    secondCaseTitle: "Transcript-Based Editing",
-    secondCaseActive: false,
-    description:
-      "Mobile-first AI video editor turning raw match footage\ninto ready-to-publish vertical vlogs with auto-highlights.",
-    images: [
-      "/aivlog/Projects.png",
-      "/aivlog/Projects-1.png",
-      "/aivlog/Projects-2.png",
-      "/aivlog/Projects-3.png",
-      "/aivlog/Projects-4.png",
-      "/aivlog/Projects-5.png",
-    ],
-    keyAchievements: [
-      "Auto-cut highlight detection from raw footage by audio peaks",
-      "Bi-directional transcript editing trimming pauses directly from text",
-    ],
-  },
-  {
-    _id: "project-trace-ai",
-    _type: "project",
-    title: "Trace AI Console",
-    anchorId: "project-3",
-    order: 3,
-    projectType: ["B2B"],
-    caseStudy: { _type: "reference", _ref: "case-ai-workflow" },
-    isCaseActive: true,
-    secondCaseTitle: "State Tree Engine",
-    secondCaseActive: false,
-    description:
-      "Generative UI observability & prompt debugger\nwith real-time state tree inspection.",
-    images: ["/quickaccess.png", "/quickaccess.png", "/quickaccess.png"],
-    keyAchievements: [
-      "Visual token graph & agent decision tree",
-      "Interactive step-by-step diff playback",
-    ],
-  },
-  {
-    _id: "project-scorpex",
-    _type: "project",
-    title: "Scorpex",
-    anchorId: "project-4",
-    order: 4,
-    projectType: ["B2B"],
-    caseStudy: { _type: "reference", _ref: "case-payment-routing" },
-    isCaseActive: true,
-    secondCaseTitle: "Circuit Breaker Console",
-    secondCaseActive: false,
-    description:
-      "Zero-downtime multi-acquirer transaction routing engine with automated failovers and real-time ledger recovery.",
-    images: ["/quickaccess.png", "/quickaccess.png", "/quickaccess.png"],
-    keyAchievements: [
-      "Sub-400ms failover latency during peak acquirer outages",
-      "99.98% authorization approval rate across $120M+ monthly volume",
-    ],
-  },
-  {
-    _id: "project-dangdi",
-    _type: "project",
-    title: "Dangdi",
-    anchorId: "project-5",
-    order: 5,
-    projectType: ["B2C"],
-    caseStudy: { _type: "reference", _ref: "case-dangdi" },
-    isCaseActive: true,
-    secondCaseTitle: "Livestream Interface",
-    secondCaseActive: false,
-    description:
-      "Mobile-first social commerce application bridging livestream shopping, localized curation, and tactile 3D assets.",
-    images: ["/quickaccess.png", "/quickaccess.png", "/quickaccess.png"],
-    keyAchievements: [
-      "Custom 3D asset pipeline for tactile product cards",
-      "End-to-end interactive purchase flow in Figma",
-    ],
-  },
-  {
-    _id: "project-aether",
-    _type: "project",
-    title: "Aether OS Interface",
-    anchorId: "project-6",
-    order: 6,
-    projectType: ["B2B", "B2C"],
-    customCaseLabel: "Spatial Tokens",
-    isCaseActive: true,
-    secondCaseTitle: "System Sound",
-    secondCaseActive: false,
-    description:
-      "Spatial operating system design system\nwith responsive depth hierarchy and micro-acoustics.",
-    images: ["/quickaccess.png", "/quickaccess.png", "/quickaccess.png"],
-    keyAchievements: [
-      "Unified light-source specular tokens",
-      "Haptic audio feedback system integration",
     ],
   },
 ];
@@ -370,23 +357,23 @@ const siteSettingsDoc = {
 async function seed() {
   console.log(`[Sanity Seed] Connecting to project: ${projectId}, dataset: ${dataset}...`);
 
-  // 1. Seed Case Studies
-  for (const doc of initialCases) {
-    try {
-      const res = await client.createOrReplace(doc);
-      console.log(`✓ Case Study: ${res.title} (slug: ${res.slug?.current})`);
-    } catch (err) {
-      console.error(`✗ Error creating case ${doc.title}:`, err.message);
-    }
-  }
-
-  // 2. Seed Main Page Projects (with references to Case Studies)
+  // 1. Seed Main Page Projects FIRST (so Case Studies can reference them)
   for (const doc of initialProjects) {
     try {
       const res = await client.createOrReplace(doc);
       console.log(`✓ Main Page Project: ${res.title} (anchor: #${res.anchorId})`);
     } catch (err) {
       console.error(`✗ Error creating project ${doc.title}:`, err.message);
+    }
+  }
+
+  // 2. Seed Case Studies (which reference Projects)
+  for (const doc of initialCases) {
+    try {
+      const res = await client.createOrReplace(doc);
+      console.log(`✓ Case Study: ${res.title} (slug: ${res.slug?.current}, project ref: ${res.project?._ref})`);
+    } catch (err) {
+      console.error(`✗ Error creating case ${doc.title}:`, err.message);
     }
   }
 
