@@ -243,10 +243,6 @@ export const caseStudyType = defineType({
                   options: { hotspot: true },
                 }),
                 defineArrayMember({
-                  type: "string",
-                  title: "Direct Path / URL",
-                }),
-                defineArrayMember({
                   type: "object",
                   name: "imagePath",
                   title: "Custom Image Path / URL",
