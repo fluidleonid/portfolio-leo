@@ -1,4 +1,5 @@
 import { defineType, defineField, defineArrayMember } from "sanity";
+import { MultipleImageUploadInput } from "../components/MultipleImageUploadInput";
 
 export const caseStudyType = defineType({
   name: "caseStudy",
@@ -228,7 +229,37 @@ export const caseStudyType = defineType({
               name: "images",
               title: "Images",
               type: "array",
-              of: [{ type: "image" }],
+              description:
+                "Изображения галереи кейса. Можно загружать сразу несколько файлов через кнопку или Drag & Drop.",
+              options: {
+                layout: "grid",
+              },
+              components: {
+                input: MultipleImageUploadInput,
+              },
+              of: [
+                defineArrayMember({
+                  type: "image",
+                  options: { hotspot: true },
+                }),
+                defineArrayMember({
+                  type: "string",
+                  title: "Direct Path / URL",
+                }),
+                defineArrayMember({
+                  type: "object",
+                  name: "imagePath",
+                  title: "Custom Image Path / URL",
+                  fields: [
+                    defineField({
+                      name: "url",
+                      title: "Path or URL",
+                      type: "string",
+                      validation: (Rule) => Rule.required(),
+                    }),
+                  ],
+                }),
+              ],
             }),
             defineField({ name: "height", title: "Height (px)", type: "number", initialValue: 600 }),
             defineField({ name: "caption", title: "Caption", type: "string" }),

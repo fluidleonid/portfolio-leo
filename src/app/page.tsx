@@ -63,6 +63,24 @@ export default async function Home() {
           buttonLabel,
           isButtonActive,
           externalUrl
+        },
+        "legacyCaseStudy": caseStudy->{
+          _id,
+          title,
+          "caseSlug": slug.current,
+          buttonLabel,
+          isButtonActive,
+          externalUrl
+        },
+        isCaseActive,
+        customCaseLabel,
+        customCaseUrl,
+        secondCaseTitle,
+        secondCaseActive,
+        "legacySecondCaseStudy": secondCaseStudy->{
+          _id,
+          title,
+          "caseSlug": slug.current
         }
       }`),
       client.fetch(`*[_type == "siteSettings"][0]{
@@ -96,18 +114,57 @@ export default async function Home() {
             ? p.images.filter(Boolean)
             : ["/quickaccess.png", "/quickaccess.png", "/quickaccess.png"],
         keyAchievements: p.keyAchievements || [],
-        caseStudies: (p.caseStudies || []).map((cs: any) => {
-          const label = cs.buttonLabel?.trim() || cs.title || "Case Study";
-          const href =
-            cs.externalUrl || (cs.caseSlug ? `/case/${cs.caseSlug}` : undefined);
-          const active = cs.isButtonActive !== false;
-          return {
-            id: cs._id,
-            label,
-            href: active ? href : undefined,
-            active,
-          };
-        }),
+        caseStudies: (() => {
+          const list = (p.caseStudies || []).map((cs: any) => {
+            const label = cs.buttonLabel?.trim() || cs.title || "Case Study";
+            const href =
+              cs.externalUrl || (cs.caseSlug ? `/case/${cs.caseSlug}` : undefined);
+            const active = cs.isButtonActive !== false;
+            return {
+              id: cs._id,
+              label,
+              href: active ? href : undefined,
+              active,
+            };
+          });
+
+          // If no direct caseStudies matched, fallback to legacy primary case study binding
+          if (list.length === 0 && p.legacyCaseStudy) {
+            const label =
+              p.customCaseLabel?.trim() ||
+              p.legacyCaseStudy.buttonLabel?.trim() ||
+              p.legacyCaseStudy.title ||
+              "Case Study";
+            const href =
+              p.customCaseUrl ||
+              (p.legacyCaseStudy.caseSlug
+                ? `/case/${p.legacyCaseStudy.caseSlug}`
+                : undefined);
+            const active = p.isCaseActive !== false;
+            list.push({
+              id: p.legacyCaseStudy._id,
+              label,
+              href: active ? href : undefined,
+              active,
+            });
+          }
+
+          // If project has secondCaseTitle defined, include it as second slot
+          if (p.secondCaseTitle) {
+            const active = p.secondCaseActive === true;
+            const href = p.legacySecondCaseStudy?.caseSlug
+              ? `/case/${p.legacySecondCaseStudy.caseSlug}`
+              : undefined;
+            list.push({
+              id: `${p._id}-second-case`,
+              label: p.secondCaseTitle,
+              href: active ? href : undefined,
+              active,
+            });
+          }
+
+          return list;
+        })(),
       }));
     }
 

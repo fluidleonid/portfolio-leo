@@ -1,11 +1,20 @@
-import { createClient } from "next-sanity";
+import { createImageUrlBuilder } from "@sanity/image-url";
 import { dataset, projectId } from "../env";
 
-// Safe helper for image URLs
-export const urlForImage = (source: unknown) => {
+const builder = createImageUrlBuilder({ projectId, dataset });
+
+// Safe helper for resolving both direct URL strings and uploaded Sanity image assets
+export const urlForImage = (source: unknown): string => {
   if (!source) return "";
   if (typeof source === "string") return source;
-  const asset = (source as { asset?: { url?: string; _ref?: string } })?.asset;
-  if (asset?.url) return asset.url;
-  return "";
+  try {
+    const directUrl =
+      (source as { url?: string })?.url ||
+      (source as { asset?: { url?: string } })?.asset?.url;
+    if (directUrl) return directUrl;
+
+    return builder.image(source as any).url() || "";
+  } catch {
+    return "";
+  }
 };

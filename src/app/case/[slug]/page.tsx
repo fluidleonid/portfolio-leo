@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import type { CaseStudyData } from "@/entities/case-study";
 import { CaseStudyView } from "@/widgets/case-study";
 import { client } from "@/sanity/lib/client";
+import { urlForImage } from "@/sanity/lib/image";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -87,6 +88,21 @@ async function getCaseStudy(slug: string): Promise<CaseStudyData | null> {
       }`,
       { slug }
     );
+
+    if (sanityCase?.blocks) {
+      sanityCase.blocks = sanityCase.blocks.map((block: any) => {
+        if (block._type === "galleryBlock" && Array.isArray(block.images)) {
+          return {
+            ...block,
+            images: block.images
+              .map((img: any) => urlForImage(img))
+              .filter(Boolean),
+          };
+        }
+        return block;
+      });
+    }
+
     return sanityCase || null;
   } catch (err) {
     console.error("[Sanity Fetch Case Error]:", err);
