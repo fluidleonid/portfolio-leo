@@ -98,40 +98,14 @@ export const Project = React.forwardRef<HTMLDivElement, ProjectProps>(
           </div>
         </div>
 
-        {/* 3. CASES ROW: If project has cases, split into KEY + CASE; otherwise KEY takes full width */}
-        {hasCases ? (
-          <div className="flex w-full flex-col sm:flex-row items-stretch gap-[16px] sm:gap-[32px]">
-            {/* Left Block: KEY - Achievements list with dash in Hauora Light 18 */}
-            <Section
-              label="KEY"
-              direction="column"
-              className="w-full sm:w-[266px] sm:flex-1 justify-start items-stretch gap-[8px] sm:gap-[16px] p-[16px] sm:px-[28px] sm:py-[28px]"
-            >
-              {resolvedAchievements.map((item, idx) => {
-                const label = typeof item === "string" ? item : item.label;
-                const id = typeof item === "object" && item.id ? item.id : idx;
-
-                return (
-                  <div
-                    key={id}
-                    className="flex w-full flex-row items-start gap-[8px] select-none"
-                  >
-                    <span className="shrink-0 font-hauora font-light text-[18px] leading-[24px] text-content-primary">
-                      —
-                    </span>
-                    <span className="flex-1 min-w-0 font-hauora font-light text-[18px] leading-[24px] text-content-primary break-words whitespace-normal">
-                      {label}
-                    </span>
-                  </div>
-                );
-              })}
-            </Section>
-
-            {/* Right Block: CASE - Interactive Case Studies with Indicator Lamps in Hauora Light 18 */}
+        {/* 3. CASE & KEY SECTIONS (Always vertical, CASE strictly above KEY) */}
+        <div className="flex w-full flex-col items-stretch gap-[20px] sm:gap-[28px]">
+          {/* Top Block: CASE - Interactive Case Studies with Indicator Lamps */}
+          {hasCases && (
             <Section
               label="CASE"
               direction="column"
-              className="w-full sm:w-[266px] sm:flex-1 justify-start items-stretch gap-[8px] sm:gap-[16px] p-[16px] sm:px-[28px] sm:py-[28px]"
+              className="w-full justify-start items-stretch gap-[8px] sm:gap-[16px] p-[16px] sm:px-[28px] sm:py-[28px]"
             >
               {caseStudies.map((item, idx) => (
                 <CaseLink
@@ -144,36 +118,34 @@ export const Project = React.forwardRef<HTMLDivElement, ProjectProps>(
                 />
               ))}
             </Section>
-          </div>
-        ) : (
-          <div className="flex w-full flex-col items-stretch">
-            {/* KEY Only - Expands across full 564px container width when 0 cases */}
-            <Section
-              label="KEY"
-              direction="column"
-              className="w-full justify-start items-stretch gap-[8px] sm:gap-[16px] p-[16px] sm:px-[28px] sm:py-[28px]"
-            >
-              {resolvedAchievements.map((item, idx) => {
-                const label = typeof item === "string" ? item : item.label;
-                const id = typeof item === "object" && item.id ? item.id : idx;
+          )}
 
-                return (
-                  <div
-                    key={id}
-                    className="flex w-full flex-row items-start gap-[8px] select-none"
-                  >
-                    <span className="shrink-0 font-hauora font-light text-[18px] leading-[24px] text-content-primary">
-                      —
-                    </span>
-                    <span className="flex-1 min-w-0 font-hauora font-light text-[18px] leading-[24px] text-content-primary break-words whitespace-normal">
-                      {label}
-                    </span>
-                  </div>
-                );
-              })}
-            </Section>
-          </div>
-        )}
+          {/* Bottom Block: KEY - Achievements list with dash in Hauora Light 18 */}
+          <Section
+            label="KEY"
+            direction="column"
+            className="w-full justify-start items-stretch gap-[8px] sm:gap-[16px] p-[16px] sm:px-[28px] sm:py-[28px]"
+          >
+            {resolvedAchievements.map((item, idx) => {
+              const label = typeof item === "string" ? item : item.label;
+              const id = typeof item === "object" && item.id ? item.id : idx;
+
+              return (
+                <div
+                  key={id}
+                  className="flex w-full flex-row items-start gap-[8px] select-none"
+                >
+                  <span className="shrink-0 font-hauora font-light text-[18px] leading-[24px] text-content-primary">
+                    —
+                  </span>
+                  <span className="flex-1 min-w-0 font-hauora font-light text-[18px] leading-[24px] text-content-primary break-words whitespace-normal">
+                    {label}
+                  </span>
+                </div>
+              );
+            })}
+          </Section>
+        </div>
       </section>
     );
   }
