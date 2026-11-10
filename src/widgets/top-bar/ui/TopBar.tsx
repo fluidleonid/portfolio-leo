@@ -38,14 +38,21 @@ export const TopBar: React.FC<TopBarProps> = ({
   className = "",
   ...props
 }) => {
-  const [isScrolling, setIsScrolling] = useState(false);
-  const [isHovered, setIsHovered] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
   const [needleRatio, setNeedleRatio] = useState<number>(0);
   const [isDragging, setIsDragging] = useState(false);
   const hideTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // TopBar is visible while scrolling, or when hovered/dragged; hides with a delay after stopping
-  const isVisible = isScrolling || isHovered || isDragging;
+  // Shows top bar during active motion (scroll, mouse move, drag) and hides with a delay after motion ceases
+  const triggerActivity = useCallback((delay = 1200) => {
+    setIsVisible(true);
+    if (hideTimerRef.current) {
+      clearTimeout(hideTimerRef.current);
+    }
+    hideTimerRef.current = setTimeout(() => {
+      setIsVisible(false);
+    }, delay);
+  }, []);
 
   // Dynamically generate tuner frames based on custom stations or live projects count from Sanity
   const frames = useMemo<TunerFrame[]>(() => {
@@ -251,17 +258,8 @@ export const TopBar: React.FC<TopBarProps> = ({
       const ratio = scrollYToRatio(scrollY);
       setNeedleRatio(ratio);
 
-      // Make visible while scrolling
-      setIsScrolling(true);
-
-      if (hideTimerRef.current) {
-        clearTimeout(hideTimerRef.current);
-      }
-
-      // Hide with a small delay (~1200ms) after scrolling stops
-      hideTimerRef.current = setTimeout(() => {
-        setIsScrolling(false);
-      }, 1200);
+      // Make visible while scrolling and auto-hide when scroll ceases
+      triggerActivity(1200);
     };
 
     window.addEventListener("scroll", handleScroll, { passive: true });
@@ -288,12 +286,14 @@ export const TopBar: React.FC<TopBarProps> = ({
       window.removeEventListener("load", updateSectionScrolls);
       resizeObserver.disconnect();
     };
-  }, [updateSectionScrolls, scrollYToRatio]);
+  }, [updateSectionScrolls, scrollYToRatio, triggerActivity]);
 
   // When clicking a frame on the top bar
   const handleFrameClick = (frameIdx: number) => {
     const target = frames[frameIdx];
     if (!target) return;
+
+    triggerActivity(1500);
 
     if (onStationChange) {
       onStationChange(target.id);
@@ -334,6 +334,8 @@ export const TopBar: React.FC<TopBarProps> = ({
 
   const handlePointerDown = (e: React.PointerEvent) => {
     setIsDragging(true);
+    setIsVisible(true);
+    if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
     try {
       e.currentTarget.setPointerCapture(e.pointerId);
     } catch {
@@ -344,6 +346,8 @@ export const TopBar: React.FC<TopBarProps> = ({
 
   const handlePointerMove = (e: React.PointerEvent) => {
     if (!isDragging) return;
+    setIsVisible(true);
+    if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
     updateScrollFromClientX(e.clientX);
   };
 
@@ -355,24 +359,16 @@ export const TopBar: React.FC<TopBarProps> = ({
     } catch {
       // Ignore
     }
-    if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
-    hideTimerRef.current = setTimeout(() => {
-      setIsScrolling(false);
-    }, 1200);
+    triggerActivity(1200);
   };
 
   return (
     <header
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => {
-        setIsHovered(false);
-        if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
-        hideTimerRef.current = setTimeout(() => {
-          setIsScrolling(false);
-        }, 1200);
-      }}
+      onMouseEnter={() => triggerActivity(1200)}
+      onMouseMove={() => triggerActivity(1200)}
+      onMouseLeave={() => triggerActivity(600)}
       className={`fixed top-0 left-0 right-0 w-full z-50 transition-all duration-300 ease-out ${
-        isVisible
+        isVisible || isDragging
           ? "translate-y-0 opacity-100 pointer-events-auto"
           : "-translate-y-full opacity-0 pointer-events-none"
       } ${className}`}
