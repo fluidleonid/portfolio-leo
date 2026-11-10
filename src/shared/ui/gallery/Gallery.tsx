@@ -70,7 +70,12 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
     const imageRefs = useRef<(HTMLImageElement | null)[]>([]);
 
     const [leftOffset, setLeftOffset] = useState<number | null>(null);
-    const [viewportWidth, setViewportWidth] = useState<number | null>(null);
+    const [viewportWidth, setViewportWidth] = useState<number | null>(() => {
+      if (typeof window !== "undefined") {
+        return document.documentElement.clientWidth || window.innerWidth;
+      }
+      return null;
+    });
 
     // Normalize images list into uniform { url, alt } objects
     const normalizedImages = useMemo<GalleryImageItem[]>(() => {
@@ -392,9 +397,9 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
       }
     };
 
-    const innerHeight = height - padding * 2;
-
     const isMobile = viewportWidth !== null ? viewportWidth <= 640 : false;
+    const effectivePadding = isMobile ? 24 : padding;
+    const innerHeight = height - effectivePadding * 2;
     const desktopLeftPadding =
       leftOffset !== null
         ? `${leftOffset}px`
@@ -462,8 +467,8 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
           }`}
           style={{
             touchAction: "pan-y",
-            paddingLeft: isMobile ? "16px" : bleed ? desktopLeftPadding : undefined,
-            paddingRight: isMobile ? "16px" : bleed ? desktopRightPadding : undefined,
+            paddingLeft: isMobile ? "24px" : bleed ? desktopLeftPadding : undefined,
+            paddingRight: isMobile ? "24px" : bleed ? desktopRightPadding : undefined,
           }}
         >
           {/* Inner Wrapper (image-scroll): The #242424 rounded container itself advances/scrolls horizontally */}
@@ -471,7 +476,7 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
             className="flex w-max shrink-0 flex-row items-center select-none"
             style={{
               height: `${height}px`,
-              padding: `${padding}px`,
+              padding: `${effectivePadding}px`,
               gap: `${gap}px`,
               borderRadius: `${cornerRadius}px`,
               backgroundColor: wrapperBg,
@@ -507,18 +512,18 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
           - Active segment: text-content-secondary (#8C8C8C).
           - Inactive segments: text-content-secondary with 20% opacity.
           - On hover: a round dot appears at cursor X, with a thumbnail preview + 10px Hauora alt text.
-          - Equal distance: bottom: ${padding / 2}px with translateY(50%) places segment line at exact midpoint between wrapper bottom and image bottom.
+          - Equal distance: bottom: ${effectivePadding / 2}px with translateY(50%) places segment line at exact midpoint between wrapper bottom and image bottom.
         */}
         {normalizedImages.length > 1 && (
           <div
             className="pointer-events-none absolute left-0 right-0 w-full z-20 flex flex-col items-center select-none"
             style={{
-              bottom: `${padding / 2}px`,
+              bottom: `${effectivePadding / 2}px`,
               transform: "translateY(50%)",
             }}
           >
             <div
-              className="w-full max-w-[564px] mx-auto px-[32px] sm:px-[32px] pointer-events-auto select-none"
+              className="w-full max-w-[564px] mx-auto px-[40px] sm:px-[32px] pointer-events-auto select-none"
             >
               <div
                 ref={trackRef}
