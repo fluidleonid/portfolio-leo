@@ -518,11 +518,7 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
             }}
           >
             <div
-              className={`w-full ${
-                isMobile
-                  ? "px-[20px]"
-                  : "max-w-[564px] mx-auto px-[24px] sm:px-[32px]"
-              } pointer-events-auto select-none`}
+              className="w-full max-w-[564px] mx-auto px-[32px] sm:px-[32px] pointer-events-auto select-none"
             >
               <div
                 ref={trackRef}
@@ -545,7 +541,7 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
                     className="group relative flex-1 py-[6px] cursor-pointer"
                   >
                     <div
-                      className={`h-[2px] w-full rounded-full transition-colors duration-150 ${
+                      className={`h-[4px] w-full rounded-full transition-colors duration-150 ${
                         isActive
                           ? "bg-content-secondary"
                           : "bg-content-secondary/20"
@@ -558,7 +554,7 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
               {/* Hover Dot: Round circle appearing at exact cursor X on the segment line */}
               {isHoveringTrack && hoverPos && (
                 <div
-                  className="pointer-events-none absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-[7px] h-[7px] rounded-full bg-content-primary shadow-[0_0_8px_rgba(204,204,204,0.5)] z-20"
+                  className="pointer-events-none absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-[8px] h-[8px] rounded-full bg-content-primary shadow-[0_0_8px_rgba(204,204,204,0.5)] z-20"
                   style={{ left: `${hoverPos.x}px` }}
                 />
               )}
