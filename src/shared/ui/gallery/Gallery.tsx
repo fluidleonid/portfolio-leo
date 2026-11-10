@@ -432,6 +432,7 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
             : "w-full max-w-full"
         } ${className}`}
         style={{
+          height: `${height}px`,
           width:
             !isMobile && bleed
               ? viewportWidth !== null
@@ -501,28 +502,38 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
         </div>
 
         {/* 
-          2. Segmented Progress Bar (stationary below images within centered content width):
+          2. Segmented Progress Bar (absolutely positioned between image bottom and #242424 wrapper bottom):
           - Number of segments matches photo count.
           - Active segment: text-content-secondary (#8C8C8C).
           - Inactive segments: text-content-secondary with 20% opacity.
           - On hover: a round dot appears at cursor X, with a thumbnail preview + 10px Hauora alt text.
+          - Equal distance: bottom: ${padding / 2}px with translateY(50%) places segment line at exact midpoint between wrapper bottom and image bottom.
         */}
         {normalizedImages.length > 1 && (
           <div
-            className={`w-full ${
-              isMobile ? "px-[16px]" : "max-w-[564px] mx-auto px-0"
-            } pt-[12px] sm:pt-[16px] flex flex-col items-center select-none`}
+            className="pointer-events-none absolute left-0 right-0 w-full z-20 flex flex-col items-center select-none"
+            style={{
+              bottom: `${padding / 2}px`,
+              transform: "translateY(50%)",
+            }}
           >
             <div
-              ref={trackRef}
-              onPointerDown={handleTrackPointerDown}
-              onPointerMove={handleTrackPointerMove}
-              onPointerUp={handleTrackPointerUp}
-              onPointerCancel={handleTrackPointerCancel}
-              onMouseLeave={handleTrackMouseLeave}
-              className="relative flex w-full items-center gap-[4px] sm:gap-[6px] cursor-pointer touch-none select-none py-[10px] sm:py-[8px]"
-              style={{ touchAction: "none" }}
+              className={`w-full ${
+                isMobile
+                  ? "px-[20px]"
+                  : "max-w-[564px] mx-auto px-[24px] sm:px-[32px]"
+              } pointer-events-auto select-none`}
             >
+              <div
+                ref={trackRef}
+                onPointerDown={handleTrackPointerDown}
+                onPointerMove={handleTrackPointerMove}
+                onPointerUp={handleTrackPointerUp}
+                onPointerCancel={handleTrackPointerCancel}
+                onMouseLeave={handleTrackMouseLeave}
+                className="relative flex w-full items-center gap-[4px] sm:gap-[6px] cursor-pointer touch-none select-none py-[8px]"
+                style={{ touchAction: "none" }}
+              >
               {normalizedImages.map((_, idx) => {
                 const isActive =
                   isScrubbing && hoverPos
@@ -578,10 +589,11 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
               )}
             </div>
           </div>
-        )}
-      </div>
-    );
-  }
+        </div>
+      )}
+    </div>
+  );
+}
 );
 
 Gallery.displayName = "Gallery";

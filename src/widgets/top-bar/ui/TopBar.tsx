@@ -38,9 +38,14 @@ export const TopBar: React.FC<TopBarProps> = ({
   className = "",
   ...props
 }) => {
-  const [isVisible, setIsVisible] = useState(false);
+  const [isScrolling, setIsScrolling] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
   const [needleRatio, setNeedleRatio] = useState<number>(0);
   const [isDragging, setIsDragging] = useState(false);
+  const hideTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // TopBar is visible while scrolling, or when hovered/dragged; hides with a delay after stopping
+  const isVisible = isScrolling || isHovered || isDragging;
 
   // Dynamically generate tuner frames based on custom stations or live projects count from Sanity
   const frames = useMemo<TunerFrame[]>(() => {
@@ -237,28 +242,27 @@ export const TopBar: React.FC<TopBarProps> = ({
     return scrolls[lastIdx];
   }, [frameCount]);
 
-  // Synchronize needle with actual page scroll
+  // Synchronize needle with actual page scroll and manage scroll-visible lifecycle
   useEffect(() => {
     updateSectionScrolls();
 
     const handleScroll = () => {
-      if (isDragging) return;
-
       const scrollY = window.scrollY;
       const ratio = scrollYToRatio(scrollY);
       setNeedleRatio(ratio);
 
-      // Reveal top bar when index (Hero) leaves viewport
-      const hero = document.getElementById("top");
-      if (hero) {
-        const rect = hero.getBoundingClientRect();
-        setIsVisible(rect.bottom < 120 || scrollY > scrollThreshold);
-      } else {
-        setIsVisible(scrollY > scrollThreshold);
-      }
-    };
+      // Make visible while scrolling
+      setIsScrolling(true);
 
-    handleScroll();
+      if (hideTimerRef.current) {
+        clearTimeout(hideTimerRef.current);
+      }
+
+      // Hide with a small delay (~1200ms) after scrolling stops
+      hideTimerRef.current = setTimeout(() => {
+        setIsScrolling(false);
+      }, 1200);
+    };
 
     window.addEventListener("scroll", handleScroll, { passive: true });
     window.addEventListener("resize", updateSectionScrolls, { passive: true });
@@ -276,12 +280,15 @@ export const TopBar: React.FC<TopBarProps> = ({
     }
 
     return () => {
+      if (hideTimerRef.current) {
+        clearTimeout(hideTimerRef.current);
+      }
       window.removeEventListener("scroll", handleScroll);
       window.removeEventListener("resize", updateSectionScrolls);
       window.removeEventListener("load", updateSectionScrolls);
       resizeObserver.disconnect();
     };
-  }, [isDragging, updateSectionScrolls, scrollYToRatio, scrollThreshold]);
+  }, [updateSectionScrolls, scrollYToRatio]);
 
   // When clicking a frame on the top bar
   const handleFrameClick = (frameIdx: number) => {
@@ -348,10 +355,22 @@ export const TopBar: React.FC<TopBarProps> = ({
     } catch {
       // Ignore
     }
+    if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
+    hideTimerRef.current = setTimeout(() => {
+      setIsScrolling(false);
+    }, 1200);
   };
 
   return (
     <header
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => {
+        setIsHovered(false);
+        if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
+        hideTimerRef.current = setTimeout(() => {
+          setIsScrolling(false);
+        }, 1200);
+      }}
       className={`fixed top-0 left-0 right-0 w-full z-50 transition-all duration-300 ease-out ${
         isVisible
           ? "translate-y-0 opacity-100 pointer-events-auto"
