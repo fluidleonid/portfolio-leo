@@ -401,18 +401,18 @@ export function LedPageTransition({ children }: LedPageTransitionProps) {
     <>
       {children}
 
-      {/* Full-Screen LED Equalizer Wave Overlay (Hardware GPU Layer) */}
-      <div
-        aria-hidden="true"
-        className={`fixed inset-0 z-[9999] pointer-events-none transform-gpu will-change-transform transition-opacity duration-200 ${
-          phase === "idle" ? "opacity-0 pointer-events-none" : "opacity-100"
-        }`}
-      >
-        <canvas
-          ref={canvasRef}
-          className="h-full w-full block pointer-events-none select-none transform-gpu"
-        />
-      </div>
+      {/* Full-Screen LED Equalizer Wave Overlay (Hardware GPU Layer) - unmounted when idle to eliminate any compositing layer blur/haze */}
+      {phase !== "idle" && (
+        <div
+          aria-hidden="true"
+          className="fixed inset-0 z-[9999] pointer-events-none transform-gpu will-change-transform transition-opacity duration-200 opacity-100"
+        >
+          <canvas
+            ref={canvasRef}
+            className="h-full w-full block pointer-events-none select-none transform-gpu"
+          />
+        </div>
+      )}
     </>
   );
 }
