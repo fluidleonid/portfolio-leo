@@ -93,12 +93,16 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
     // Active photo index tracked during horizontal scrolling
     const [activeIndex, setActiveIndex] = useState<number>(0);
 
-    // Hover state over the segmented progress bar
+    // Hover & Scrub states on the segmented progress bar
     const [isHoveringTrack, setIsHoveringTrack] = useState(false);
+    const [isScrubbing, setIsScrubbing] = useState(false);
     const [hoverPos, setHoverPos] = useState<{
       x: number;
       index: number;
     } | null>(null);
+
+    // Ref to track latest hover/scrub position without state lag on pointerup
+    const currentHoverPosRef = useRef<{ x: number; index: number } | null>(null);
 
     // Calculate breakout dimensions so wrapper bleeds cleanly across full viewport width
     useEffect(() => {
@@ -299,22 +303,93 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
       [cancelMomentum]
     );
 
-    // Track mouse movement across the progress bar
-    const handleTrackMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-      const rect = e.currentTarget.getBoundingClientRect();
-      const localX = Math.max(0, Math.min(rect.width, e.clientX - rect.left));
-      const percent = rect.width > 0 ? localX / rect.width : 0;
-      const index = Math.min(
-        normalizedImages.length - 1,
-        Math.max(0, Math.floor(percent * normalizedImages.length))
-      );
-      setHoverPos({ x: localX, index });
+    // Calculate position and target image index from client coordinate
+    const calculateScrubPos = useCallback(
+      (clientX: number) => {
+        const track = trackRef.current;
+        if (!track) return null;
+        const rect = track.getBoundingClientRect();
+        const localX = Math.max(0, Math.min(rect.width, clientX - rect.left));
+        const percent = rect.width > 0 ? localX / rect.width : 0;
+        const index = Math.min(
+          normalizedImages.length - 1,
+          Math.max(0, Math.floor(percent * normalizedImages.length))
+        );
+        return { x: localX, index };
+      },
+      [normalizedImages.length]
+    );
+
+    // Pointer Down on progress bar: starts touch dragging / scrubbing
+    const handleTrackPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+      const pos = calculateScrubPos(e.clientX);
+      if (!pos) return;
+
+      currentHoverPosRef.current = pos;
+      setHoverPos(pos);
+      setIsHoveringTrack(true);
+      setIsScrubbing(true);
+
+      try {
+        e.currentTarget.setPointerCapture(e.pointerId);
+      } catch {
+        // ignore
+      }
+    };
+
+    // Pointer Move on progress bar: tracks touch drag and desktop hover
+    const handleTrackPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+      const pos = calculateScrubPos(e.clientX);
+      if (!pos) return;
+
+      currentHoverPosRef.current = pos;
+      setHoverPos(pos);
       setIsHoveringTrack(true);
     };
 
-    const handleTrackMouseLeave = () => {
+    // Pointer Up on progress bar: scrolls gallery to the selected photo on tap / scrub release
+    const handleTrackPointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+      try {
+        e.currentTarget.releasePointerCapture(e.pointerId);
+      } catch {
+        // ignore
+      }
+
+      setIsScrubbing(false);
+
+      const targetPos = currentHoverPosRef.current;
+      if (targetPos) {
+        scrollToImage(targetPos.index);
+      }
+
+      // On mobile touch: keep preview visible briefly for confirmation before fading out
+      if (e.pointerType === "touch") {
+        setTimeout(() => {
+          setIsHoveringTrack(false);
+          setHoverPos(null);
+          currentHoverPosRef.current = null;
+        }, 350);
+      }
+    };
+
+    const handleTrackPointerCancel = (e: React.PointerEvent<HTMLDivElement>) => {
+      try {
+        e.currentTarget.releasePointerCapture(e.pointerId);
+      } catch {
+        // ignore
+      }
+      setIsScrubbing(false);
       setIsHoveringTrack(false);
       setHoverPos(null);
+      currentHoverPosRef.current = null;
+    };
+
+    const handleTrackMouseLeave = (e: React.MouseEvent<HTMLDivElement>) => {
+      if (!isScrubbing) {
+        setIsHoveringTrack(false);
+        setHoverPos(null);
+        currentHoverPosRef.current = null;
+      }
     };
 
     const innerHeight = height - padding * 2;
@@ -440,19 +515,22 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
           >
             <div
               ref={trackRef}
-              onMouseMove={handleTrackMouseMove}
+              onPointerDown={handleTrackPointerDown}
+              onPointerMove={handleTrackPointerMove}
+              onPointerUp={handleTrackPointerUp}
+              onPointerCancel={handleTrackPointerCancel}
               onMouseLeave={handleTrackMouseLeave}
-              className="relative flex w-full items-center gap-[4px] sm:gap-[6px] cursor-pointer"
+              className="relative flex w-full items-center gap-[4px] sm:gap-[6px] cursor-pointer touch-none select-none py-[10px] sm:py-[8px]"
+              style={{ touchAction: "none" }}
             >
               {normalizedImages.map((_, idx) => {
-                const isActive = activeIndex === idx;
+                const isActive =
+                  isScrubbing && hoverPos
+                    ? hoverPos.index === idx
+                    : activeIndex === idx;
                 return (
                   <div
                     key={idx}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      scrollToImage(idx);
-                    }}
                     className="group relative flex-1 py-[6px] cursor-pointer"
                   >
                     <div
