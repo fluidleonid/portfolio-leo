@@ -394,7 +394,8 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
 
     const isMobile = viewportWidth !== null ? viewportWidth <= 640 : false;
     const effectivePadding = isMobile ? 24 : padding;
-    const innerHeight = height - effectivePadding * 2;
+    const wrapperPaddingBottom = effectivePadding * 2 + 4;
+    const innerHeight = height - effectivePadding - wrapperPaddingBottom;
     const desktopLeftPadding =
       leftOffset !== null
         ? `${leftOffset}px`
@@ -468,10 +469,13 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
         >
           {/* Inner Wrapper (image-scroll): The #242424 rounded container itself advances/scrolls horizontally */}
           <div
-            className="flex w-max shrink-0 flex-row items-center select-none"
+            className="flex w-max shrink-0 flex-row items-start select-none"
             style={{
               height: `${height}px`,
-              padding: `${effectivePadding}px`,
+              paddingTop: `${effectivePadding}px`,
+              paddingBottom: `${wrapperPaddingBottom}px`,
+              paddingLeft: `${effectivePadding}px`,
+              paddingRight: `${effectivePadding}px`,
               gap: `${gap}px`,
               borderRadius: `${cornerRadius}px`,
               backgroundColor: wrapperBg,
@@ -507,13 +511,14 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
           - Active segment: text-content-secondary (#8C8C8C).
           - Inactive segments: text-content-secondary with 20% opacity.
           - On hover: a round dot appears at cursor X, with a thumbnail preview + 10px Hauora alt text.
-          - Equal distance: bottom: ${effectivePadding / 2}px with translateY(50%) places segment line at exact midpoint between wrapper bottom and image bottom.
+          - Strictly equidistant: distance from wrapper bottom to 4px segment and from segment to image bottom both equal sidePadding (effectivePadding).
+          - Wrapper bottom padding = effectivePadding * 2 + 4px.
         */}
         {normalizedImages.length > 1 && (
           <div
             className="pointer-events-none absolute left-0 right-0 w-full z-20 flex flex-col items-center select-none"
             style={{
-              bottom: `${effectivePadding / 2}px`,
+              bottom: `${effectivePadding + 2}px`,
               transform: "translateY(50%)",
             }}
           >
