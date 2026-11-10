@@ -70,12 +70,7 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
     const imageRefs = useRef<(HTMLImageElement | null)[]>([]);
 
     const [leftOffset, setLeftOffset] = useState<number | null>(null);
-    const [viewportWidth, setViewportWidth] = useState<number | null>(() => {
-      if (typeof window !== "undefined") {
-        return document.documentElement.clientWidth || window.innerWidth;
-      }
-      return null;
-    });
+    const [viewportWidth, setViewportWidth] = useState<number | null>(null);
 
     // Normalize images list into uniform { url, alt } objects
     const normalizedImages = useMemo<GalleryImageItem[]>(() => {
@@ -429,7 +424,7 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
     return (
       <div
         ref={setRefs}
-        className={`relative flex flex-col select-none ${
+        className={`relative flex flex-col select-none overflow-hidden ${
           isMobile
             ? "w-[calc(100%+32px)] -ml-[16px] -mr-[16px] max-w-[100vw]"
             : bleed
@@ -467,8 +462,8 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
           }`}
           style={{
             touchAction: "pan-y",
-            paddingLeft: isMobile ? "24px" : bleed ? desktopLeftPadding : undefined,
-            paddingRight: isMobile ? "24px" : bleed ? desktopRightPadding : undefined,
+            paddingLeft: isMobile ? "16px" : bleed ? desktopLeftPadding : undefined,
+            paddingRight: isMobile ? "16px" : bleed ? desktopRightPadding : undefined,
           }}
         >
           {/* Inner Wrapper (image-scroll): The #242424 rounded container itself advances/scrolls horizontally */}
