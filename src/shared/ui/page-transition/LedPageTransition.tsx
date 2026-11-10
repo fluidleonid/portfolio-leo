@@ -61,6 +61,8 @@ export function LedPageTransition({ children }: LedPageTransitionProps) {
   const pathname = usePathname();
   const router = useRouter();
 
+  const isStudio = pathname?.startsWith("/studio");
+
   const [phase, setPhase] = useState<"idle" | "entering" | "leaving">("idle");
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const animFrameRef = useRef<number>(0);
@@ -68,8 +70,10 @@ export function LedPageTransition({ children }: LedPageTransitionProps) {
   const peaksRef = useRef<ColumnPeak[]>([]);
   const isNavigatingRef = useRef<boolean>(false);
 
-  // Intercept internal Next.js link clicks
+  // Intercept internal Next.js link clicks (except inside Sanity Studio)
   useEffect(() => {
+    if (isStudio) return;
+
     const handleDocumentClick = (e: MouseEvent) => {
       const anchor = (e.target as HTMLElement).closest("a");
       if (!anchor) return;
@@ -95,7 +99,15 @@ export function LedPageTransition({ children }: LedPageTransitionProps) {
 
       const currentPath = window.location.pathname;
       const targetPath = href.split("?")[0].split("#")[0];
-      if (targetPath === currentPath) return;
+
+      // Never intercept inside or to/from Sanity Studio
+      if (
+        currentPath.startsWith("/studio") ||
+        targetPath.startsWith("/studio") ||
+        targetPath === currentPath
+      ) {
+        return;
+      }
 
       e.preventDefault();
       isNavigatingRef.current = true;
@@ -112,7 +124,12 @@ export function LedPageTransition({ children }: LedPageTransitionProps) {
     return () => {
       document.removeEventListener("click", handleDocumentClick, { capture: true });
     };
-  }, [router]);
+  }, [router, isStudio]);
+
+  // When inside Sanity Studio, completely bypass transition
+  if (isStudio) {
+    return <>{children}</>;
+  }
 
   // When pathname updates on the new page, trigger "leaving" (wave recedes and reveals new page)
   const prevPathnameRef = useRef(pathname);
