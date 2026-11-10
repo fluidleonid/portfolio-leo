@@ -87,7 +87,7 @@ export interface HypothesesSectionBlock {
 export interface GalleryBlock {
   _type: "galleryBlock";
   _key?: string;
-  images: string[];
+  images: (string | { url: string; alt?: string })[];
   height?: number;
   caption?: string;
 }

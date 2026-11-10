@@ -52,8 +52,9 @@ export default async function Home() {
         projectType,
         description,
         "images": images[]{
-          "url": coalesce(asset->url, url, @)
-        }.url,
+          "url": coalesce(asset->url, url, @),
+          "alt": coalesce(alt, asset->altText, asset->originalFilename, "")
+        },
         keyAchievements,
         "caseStudies": *[_type == "caseStudy" && (project._ref == ^._id || references(^._id))] | order(order asc, _createdAt asc) {
           _id,
@@ -111,8 +112,23 @@ export default async function Home() {
         description: p.description,
         images:
           p.images && p.images.length > 0
-            ? p.images.filter(Boolean)
-            : ["/quickaccess.png", "/quickaccess.png", "/quickaccess.png"],
+            ? p.images
+                .map((img: any) => {
+                  if (typeof img === "string") return { url: img, alt: "" };
+                  if (img && typeof img === "object") {
+                    return {
+                      url: img.url || "",
+                      alt: img.alt || "",
+                    };
+                  }
+                  return null;
+                })
+                .filter((item: any) => item && Boolean(item.url))
+            : [
+                { url: "/quickaccess.png", alt: "Quick Access Preview" },
+                { url: "/quickaccess.png", alt: "Quick Access Preview" },
+                { url: "/quickaccess.png", alt: "Quick Access Preview" },
+              ],
         keyAchievements: p.keyAchievements || [],
         caseStudies: (() => {
           const list = (p.caseStudies || []).map((cs: any) => {

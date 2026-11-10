@@ -9,8 +9,8 @@ export interface ProjectProps extends React.HTMLAttributes<HTMLDivElement> {
   title?: string;
   /** Project summary / pitch (default: "Project description") */
   description?: string;
-  /** List of image URLs for the horizontal gallery */
-  images?: string[];
+  /** List of image URLs or image objects for the horizontal gallery */
+  images?: (string | { url: string; alt?: string })[];
   /** Key achievements list with glowing amber lamps (rendered in the left "KEY" Section) */
   keyAchievements?: (string | Achievement)[];
   /** Backwards compatibility alias for key achievements */

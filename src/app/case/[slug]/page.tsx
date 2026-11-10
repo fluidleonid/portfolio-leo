@@ -95,8 +95,17 @@ async function getCaseStudy(slug: string): Promise<CaseStudyData | null> {
           return {
             ...block,
             images: block.images
-              .map((img: any) => urlForImage(img))
-              .filter(Boolean),
+              .map((img: any) => {
+                if (typeof img === "string") {
+                  return { url: img, alt: "" };
+                }
+                const url = urlForImage(img);
+                return {
+                  url,
+                  alt: img?.alt || "",
+                };
+              })
+              .filter((item: any) => Boolean(item.url)),
           };
         }
         return block;

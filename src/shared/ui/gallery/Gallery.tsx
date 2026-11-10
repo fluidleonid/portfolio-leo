@@ -1,11 +1,18 @@
 "use client";
 
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { tokens } from "@/shared/config/tokens";
 
+export interface GalleryImageItem {
+  url: string;
+  alt?: string;
+}
+
+export type GalleryItem = string | GalleryImageItem;
+
 export interface GalleryProps extends React.HTMLAttributes<HTMLDivElement> {
-  /** Array of image URLs to display */
-  images?: string[];
+  /** Array of image URLs or items with alt text to display */
+  images?: GalleryItem[];
   /** Outer container max-width in px when bleed=false (default 564) */
   maxWidth?: number;
   /** Whether the gallery should bleed out across the full viewport (default true) */
@@ -27,13 +34,17 @@ export interface GalleryProps extends React.HTMLAttributes<HTMLDivElement> {
 /**
  * Tactile Horizontal Gallery Component (FSD Shared UI Primitive)
  *
- * Structure:
- * 1. Outer Container: Full-bleed unclipped track (100vw, marginLeft: -leftOffset)
- * 2. Inner Wrapper (image-scroll): Height 600px, 28px padding, 0px corner radius, and #242424 surface background.
- *    The entire wrapper itself scrolls across the viewport track.
- * 3. Images: Pure images only, filling the 544px inner height while strictly preserving aspect ratio.
- *    Zero shadows, zero texts/captions, zero border radiuses.
- * 4. Interaction: Drag-to-scroll & Touch/Trackpad Swipe.
+ * Features:
+ * 1. Horizontal Breakout Track: Full-bleed unclipped track (100vw, marginLeft: -leftOffset).
+ * 2. Inner Wrapper (image-scroll): #242424 tactile background, 28px padding, 0px corner radius.
+ * 3. Interaction: Drag-to-scroll & Touch/Trackpad Swipe with smooth kinetic momentum.
+ * 4. Segmented Progress Bar:
+ *    - Number of segments corresponds to image count.
+ *    - Active segment: text-content-secondary (#8C8C8C).
+ *    - Inactive segments: text-content-secondary with 20% opacity.
+ *    - On hover: a round dot follows cursor X along the segment line.
+ *    - Tooltip above dot: aspect-ratio-preserved thumbnail + 10px Hauora alt text.
+ *    - Click segment: jumps smoothly to that image.
  */
 export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
   (
@@ -55,8 +66,39 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
   ) => {
     const containerRef = useRef<HTMLDivElement | null>(null);
     const scrollContainerRef = useRef<HTMLDivElement | null>(null);
+    const trackRef = useRef<HTMLDivElement | null>(null);
+    const imageRefs = useRef<(HTMLImageElement | null)[]>([]);
+
     const [leftOffset, setLeftOffset] = useState<number | null>(null);
     const [viewportWidth, setViewportWidth] = useState<number | null>(null);
+
+    // Normalize images list into uniform { url, alt } objects
+    const normalizedImages = useMemo<GalleryImageItem[]>(() => {
+      const list =
+        images && images.length > 0
+          ? images
+          : ["/quickaccess.png", "/quickaccess.png", "/quickaccess.png"];
+
+      return list.map((item, idx) => {
+        if (typeof item === "string") {
+          return { url: item, alt: "" };
+        }
+        return {
+          url: item.url || "",
+          alt: item.alt || "",
+        };
+      });
+    }, [images]);
+
+    // Active photo index tracked during horizontal scrolling
+    const [activeIndex, setActiveIndex] = useState<number>(0);
+
+    // Hover state over the segmented progress bar
+    const [isHoveringTrack, setIsHoveringTrack] = useState(false);
+    const [hoverPos, setHoverPos] = useState<{
+      x: number;
+      index: number;
+    } | null>(null);
 
     // Calculate breakout dimensions so wrapper bleeds cleanly across full viewport width
     useEffect(() => {
@@ -90,6 +132,50 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
       },
       [ref]
     );
+
+    // Update active index based on horizontal scroll position
+    const handleScroll = useCallback(() => {
+      const container = scrollContainerRef.current;
+      if (!container) return;
+
+      const scrollLeft = container.scrollLeft;
+      const scrollWidth = container.scrollWidth;
+      const clientWidth = container.clientWidth;
+
+      if (scrollLeft <= 5) {
+        setActiveIndex(0);
+        return;
+      }
+      if (scrollLeft + clientWidth >= scrollWidth - 5) {
+        setActiveIndex(normalizedImages.length - 1);
+        return;
+      }
+
+      // Focal center of the visible track
+      const focalPoint = scrollLeft + clientWidth / 2;
+      let closestIndex = 0;
+      let minDistance = Infinity;
+
+      imageRefs.current.forEach((img, idx) => {
+        if (!img) return;
+        const imgCenter = img.offsetLeft + img.offsetWidth / 2;
+        const distance = Math.abs(imgCenter - focalPoint);
+        if (distance < minDistance) {
+          minDistance = distance;
+          closestIndex = idx;
+        }
+      });
+
+      setActiveIndex(closestIndex);
+    }, [normalizedImages.length]);
+
+    useEffect(() => {
+      const container = scrollContainerRef.current;
+      if (!container) return;
+      container.addEventListener("scroll", handleScroll, { passive: true });
+      handleScroll();
+      return () => container.removeEventListener("scroll", handleScroll);
+    }, [handleScroll]);
 
     // Drag-to-scroll & Touch Swipe interaction states
     const [isPointerDown, setIsPointerDown] = useState(false);
@@ -193,12 +279,45 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
       }, 50);
     };
 
-    const innerHeight = height - padding * 2;
+    // Smoothly scroll to a specific image when clicking on a segment
+    const scrollToImage = useCallback(
+      (index: number) => {
+        const container = scrollContainerRef.current;
+        const targetEl = imageRefs.current[index];
+        if (!container || !targetEl) return;
 
-    const displayImages =
-      images && images.length > 0
-        ? images
-        : ["/quickaccess.png", "/quickaccess.png", "/quickaccess.png"];
+        cancelMomentum();
+        const targetScroll =
+          targetEl.offsetLeft - (container.clientWidth - targetEl.offsetWidth) / 2;
+
+        container.scrollTo({
+          left: Math.max(0, targetScroll),
+          behavior: "smooth",
+        });
+        setActiveIndex(index);
+      },
+      [cancelMomentum]
+    );
+
+    // Track mouse movement across the progress bar
+    const handleTrackMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+      const rect = e.currentTarget.getBoundingClientRect();
+      const localX = Math.max(0, Math.min(rect.width, e.clientX - rect.left));
+      const percent = rect.width > 0 ? localX / rect.width : 0;
+      const index = Math.min(
+        normalizedImages.length - 1,
+        Math.max(0, Math.floor(percent * normalizedImages.length))
+      );
+      setHoverPos({ x: localX, index });
+      setIsHoveringTrack(true);
+    };
+
+    const handleTrackMouseLeave = () => {
+      setIsHoveringTrack(false);
+      setHoverPos(null);
+    };
+
+    const innerHeight = height - padding * 2;
 
     const isMobile = viewportWidth !== null ? viewportWidth <= 640 : false;
     const desktopLeftPadding =
@@ -214,10 +333,23 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
         ? `-${leftOffset}px`
         : "calc(-1 * ((100vw - 564px) / 2))";
 
+    // Tooltip position calculation with edge clamping
+    const trackWidth = trackRef.current ? trackRef.current.clientWidth : 564;
+    const tooltipHalfWidth = 75;
+    const clampedTooltipX = hoverPos
+      ? Math.max(
+          tooltipHalfWidth,
+          Math.min(trackWidth - tooltipHalfWidth, hoverPos.x)
+        )
+      : 0;
+
+    const hoveredItem =
+      hoverPos !== null ? normalizedImages[hoverPos.index] : null;
+
     return (
       <div
         ref={setRefs}
-        className={`relative flex select-none overflow-hidden ${
+        className={`relative flex flex-col select-none ${
           isMobile
             ? "w-[calc(100%+32px)] -ml-[16px] -mr-[16px] max-w-[100vw]"
             : bleed
@@ -238,7 +370,7 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
         {...props}
       >
         {/* 
-          Horizontal scroll track spanning the full screen width:
+          1. Horizontal scroll track spanning the full screen width:
           - overflow-x-auto: Allows natural horizontal trackpad two-finger swipe, wheel, and drag.
           - [scrollbar-width:none]: Keeps scrollbar completely invisible across all browsers.
           - touch-pan-y: Lets vertical touch scroll page naturally, while horizontal gestures swipe gallery.
@@ -271,11 +403,14 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
           >
             {children
               ? children
-              : displayImages.map((src, idx) => (
+              : normalizedImages.map((item, idx) => (
                   <img
                     key={idx}
-                    src={src}
-                    alt={`Gallery Image ${idx + 1}`}
+                    ref={(el) => {
+                      imageRefs.current[idx] = el;
+                    }}
+                    src={item.url}
+                    alt={item.alt || `Gallery Image ${idx + 1}`}
                     draggable={false}
                     className="pointer-events-none shrink-0 rounded-none object-cover select-none"
                     style={{
@@ -289,6 +424,83 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
                 ))}
           </div>
         </div>
+
+        {/* 
+          2. Segmented Progress Bar (stationary below images within centered content width):
+          - Number of segments matches photo count.
+          - Active segment: text-content-secondary (#8C8C8C).
+          - Inactive segments: text-content-secondary with 20% opacity.
+          - On hover: a round dot appears at cursor X, with a thumbnail preview + 10px Hauora alt text.
+        */}
+        {normalizedImages.length > 1 && (
+          <div
+            className={`w-full ${
+              isMobile ? "px-[16px]" : "max-w-[564px] mx-auto px-0"
+            } pt-[12px] sm:pt-[16px] flex flex-col items-center select-none`}
+          >
+            <div
+              ref={trackRef}
+              onMouseMove={handleTrackMouseMove}
+              onMouseLeave={handleTrackMouseLeave}
+              className="relative flex w-full items-center gap-[4px] sm:gap-[6px] cursor-pointer"
+            >
+              {normalizedImages.map((_, idx) => {
+                const isActive = activeIndex === idx;
+                return (
+                  <div
+                    key={idx}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      scrollToImage(idx);
+                    }}
+                    className="group relative flex-1 py-[6px] cursor-pointer"
+                  >
+                    <div
+                      className={`h-[2px] w-full rounded-full transition-colors duration-150 ${
+                        isActive
+                          ? "bg-content-secondary"
+                          : "bg-content-secondary/20"
+                      }`}
+                    />
+                  </div>
+                );
+              })}
+
+              {/* Hover Dot: Round circle appearing at exact cursor X on the segment line */}
+              {isHoveringTrack && hoverPos && (
+                <div
+                  className="pointer-events-none absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-[7px] h-[7px] rounded-full bg-content-primary shadow-[0_0_8px_rgba(204,204,204,0.5)] z-20"
+                  style={{ left: `${hoverPos.x}px` }}
+                />
+              )}
+
+              {/* Hover Tooltip: Thumbnail preview preserving aspect ratio + 10px Hauora Alt Text */}
+              {isHoveringTrack && hoverPos && hoveredItem && (
+                <div
+                  className="pointer-events-none absolute z-40 -translate-x-1/2 bottom-[24px] flex flex-col items-center overflow-hidden rounded-[4px] border border-border-hardware bg-[#1a1a1a]/95 backdrop-blur-md p-[3px] shadow-2xl transition-opacity duration-150 animate-in fade-in"
+                  style={{ left: `${clampedTooltipX}px` }}
+                >
+                  <div className="relative flex items-center justify-center overflow-hidden rounded-[2px] bg-[#121212] max-h-[88px] max-w-[140px]">
+                    <img
+                      src={hoveredItem.url}
+                      alt={hoveredItem.alt || `Preview ${hoverPos.index + 1}`}
+                      className="max-h-[88px] max-w-[140px] w-auto h-auto object-contain block select-none"
+                    />
+
+                    {/* 10px Hauora Alt Text Overlay */}
+                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/60 to-transparent px-[6px] pt-[12px] pb-[4px]">
+                      <span className="block font-hauora text-[10px] font-normal leading-[13px] text-content-primary tracking-normal text-center truncate max-w-[128px]">
+                        {hoveredItem.alt && hoveredItem.alt.trim()
+                          ? hoveredItem.alt
+                          : `Photo ${hoverPos.index + 1}`}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     );
   }

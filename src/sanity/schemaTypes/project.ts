@@ -71,6 +71,15 @@ export const projectDocumentType = defineType({
         defineArrayMember({
           type: "image",
           options: { hotspot: true },
+          fields: [
+            defineField({
+              name: "alt",
+              title: "Alt Text / Описание для тултипа",
+              type: "string",
+              description:
+                "Текст для всплывающего тултипа на прогресс-баре галереи (шрифт Hauora 10px)",
+            }),
+          ],
         }),
         defineArrayMember({
           type: "object",
@@ -83,9 +92,14 @@ export const projectDocumentType = defineType({
               type: "string",
               validation: (Rule) => Rule.required(),
             }),
+            defineField({
+              name: "alt",
+              title: "Alt Text / Описание для тултипа",
+              type: "string",
+            }),
           ],
           preview: {
-            select: { title: "url" },
+            select: { title: "url", subtitle: "alt" },
           },
         }),
       ],

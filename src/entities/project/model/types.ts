@@ -12,6 +12,11 @@ export interface Achievement {
   active?: boolean;
 }
 
+export interface ProjectImageItem {
+  url: string;
+  alt?: string;
+}
+
 export interface ProjectData {
   id?: string | number;
   anchorId?: string;
@@ -19,7 +24,7 @@ export interface ProjectData {
   title: string;
   description: string;
   projectType?: ("B2B" | "B2C" | string)[];
-  images: string[];
+  images: (string | ProjectImageItem)[];
   keyAchievements?: (string | Achievement)[];
   caseStudies: CaseItem[];
 }
