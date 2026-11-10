@@ -258,6 +258,15 @@ export const TopBar: React.FC<TopBarProps> = ({
       const ratio = scrollYToRatio(scrollY);
       setNeedleRatio(ratio);
 
+      // If hitting the very top of the page, immediately hide without delay
+      if (scrollY <= 10) {
+        if (hideTimerRef.current) {
+          clearTimeout(hideTimerRef.current);
+        }
+        setIsVisible(false);
+        return;
+      }
+
       // Make visible while scrolling and auto-hide when scroll ceases
       triggerActivity(1200);
     };
@@ -300,6 +309,8 @@ export const TopBar: React.FC<TopBarProps> = ({
     }
 
     if (target.id === "index" || target.targetId === "top") {
+      if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
+      setIsVisible(false);
       window.scrollTo({ top: 0, behavior: "smooth" });
       return;
     }
