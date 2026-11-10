@@ -408,9 +408,9 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
         ? `-${leftOffset}px`
         : "calc(-1 * ((100vw - 564px) / 2))";
 
-    // Tooltip position calculation with edge clamping
+    // Tooltip position calculation with edge clamping (max-w: 240px)
     const trackWidth = trackRef.current ? trackRef.current.clientWidth : 564;
-    const tooltipHalfWidth = 64;
+    const tooltipHalfWidth = Math.min(125, Math.max(40, trackWidth / 2 - 8));
     const clampedTooltipX = hoverPos
       ? Math.max(
           tooltipHalfWidth,
@@ -552,22 +552,22 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
                 />
               )}
 
-              {/* Hover Tooltip: Thumbnail preview preserving aspect ratio (max-w: 120px, max-h: 280px) + 10px Hauora Alt Text */}
+              {/* Hover Tooltip: Thumbnail preview preserving aspect ratio (max-w: 240px, max-h: 280px) + 10px Hauora Alt Text */}
               {isHoveringTrack && hoverPos && hoveredItem && (
                 <div
                   className="pointer-events-none absolute z-40 -translate-x-1/2 bottom-[26px] flex flex-col items-center overflow-hidden rounded-[4px] border border-border-hardware bg-[#1a1a1a]/95 backdrop-blur-md p-[3px] shadow-2xl transition-opacity duration-150 animate-in fade-in"
                   style={{ left: `${clampedTooltipX}px` }}
                 >
-                  <div className="relative flex items-center justify-center overflow-hidden rounded-[2px] bg-[#121212] max-w-[120px] max-h-[280px]">
+                  <div className="relative flex items-center justify-center overflow-hidden rounded-[2px] bg-[#121212] max-w-[240px] max-h-[280px]">
                     <img
                       src={hoveredItem.url}
                       alt={hoveredItem.alt || `Preview ${hoverPos.index + 1}`}
-                      className="max-w-[120px] max-h-[280px] w-auto h-auto object-contain block select-none"
+                      className="max-w-[240px] max-h-[280px] w-auto h-auto object-contain block select-none"
                     />
 
                     {/* 10px Hauora Alt Text Overlay */}
                     <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/60 to-transparent px-[6px] pt-[14px] pb-[4px]">
-                      <span className="block font-hauora text-[10px] font-normal leading-[13px] text-content-primary tracking-normal text-center truncate max-w-[112px]">
+                      <span className="block font-hauora text-[10px] font-normal leading-[13px] text-content-primary tracking-normal text-center truncate max-w-[228px]">
                         {hoveredItem.alt && hoveredItem.alt.trim()
                           ? hoveredItem.alt
                           : `Photo ${hoverPos.index + 1}`}
