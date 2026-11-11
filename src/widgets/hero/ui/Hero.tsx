@@ -342,8 +342,8 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
                 onMouseLeave={() => setHoveredNav(null)}
                 className={`absolute left-[16px] sm:left-[20px] top-[22px] sm:top-[32px] -translate-y-1/2 cursor-pointer text-left text-[16px] sm:text-[18px] leading-none font-normal font-stetica select-none tracking-normal transition-colors duration-150 ${
                   activeNav === "works"
-                    ? "text-content-contrast"
-                    : "text-content-secondary hover:text-content-contrast"
+                    ? "text-content-primary"
+                    : "text-content-secondary hover:text-content-primary"
                 }`}
               >
                 works
@@ -359,8 +359,8 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
                 onMouseLeave={() => setHoveredNav(null)}
                 className={`absolute left-[16px] sm:left-[20px] top-[72px] sm:top-[92px] -translate-y-1/2 cursor-pointer text-left text-[16px] sm:text-[18px] leading-none font-normal font-stetica select-none tracking-normal transition-colors duration-150 ${
                   activeNav === "index"
-                    ? "text-content-contrast"
-                    : "text-content-secondary hover:text-content-contrast"
+                    ? "text-content-primary"
+                    : "text-content-secondary hover:text-content-primary"
                 }`}
               >
                 index
@@ -388,8 +388,8 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
                 onMouseLeave={() => setHoveredNav(null)}
                 className={`absolute right-[16px] sm:right-[20px] top-[22px] sm:top-[32px] -translate-y-1/2 cursor-pointer text-right text-[16px] sm:text-[18px] leading-none font-normal font-stetica select-none tracking-normal transition-colors duration-150 ${
                   activeNav === "career" || activeNav === "experience"
-                    ? "text-content-contrast"
-                    : "text-content-secondary hover:text-content-contrast"
+                    ? "text-content-primary"
+                    : "text-content-secondary hover:text-content-primary"
                 }`}
               >
                 career
@@ -402,8 +402,8 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
                 onMouseLeave={() => setHoveredNav(null)}
                 className={`absolute right-[16px] sm:right-[20px] top-[72px] sm:top-[92px] -translate-y-1/2 cursor-pointer text-right text-[16px] sm:text-[18px] leading-none font-normal font-stetica select-none tracking-normal transition-colors duration-150 ${
                   activeNav === "about"
-                    ? "text-content-contrast"
-                    : "text-content-secondary hover:text-content-contrast"
+                    ? "text-content-primary"
+                    : "text-content-secondary hover:text-content-primary"
                 }`}
               >
                 about

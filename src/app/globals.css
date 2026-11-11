@@ -18,8 +18,8 @@
   --color-border-active: #666666;
 
   /* Typography / Content Colors */
-  --color-content-primary: #CCCCCC;
-  --color-content-badge: rgba(204, 204, 204, 0.16);
+  --color-content-primary: #E5E5E5;
+  --color-content-badge: rgba(229, 229, 229, 0.16);
   --color-content-secondary: #8C8C8C;
   --color-content-hover: #D4D4D4;
   --color-content-contrast: #FFFFFF;
@@ -31,7 +31,7 @@
 }
 
 @utility text-content-badge {
-  color: var(--color-content-badge, rgba(204, 204, 204, 0.16));
+  color: var(--color-content-badge, rgba(229, 229, 229, 0.16));
 }
 
 html, body {

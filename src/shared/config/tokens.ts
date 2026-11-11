@@ -17,8 +17,8 @@ export const tokens = {
     borderActive: "#666666",
 
     // Content & Typography
-    contentPrimary: "#CCCCCC",
-    contentBadge: "rgba(204, 204, 204, 0.16)",
+    contentPrimary: "#E5E5E5",
+    contentBadge: "rgba(229, 229, 229, 0.16)",
     contentSecondary: "#8C8C8C",
     contentHover: "#D4D4D4",
     contentContrast: "#FFFFFF",
