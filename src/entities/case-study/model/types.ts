@@ -15,6 +15,7 @@ export type CaseBlockType =
 export interface MetadataTableBlock {
   _type: "metadataTable";
   _key?: string;
+  anchor?: string;
   badge?: string;
   title?: string;
   rows: MetadataRow[];
@@ -23,6 +24,7 @@ export interface MetadataTableBlock {
 export interface SectionHeadingBlock {
   _type: "sectionHeading";
   _key?: string;
+  anchor?: string;
   badge?: string;
   title: string;
   description?: string;
@@ -37,6 +39,7 @@ export interface ProblemItem {
 export interface ProblemListBlock {
   _type: "problemList";
   _key?: string;
+  anchor?: string;
   badge?: string;
   title?: string;
   items: ProblemItem[];
@@ -51,6 +54,7 @@ export interface TeamMember {
 export interface TeamSectionBlock {
   _type: "teamSection";
   _key?: string;
+  anchor?: string;
   badge?: string;
   title?: string;
   composition: TeamMember[];
@@ -65,6 +69,7 @@ export interface DiscoveryFinding {
 export interface DiscoverySectionBlock {
   _type: "discoverySection";
   _key?: string;
+  anchor?: string;
   badge?: string;
   title?: string;
   method?: string;
@@ -80,6 +85,7 @@ export interface HypothesisItem {
 export interface HypothesesSectionBlock {
   _type: "hypothesesSection";
   _key?: string;
+  anchor?: string;
   badge?: string;
   title?: string;
   items: HypothesisItem[];
@@ -88,6 +94,7 @@ export interface HypothesesSectionBlock {
 export interface GalleryBlock {
   _type: "galleryBlock";
   _key?: string;
+  anchor?: string;
   badge?: string;
   title?: string;
   images: (string | { url: string; alt?: string })[];
@@ -104,6 +111,7 @@ export interface MetricItem {
 export interface MetricsBlock {
   _type: "metricsBlock";
   _key?: string;
+  anchor?: string;
   badge?: string;
   title?: string;
   items: MetricItem[];
@@ -112,6 +120,7 @@ export interface MetricsBlock {
 export interface TextBlock {
   _type: "textBlock";
   _key?: string;
+  anchor?: string;
   badge?: string;
   title?: string;
   content: string;
@@ -120,6 +129,7 @@ export interface TextBlock {
 export interface QuoteCalloutBlock {
   _type: "quoteCallout";
   _key?: string;
+  anchor?: string;
   badge?: string;
   title?: string;
   quote: string;

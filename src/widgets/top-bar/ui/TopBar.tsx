@@ -12,6 +12,7 @@ export interface TunerFrame {
   id: string;
   label?: string;
   targetId: string;
+  sectionId?: string;
   isProject?: boolean;
 }
 
@@ -516,8 +517,12 @@ export const TopBar: React.FC<TopBarProps> = ({
                 );
               }
 
+              const activeFrame = frames.find((f) => f.id === currentActiveStation);
+              const activeSectionId = activeFrame?.sectionId || currentActiveStation;
+
               const isActive =
                 currentActiveStation === frame.id ||
+                frame.id === activeSectionId ||
                 (!stations &&
                   frame.id === "works" &&
                   (currentActiveStation.startsWith("project") ||

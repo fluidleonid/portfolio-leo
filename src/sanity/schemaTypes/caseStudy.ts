@@ -4,7 +4,8 @@ import { MultipleImageUploadInput } from "../components/MultipleImageUploadInput
 /**
  * Reusable Modular Content Blocks for Case Studies
  * Each block can be used freely inside any Section (or inside legacy blocks).
- * All headings and badges on every block are strictly optional.
+ * All headings, badges, and anchors on every block are strictly optional.
+ * If a block defines an `anchor`, the parent section in TopBar splits into sub-segments.
  */
 export const caseBlockMembers = [
   // 1. 2-Column Metadata Table
@@ -13,6 +14,13 @@ export const caseBlockMembers = [
     title: "Metadata Table (Client / Role / Team / Delivered)",
     type: "object",
     fields: [
+      defineField({
+        name: "anchor",
+        title: "Tuner Anchor / ID (Опциональный якорь блока)",
+        type: "string",
+        description:
+          "Если заполнено, секция в TopBar дробится на сегменты, и этот блок становится отдельной засечкой в шкале радио-тюнера.",
+      }),
       defineField({
         name: "badge",
         title: "Badge (Optional)",
@@ -42,10 +50,11 @@ export const caseBlockMembers = [
       }),
     ],
     preview: {
-      select: { title: "title" },
-      prepare({ title }) {
+      select: { title: "title", anchor: "anchor" },
+      prepare({ title, anchor }) {
+        const tag = anchor ? ` [#${anchor}]` : "";
         return {
-          title: title || "Metadata Table",
+          title: (title || "Metadata Table") + tag,
           subtitle: "Key-Value Spec Grid",
         };
       },
@@ -58,6 +67,13 @@ export const caseBlockMembers = [
     title: "Section Heading",
     type: "object",
     fields: [
+      defineField({
+        name: "anchor",
+        title: "Tuner Anchor / ID (Опциональный якорь блока)",
+        type: "string",
+        description:
+          "Если заполнено, секция в TopBar дробится на сегменты, и этот блок становится отдельной засечкой в шкале радио-тюнера.",
+      }),
       defineField({
         name: "badge",
         title: "Badge (Optional)",
@@ -76,10 +92,11 @@ export const caseBlockMembers = [
       }),
     ],
     preview: {
-      select: { title: "title", subtitle: "badge" },
-      prepare({ title, subtitle }) {
+      select: { title: "title", subtitle: "badge", anchor: "anchor" },
+      prepare({ title, subtitle, anchor }) {
+        const tag = anchor ? ` [#${anchor}]` : "";
         return {
-          title: title || "Untitled Heading",
+          title: (title || "Untitled Heading") + tag,
           subtitle: subtitle ? `[${subtitle}]` : "Heading Block",
         };
       },
@@ -92,6 +109,13 @@ export const caseBlockMembers = [
     title: "Key Problems & Challenges",
     type: "object",
     fields: [
+      defineField({
+        name: "anchor",
+        title: "Tuner Anchor / ID (Опциональный якорь блока)",
+        type: "string",
+        description:
+          "Если заполнено, секция в TopBar дробится на сегменты, и этот блок становится отдельной засечкой в шкале радио-тюнера.",
+      }),
       defineField({
         name: "badge",
         title: "Badge (Optional)",
@@ -122,11 +146,12 @@ export const caseBlockMembers = [
       }),
     ],
     preview: {
-      select: { title: "title", items: "items" },
-      prepare({ title, items }) {
+      select: { title: "title", items: "items", anchor: "anchor" },
+      prepare({ title, items, anchor }) {
         const count = Array.isArray(items) ? items.length : 0;
+        const tag = anchor ? ` [#${anchor}]` : "";
         return {
-          title: title || "Key Problems",
+          title: (title || "Key Problems") + tag,
           subtitle: `${count} problem items`,
         };
       },
@@ -139,6 +164,13 @@ export const caseBlockMembers = [
     title: "Team & Composition",
     type: "object",
     fields: [
+      defineField({
+        name: "anchor",
+        title: "Tuner Anchor / ID (Опциональный якорь блока)",
+        type: "string",
+        description:
+          "Если заполнено, секция в TopBar дробится на сегменты, и этот блок становится отдельной засечкой в шкале радио-тюнера.",
+      }),
       defineField({
         name: "badge",
         title: "Badge (Optional)",
@@ -169,10 +201,11 @@ export const caseBlockMembers = [
       }),
     ],
     preview: {
-      select: { title: "title" },
-      prepare({ title }) {
+      select: { title: "title", anchor: "anchor" },
+      prepare({ title, anchor }) {
+        const tag = anchor ? ` [#${anchor}]` : "";
         return {
-          title: title || "Team Composition",
+          title: (title || "Team Composition") + tag,
         };
       },
     },
@@ -184,6 +217,13 @@ export const caseBlockMembers = [
     title: "Discovery & User Research",
     type: "object",
     fields: [
+      defineField({
+        name: "anchor",
+        title: "Tuner Anchor / ID (Опциональный якорь блока)",
+        type: "string",
+        description:
+          "Если заполнено, секция в TopBar дробится на сегменты, и этот блок становится отдельной засечкой в шкале радио-тюнера.",
+      }),
       defineField({
         name: "badge",
         title: "Badge (Optional)",
@@ -219,10 +259,11 @@ export const caseBlockMembers = [
       }),
     ],
     preview: {
-      select: { title: "title", method: "method" },
-      prepare({ title, method }) {
+      select: { title: "title", method: "method", anchor: "anchor" },
+      prepare({ title, method, anchor }) {
+        const tag = anchor ? ` [#${anchor}]` : "";
         return {
-          title: title || "Discovery & Research",
+          title: (title || "Discovery & Research") + tag,
           subtitle: method || "Research block",
         };
       },
@@ -235,6 +276,13 @@ export const caseBlockMembers = [
     title: "Hypotheses & Architecture",
     type: "object",
     fields: [
+      defineField({
+        name: "anchor",
+        title: "Tuner Anchor / ID (Опциональный якорь блока)",
+        type: "string",
+        description:
+          "Если заполнено, секция в TopBar дробится на сегменты, и этот блок становится отдельной засечкой в шкале радио-тюнера.",
+      }),
       defineField({
         name: "badge",
         title: "Badge (Optional)",
@@ -265,10 +313,11 @@ export const caseBlockMembers = [
       }),
     ],
     preview: {
-      select: { title: "title" },
-      prepare({ title }) {
+      select: { title: "title", anchor: "anchor" },
+      prepare({ title, anchor }) {
+        const tag = anchor ? ` [#${anchor}]` : "";
         return {
-          title: title || "Hypotheses & Architecture",
+          title: (title || "Hypotheses & Architecture") + tag,
         };
       },
     },
@@ -280,6 +329,13 @@ export const caseBlockMembers = [
     title: "Horizontal Gallery (Full Bleed Breakout)",
     type: "object",
     fields: [
+      defineField({
+        name: "anchor",
+        title: "Tuner Anchor / ID (Опциональный якорь блока)",
+        type: "string",
+        description:
+          "Если заполнено, секция в TopBar дробится на сегменты, и этот блок становится отдельной засечкой в шкале радио-тюнера.",
+      }),
       defineField({
         name: "badge",
         title: "Badge (Optional)",
@@ -352,11 +408,12 @@ export const caseBlockMembers = [
       }),
     ],
     preview: {
-      select: { title: "title", images: "images" },
-      prepare({ title, images }) {
+      select: { title: "title", images: "images", anchor: "anchor" },
+      prepare({ title, images, anchor }) {
         const count = Array.isArray(images) ? images.length : 0;
+        const tag = anchor ? ` [#${anchor}]` : "";
         return {
-          title: title || "Horizontal Gallery",
+          title: (title || "Horizontal Gallery") + tag,
           subtitle: `${count} image${count === 1 ? "" : "s"}`,
         };
       },
@@ -369,6 +426,13 @@ export const caseBlockMembers = [
     title: "Results & Impact Metrics",
     type: "object",
     fields: [
+      defineField({
+        name: "anchor",
+        title: "Tuner Anchor / ID (Опциональный якорь блока)",
+        type: "string",
+        description:
+          "Если заполнено, секция в TopBar дробится на сегменты, и этот блок становится отдельной засечкой в шкале радио-тюнера.",
+      }),
       defineField({
         name: "badge",
         title: "Badge (Optional)",
@@ -403,11 +467,12 @@ export const caseBlockMembers = [
       }),
     ],
     preview: {
-      select: { title: "title", items: "items" },
-      prepare({ title, items }) {
+      select: { title: "title", items: "items", anchor: "anchor" },
+      prepare({ title, items, anchor }) {
         const count = Array.isArray(items) ? items.length : 0;
+        const tag = anchor ? ` [#${anchor}]` : "";
         return {
-          title: title || "Results & Impact Metrics",
+          title: (title || "Results & Impact Metrics") + tag,
           subtitle: `${count} metrics`,
         };
       },
@@ -420,6 +485,13 @@ export const caseBlockMembers = [
     title: "Text / Story Paragraphs",
     type: "object",
     fields: [
+      defineField({
+        name: "anchor",
+        title: "Tuner Anchor / ID (Опциональный якорь блока)",
+        type: "string",
+        description:
+          "Если заполнено, секция в TopBar дробится на сегменты, и этот блок становится отдельной засечкой в шкале радио-тюнера.",
+      }),
       defineField({
         name: "badge",
         title: "Badge (Optional)",
@@ -438,10 +510,11 @@ export const caseBlockMembers = [
       }),
     ],
     preview: {
-      select: { title: "title", content: "content" },
-      prepare({ title, content }) {
+      select: { title: "title", content: "content", anchor: "anchor" },
+      prepare({ title, content, anchor }) {
+        const tag = anchor ? ` [#${anchor}]` : "";
         return {
-          title: title || "Text Block",
+          title: (title || "Text Block") + tag,
           subtitle: content ? content.slice(0, 60) + "..." : "Empty",
         };
       },
@@ -454,6 +527,13 @@ export const caseBlockMembers = [
     title: "Quote / Key Takeaway",
     type: "object",
     fields: [
+      defineField({
+        name: "anchor",
+        title: "Tuner Anchor / ID (Опциональный якорь блока)",
+        type: "string",
+        description:
+          "Если заполнено, секция в TopBar дробится на сегменты, и этот блок становится отдельной засечкой в шкале радио-тюнера.",
+      }),
       defineField({
         name: "badge",
         title: "Badge (Optional)",
@@ -474,10 +554,11 @@ export const caseBlockMembers = [
       defineField({ name: "role", title: "Role", type: "string" }),
     ],
     preview: {
-      select: { title: "quote", subtitle: "author" },
-      prepare({ title, subtitle }) {
+      select: { title: "quote", subtitle: "author", anchor: "anchor" },
+      prepare({ title, subtitle, anchor }) {
+        const tag = anchor ? ` [#${anchor}]` : "";
         return {
-          title: title ? `"${title.slice(0, 50)}..."` : "Quote",
+          title: (title ? `"${title.slice(0, 50)}..."` : "Quote") + tag,
           subtitle: subtitle || "Quote block",
         };
       },
