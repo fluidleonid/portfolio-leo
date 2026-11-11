@@ -15,6 +15,7 @@ export type CaseBlockType =
 export interface MetadataTableBlock {
   _type: "metadataTable";
   _key?: string;
+  badge?: string;
   title?: string;
   rows: MetadataRow[];
 }
@@ -87,6 +88,7 @@ export interface HypothesesSectionBlock {
 export interface GalleryBlock {
   _type: "galleryBlock";
   _key?: string;
+  badge?: string;
   title?: string;
   images: (string | { url: string; alt?: string })[];
   height?: number;
@@ -110,6 +112,7 @@ export interface MetricsBlock {
 export interface TextBlock {
   _type: "textBlock";
   _key?: string;
+  badge?: string;
   title?: string;
   content: string;
 }
@@ -117,6 +120,7 @@ export interface TextBlock {
 export interface QuoteCalloutBlock {
   _type: "quoteCallout";
   _key?: string;
+  badge?: string;
   title?: string;
   quote: string;
   author?: string;

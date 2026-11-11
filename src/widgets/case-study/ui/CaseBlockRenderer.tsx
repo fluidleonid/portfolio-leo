@@ -27,6 +27,14 @@ export function CaseBlockRenderer({ block, id }: CaseBlockRendererProps) {
       const b = block as MetadataTableBlock;
       return (
         <div id={id} className="w-full flex flex-col gap-[12px] scroll-mt-[100px]">
+          {b.badge && (
+            <span
+              className="text-[14px] font-normal leading-[24px] text-content-badge font-hauora uppercase tracking-normal"
+              style={{ color: "var(--color-content-badge, rgba(204, 204, 204, 0.16))" }}
+            >
+              {b.badge}
+            </span>
+          )}
           {b.title && (
             <h3 className="text-[18px] font-medium leading-[24px] text-content-primary font-hauora tracking-normal">
               {b.title}
@@ -241,6 +249,14 @@ export function CaseBlockRenderer({ block, id }: CaseBlockRendererProps) {
       const b = block as GalleryBlock;
       return (
         <div id={id} className="w-full flex flex-col gap-[8px] scroll-mt-[100px]">
+          {b.badge && (
+            <span
+              className="text-[14px] font-normal leading-[24px] text-content-badge font-hauora uppercase tracking-normal"
+              style={{ color: "var(--color-content-badge, rgba(204, 204, 204, 0.16))" }}
+            >
+              {b.badge}
+            </span>
+          )}
           {b.title && (
             <h3 className="text-[18px] font-medium leading-[24px] text-content-primary font-hauora tracking-normal px-[4px]">
               {b.title}
@@ -318,6 +334,14 @@ export function CaseBlockRenderer({ block, id }: CaseBlockRendererProps) {
       const b = block as TextBlock;
       return (
         <div id={id} className="flex w-full flex-col gap-[8px] scroll-mt-[100px]">
+          {b.badge && (
+            <span
+              className="text-[14px] font-normal leading-[24px] text-content-badge font-hauora uppercase tracking-normal"
+              style={{ color: "var(--color-content-badge, rgba(204, 204, 204, 0.16))" }}
+            >
+              {b.badge}
+            </span>
+          )}
           {b.title && (
             <h3 className="text-[18px] font-medium leading-[24px] text-content-primary font-hauora tracking-normal">
               {b.title}
@@ -342,6 +366,14 @@ export function CaseBlockRenderer({ block, id }: CaseBlockRendererProps) {
       const b = block as QuoteCalloutBlock;
       return (
         <div id={id} className="flex w-full flex-col gap-[8px] scroll-mt-[100px]">
+          {b.badge && (
+            <span
+              className="text-[14px] font-normal leading-[24px] text-content-badge font-hauora uppercase tracking-normal"
+              style={{ color: "var(--color-content-badge, rgba(204, 204, 204, 0.16))" }}
+            >
+              {b.badge}
+            </span>
+          )}
           {b.title && (
             <h3 className="text-[18px] font-medium leading-[24px] text-content-primary font-hauora tracking-normal">
               {b.title}

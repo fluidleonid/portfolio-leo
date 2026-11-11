@@ -4,6 +4,7 @@ import { MultipleImageUploadInput } from "../components/MultipleImageUploadInput
 /**
  * Reusable Modular Content Blocks for Case Studies
  * Each block can be used freely inside any Section (or inside legacy blocks).
+ * All headings and badges on every block are strictly optional.
  */
 export const caseBlockMembers = [
   // 1. 2-Column Metadata Table
@@ -12,6 +13,11 @@ export const caseBlockMembers = [
     title: "Metadata Table (Client / Role / Team / Delivered)",
     type: "object",
     fields: [
+      defineField({
+        name: "badge",
+        title: "Badge (Optional)",
+        type: "string",
+      }),
       defineField({
         name: "title",
         title: "Block Title (Optional)",
@@ -54,12 +60,12 @@ export const caseBlockMembers = [
     fields: [
       defineField({
         name: "badge",
-        title: "Hardware Badge (e.g. OVERVIEW, DESIGN, DISCOVERY)",
+        title: "Badge (Optional)",
         type: "string",
       }),
       defineField({
         name: "title",
-        title: "Title",
+        title: "Title (Optional)",
         type: "string",
       }),
       defineField({
@@ -88,9 +94,8 @@ export const caseBlockMembers = [
     fields: [
       defineField({
         name: "badge",
-        title: "Badge",
+        title: "Badge (Optional)",
         type: "string",
-        initialValue: "PROBLEMS",
       }),
       defineField({
         name: "title",
@@ -136,9 +141,8 @@ export const caseBlockMembers = [
     fields: [
       defineField({
         name: "badge",
-        title: "Badge",
+        title: "Badge (Optional)",
         type: "string",
-        initialValue: "TEAM",
       }),
       defineField({
         name: "title",
@@ -182,9 +186,8 @@ export const caseBlockMembers = [
     fields: [
       defineField({
         name: "badge",
-        title: "Badge",
+        title: "Badge (Optional)",
         type: "string",
-        initialValue: "DISCOVERY",
       }),
       defineField({
         name: "title",
@@ -234,9 +237,8 @@ export const caseBlockMembers = [
     fields: [
       defineField({
         name: "badge",
-        title: "Badge",
+        title: "Badge (Optional)",
         type: "string",
-        initialValue: "HYPOTHESES",
       }),
       defineField({
         name: "title",
@@ -278,6 +280,11 @@ export const caseBlockMembers = [
     title: "Horizontal Gallery (Full Bleed Breakout)",
     type: "object",
     fields: [
+      defineField({
+        name: "badge",
+        title: "Badge (Optional)",
+        type: "string",
+      }),
       defineField({
         name: "title",
         title: "Gallery Title (Optional)",
@@ -364,9 +371,8 @@ export const caseBlockMembers = [
     fields: [
       defineField({
         name: "badge",
-        title: "Badge",
+        title: "Badge (Optional)",
         type: "string",
-        initialValue: "RESULTS",
       }),
       defineField({
         name: "title",
@@ -415,6 +421,11 @@ export const caseBlockMembers = [
     type: "object",
     fields: [
       defineField({
+        name: "badge",
+        title: "Badge (Optional)",
+        type: "string",
+      }),
+      defineField({
         name: "title",
         title: "Block Title (Optional)",
         type: "string",
@@ -443,6 +454,11 @@ export const caseBlockMembers = [
     title: "Quote / Key Takeaway",
     type: "object",
     fields: [
+      defineField({
+        name: "badge",
+        title: "Badge (Optional)",
+        type: "string",
+      }),
       defineField({
         name: "title",
         title: "Block Title (Optional)",
