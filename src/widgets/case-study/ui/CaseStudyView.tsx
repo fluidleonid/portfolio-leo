@@ -128,11 +128,11 @@ export function CaseStudyView({ caseData }: CaseStudyViewProps) {
           id="overview"
           className="flex w-full flex-col gap-[8px] mt-[40px] sm:mt-[60px] scroll-mt-[100px]"
         >
-          <h1 className="text-[18px] font-medium leading-[26px] text-content-primary font-hauora tracking-normal">
+          <h1 className="text-[20px] font-semibold leading-[28px] text-content-primary font-hauora tracking-normal">
             {caseData.title}
           </h1>
           {caseData.tagline && (
-            <p className="text-[18px] font-light leading-[26px] text-content-primary font-hauora whitespace-pre-line tracking-normal">
+            <p className="text-[18px] font-light leading-[26px] text-content-secondary font-hauora whitespace-pre-line tracking-normal">
               {caseData.tagline}
             </p>
           )}
@@ -152,7 +152,7 @@ export function CaseStudyView({ caseData }: CaseStudyViewProps) {
               >
                 {/* Optional Section Heading */}
                 {section.title && (
-                  <h2 className="text-[18px] font-medium leading-[26px] text-content-primary font-hauora tracking-normal mb-[16px] sm:mb-[24px]">
+                  <h2 className="text-[18px] font-semibold leading-[26px] text-content-primary font-hauora tracking-normal mb-[16px] sm:mb-[24px]">
                     {section.title}
                   </h2>
                 )}
