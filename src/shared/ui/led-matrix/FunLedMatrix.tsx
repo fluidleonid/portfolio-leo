@@ -4,11 +4,14 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { tokens } from "@/shared/config/tokens";
 
 export type FunAnimationMode =
-  | "swap" // Eyes and Mouth swap places
-  | "rolling-ears" // Ears roll around to the edges
+  | "squished-goofy" // Eyes and mouth assembled right together into a funny micro-face
+  | "pixel-sort" // Turbulent streaming pixel sort into goofy face
+  | "picasso" // Cubist mashup: eyes split above/below mouth, ear on chin
+  | "swap" // Eyes and mouth completely swap places
+  | "rolling-ears" // Ears rolling to screen edges
   | "carnival" // Total chaos: swap + rolling ears + floating nose
   | "scatter" // Shatter apart and magnetically reassemble
-  | "liquid" // Melting sinusoidal horizontal slices
+  | "liquid" // Melting sinusoidal waves
   | "idle"; // Clean original portrait
 
 export interface FunLedMatrixProps
@@ -23,6 +26,8 @@ export interface FunLedMatrixProps
   intensity?: number;
   /** Is animation actively running */
   isPlaying?: boolean;
+  /** Manual morph progress 0..1 (optional: overrides time-based animation when set) */
+  manualMorphProgress?: number;
   /** Color theme for active LED pixels: "amber" (vintage warm) or "monochrome" (studio crisp) */
   theme?: "amber" | "monochrome";
   /** Number of module columns (default 28) */
@@ -167,16 +172,17 @@ function processImageToSubPixels(
 }
 
 /**
- * Fun variant of LedMatrix with kinetic facial feature manipulation (eyes/mouth swap, rolling ears, scatter)
+ * Fun variant of LedMatrix with kinetic pixel-by-pixel re-sorting and hilarious face assemblies
  */
 export const FunLedMatrix = React.forwardRef<HTMLDivElement, FunLedMatrixProps>(
   (
     {
       src = "/portrait-2.png",
-      mode = "swap",
+      mode = "squished-goofy",
       speed = 1.0,
       intensity = 1.0,
       isPlaying = true,
+      manualMorphProgress,
       theme = "amber",
       cols = 28,
       rows = 13,
@@ -230,8 +236,6 @@ export const FunLedMatrix = React.forwardRef<HTMLDivElement, FunLedMatrixProps>(
         modC: number;
         dx: number;
         dy: number;
-        vx: number;
-        vy: number;
         targetDx: number;
         targetDy: number;
       }>
@@ -248,7 +252,6 @@ export const FunLedMatrix = React.forwardRef<HTMLDivElement, FunLedMatrixProps>(
           const x = Math.sin(i * 12.9898 + 78.233) * 43758.5453;
           seeds[i] = x - Math.floor(x);
 
-          // Angle and velocity for scatter explosion
           const angle = Math.atan2(r - rows / 2, c - cols / 2) + (seeds[i] - 0.5) * 0.8;
           const dist = 30 + seeds[i] * 60;
           particles.push({
@@ -256,8 +259,6 @@ export const FunLedMatrix = React.forwardRef<HTMLDivElement, FunLedMatrixProps>(
             modC: c,
             dx: 0,
             dy: 0,
-            vx: Math.cos(angle) * (1.5 + seeds[i] * 2),
-            vy: Math.sin(angle) * (1.5 + seeds[i] * 2),
             targetDx: Math.cos(angle) * dist,
             targetDy: Math.sin(angle) * dist,
           });
@@ -284,7 +285,6 @@ export const FunLedMatrix = React.forwardRef<HTMLDivElement, FunLedMatrixProps>(
         );
         if (processed) {
           baseBufferRef.current = processed;
-          // Initial copy to frame
           frameActiveRef.current.set(processed.active);
           frameNormRef.current.set(processed.norm);
           setAnimPhase("igniting");
@@ -341,15 +341,17 @@ export const FunLedMatrix = React.forwardRef<HTMLDivElement, FunLedMatrixProps>(
 
       let animId: number;
 
-      // Define anatomical feature bounding boxes in sub-pixel coordinates
-      // In portrait-2.png with drawW=141, drawH=117, startCol=55, startRow=0:
-      const eyesBox = { minR: 30, maxR: 58, minC: 86, maxC: 164, centerR: 44, centerC: 125 };
-      const mouthBox = { minR: 74, maxR: 102, minC: 98, maxC: 152, centerR: 88, centerC: 125 };
-      const leftEarBox = { minR: 38, maxR: 80, minC: 55, maxC: 82, centerR: 59, centerC: 68 };
-      const rightEarBox = { minR: 38, maxR: 80, minC: 168, maxC: 196, centerR: 59, centerC: 182 };
-      const noseBox = { minR: 54, maxR: 74, minC: 114, maxC: 136, centerR: 64, centerC: 125 };
+      // Anatomical bounding boxes extracted directly from portrait-2.png on 252x117 subpixels:
+      // Face center is at (r: 45, c: 121)
+      const leftEyeBox = { minR: 26, maxR: 44, minC: 104, maxC: 119, centerR: 35, centerC: 112 };
+      const rightEyeBox = { minR: 26, maxR: 44, minC: 122, maxC: 137, centerR: 35, centerC: 129 };
+      const eyesAllBox = { minR: 26, maxR: 44, minC: 104, maxC: 137, centerR: 35, centerC: 121 };
+      const noseBox = { minR: 38, maxR: 52, minC: 114, maxC: 127, centerR: 45, centerC: 121 };
+      const mouthBox = { minR: 50, maxR: 66, minC: 104, maxC: 137, centerR: 58, centerC: 121 };
+      const rightEarBox = { minR: 36, maxR: 54, minC: 142, maxC: 158, centerR: 45, centerC: 150 };
+      const foreheadBox = { minR: 12, maxR: 26, minC: 104, maxC: 138, centerR: 19, centerC: 121 };
 
-      const isInside = (r: number, c: number, b: typeof eyesBox) =>
+      const isInside = (r: number, c: number, b: typeof eyesAllBox) =>
         r >= b.minR && r <= b.maxR && c >= b.minC && c <= b.maxC;
 
       const render = (time: number) => {
@@ -364,236 +366,183 @@ export const FunLedMatrix = React.forwardRef<HTMLDivElement, FunLedMatrixProps>(
         const activeBuf = frameActiveRef.current;
         const normBuf = frameNormRef.current;
 
-        // Reset frame buffer to clean 0
         activeBuf.fill(0);
         normBuf.fill(0);
 
-        // Normalized time for animation loops
         const tSec = (time / 1000) * speed;
 
-        // 1. COMPUTE FEATURE OFFSETS BASED ON ACTIVE MODE
-        let eyesOffset = { dr: 0, dc: 0 };
-        let mouthOffset = { dr: 0, dc: 0 };
-        let leftEarOffset = { dr: 0, dc: 0 };
-        let rightEarOffset = { dr: 0, dc: 0 };
-        let noseOffset = { dr: 0, dc: 0 };
+        // Calculate morph progress (0 = normal face, 1 = funny re-sorted face)
+        let morph = 0;
+        if (typeof manualMorphProgress === "number") {
+          morph = Math.max(0, Math.min(1, manualMorphProgress));
+        } else if (isPlaying && mode !== "idle") {
+          // Smooth cycle: 1.8s at normal, 1.2s smooth morph, 2.0s at funny face, 1.2s smooth return
+          const cyclePeriod = 6.2;
+          const cycle = (tSec % cyclePeriod) / cyclePeriod;
 
-        const deltaSwapR = mouthBox.centerR - eyesBox.centerR; // ~44px distance
-
-        if (isPlaying && mode !== "idle") {
-          if (mode === "swap") {
-            // Smooth ping-pong cycle: stays normal for 2s, smoothly swaps over 1.2s, stays swapped for 2s, swaps back
-            const cycle = (tSec % 6) / 6; // 0..1 over 6 seconds
-            let swapProgress = 0;
-
-            if (cycle < 0.25) {
-              swapProgress = 0; // normal
-            } else if (cycle < 0.45) {
-              // smooth transition 0 -> 1 with sine curve
-              const localT = (cycle - 0.25) / 0.2;
-              swapProgress = 0.5 - 0.5 * Math.cos(localT * Math.PI);
-            } else if (cycle < 0.75) {
-              swapProgress = 1; // fully swapped!
-            } else if (cycle < 0.95) {
-              // smooth transition 1 -> 0
-              const localT = (cycle - 0.75) / 0.2;
-              swapProgress = 0.5 + 0.5 * Math.cos(localT * Math.PI);
-            } else {
-              swapProgress = 0;
-            }
-
-            // Curve outwards slightly during flight
-            const arcOut = Math.sin(swapProgress * Math.PI) * 12 * intensity;
-
-            eyesOffset.dr = swapProgress * deltaSwapR * intensity;
-            eyesOffset.dc = arcOut;
-
-            mouthOffset.dr = -swapProgress * deltaSwapR * intensity;
-            mouthOffset.dc = -arcOut;
-          } else if (mode === "rolling-ears") {
-            // Ears skate outward and roll up & down like little roller-skates
-            const earWave = Math.sin(tSec * 2);
-            const rollOutDist = 38 * intensity; // slide way out toward borders
-
-            leftEarOffset.dc = -Math.abs(earWave) * rollOutDist;
-            leftEarOffset.dr = Math.sin(tSec * 4) * 12 * intensity;
-
-            rightEarOffset.dc = Math.abs(earWave) * rollOutDist;
-            rightEarOffset.dr = -Math.sin(tSec * 4) * 12 * intensity;
-          } else if (mode === "carnival") {
-            // ALL TOGETHER: Swapped eyes/mouth + rolling ears + floating nose + wobbling brows!
-            const swapWave = 0.5 + 0.5 * Math.sin(tSec * 1.8);
-            eyesOffset.dr = swapWave * deltaSwapR * intensity;
-            eyesOffset.dc = Math.cos(tSec * 2) * 8 * intensity;
-
-            mouthOffset.dr = -swapWave * deltaSwapR * intensity;
-            mouthOffset.dc = -Math.cos(tSec * 2) * 8 * intensity;
-
-            const earWave = Math.sin(tSec * 2.5);
-            leftEarOffset.dc = -Math.abs(earWave) * 42 * intensity;
-            leftEarOffset.dr = Math.cos(tSec * 3) * 14 * intensity;
-
-            rightEarOffset.dc = Math.abs(earWave) * 42 * intensity;
-            rightEarOffset.dr = -Math.cos(tSec * 3) * 14 * intensity;
-
-            noseOffset.dr = Math.sin(tSec * 5) * 6 * intensity;
-            noseOffset.dc = Math.sin(tSec * 3) * 10 * intensity;
+          if (cycle < 0.25) {
+            morph = 0;
+          } else if (cycle < 0.45) {
+            const localT = (cycle - 0.25) / 0.2;
+            morph = 0.5 - 0.5 * Math.cos(localT * Math.PI); // smooth sine ease in
+          } else if (cycle < 0.75) {
+            morph = 1; // fully scrambled and together!
+          } else if (cycle < 0.95) {
+            const localT = (cycle - 0.75) / 0.2;
+            morph = 0.5 + 0.5 * Math.cos(localT * Math.PI); // smooth return
+          } else {
+            morph = 0;
           }
         }
 
-        // 2. COMPOSE BASE HEAD & MASKED FEATURES INTO FRAME BUFFER
+        const effectiveMorph = morph * intensity;
+
+        // Turbulent pixel-sorting streaming trail during transition
+        const streamTurbulence = Math.sin(morph * Math.PI) * intensity;
+
         const baseActive = base.active;
         const baseNorm = base.norm;
 
+        // 1. RE-SORTING PIXEL MAP ENGINE
         for (let r = 0; r < totalSubRows; r++) {
           for (let c = 0; c < totalSubCols; c++) {
-            const idx = r * totalSubCols + c;
-            if (baseActive[idx] === 0) continue;
+            const srcIdx = r * totalSubCols + c;
+            if (baseActive[srcIdx] === 0) continue;
 
-            // Check if pixel belongs to a dynamic feature
-            const inEyes = isInside(r, c, eyesBox);
-            const inMouth = isInside(r, c, mouthBox);
-            const inLeftEar = isInside(r, c, leftEarBox);
-            const inRightEar = isInside(r, c, rightEarBox);
-            const inNose = isInside(r, c, noseBox);
+            let targetR = r;
+            let targetC = c;
 
-            if (mode === "liquid") {
-              // Melting wavy liquid distortion across horizontal lines
-              const waveOffset = Math.round(
+            // Stream jitter during transit (pixel-sorting trail effect)
+            let jitterR = 0;
+            let jitterC = 0;
+            if (streamTurbulence > 0.001) {
+              const noiseAngle = r * 0.24 + c * 0.18 + tSec * 5;
+              const mag = streamTurbulence * (mode === "pixel-sort" ? 22 : 9);
+              jitterR = Math.sin(noiseAngle) * mag;
+              jitterC = Math.cos(noiseAngle * 1.3) * mag * 1.4;
+            }
+
+            if (mode === "squished-goofy" || mode === "pixel-sort") {
+              // 1. EYES + MOUTH PACKED TOGETHER!
+              if (isInside(r, c, eyesAllBox)) {
+                // EYES: Pulled DOWN by +13 rows to meet the mouth!
+                // Squeezed slightly closer horizontally for a funny cross-eyed look
+                const dr = 13;
+                const dc = (121 - c) * 0.15;
+                targetR = r + dr;
+                targetC = c + dc;
+              } else if (isInside(r, c, mouthBox)) {
+                // MOUTH: Pulled UP by -5 rows to sit right below lowered eyes!
+                // Stretched wider into a massive goofy grin
+                const dr = -5;
+                const dc = (c - 121) * 0.28;
+                targetR = r + dr;
+                targetC = c + dc;
+              } else if (isInside(r, c, noseBox)) {
+                // NOSE: Moved UP to the forehead!
+                const dr = -24;
+                targetR = r + dr;
+                targetC = c;
+              } else if (isInside(r, c, rightEarBox)) {
+                // RIGHT EAR: Slides to the top of the head like an antenna/bunny ear!
+                const dr = -28;
+                const dc = -24;
+                targetR = r + dr;
+                targetC = c + dc;
+              } else if (r >= 12 && r <= 78 && c >= 90 && c <= 150) {
+                // Surrounding face contour softly pulls inward to frame the micro-face
+                const distToCenter = Math.hypot(r - 50, c - 121);
+                if (distToCenter > 18) {
+                  const factor = Math.sin((distToCenter - 18) * 0.08) * 4;
+                  targetR = r + factor;
+                }
+              }
+            } else if (mode === "picasso") {
+              // CUBIST CHAOS:
+              if (isInside(r, c, leftEyeBox)) {
+                // Left eye moves way down below mouth
+                targetR = r + 24;
+                targetC = c - 6;
+              } else if (isInside(r, c, rightEyeBox)) {
+                // Right eye moves up to forehead
+                targetR = r - 14;
+                targetC = c + 4;
+              } else if (isInside(r, c, mouthBox)) {
+                // Mouth shifts sideways onto the cheek
+                targetR = r - 4;
+                targetC = c + 18;
+              } else if (isInside(r, c, rightEarBox)) {
+                // Ear on the chin
+                targetR = r + 26;
+                targetC = c - 32;
+              } else if (isInside(r, c, noseBox)) {
+                // Nose slightly tilted
+                targetR = r - 6;
+                targetC = c - 10;
+              }
+            } else if (mode === "swap") {
+              // FULL SWAP: Mouth in eye sockets, eyes in mouth
+              const deltaR = mouthBox.centerR - eyesAllBox.centerR; // ~23 rows
+              if (isInside(r, c, eyesAllBox)) {
+                targetR = r + deltaR;
+                targetC = c + Math.sin((r / 10) * Math.PI) * 6;
+              } else if (isInside(r, c, mouthBox)) {
+                targetR = r - deltaR;
+                targetC = c - Math.sin((r / 10) * Math.PI) * 6;
+              }
+            } else if (mode === "rolling-ears") {
+              if (isInside(r, c, rightEarBox)) {
+                const earWave = Math.sin(tSec * 2.5);
+                targetC = c + Math.abs(earWave) * 44;
+                targetR = r + Math.sin(tSec * 5) * 12;
+              } else if (c >= 55 && c <= 82 && r >= 38 && r <= 80) {
+                const earWave = Math.sin(tSec * 2.5);
+                targetC = c - Math.abs(earWave) * 44;
+                targetR = r - Math.sin(tSec * 5) * 12;
+              }
+            } else if (mode === "carnival") {
+              // EVERYTHING AT ONCE:
+              if (isInside(r, c, eyesAllBox)) {
+                targetR = r + 13 + Math.sin(tSec * 3) * 4;
+                targetC = c + Math.cos(tSec * 2) * 6;
+              } else if (isInside(r, c, mouthBox)) {
+                targetR = r - 5 - Math.sin(tSec * 3) * 4;
+                targetC = c - Math.cos(tSec * 2) * 6;
+              } else if (isInside(r, c, noseBox)) {
+                targetR = r - 24 + Math.sin(tSec * 6) * 5;
+              } else if (isInside(r, c, rightEarBox)) {
+                targetC = c + Math.sin(tSec * 2.5) * 40;
+                targetR = r + Math.cos(tSec * 3) * 14;
+              }
+            } else if (mode === "liquid") {
+              const wave = Math.round(
                 Math.sin(r * 0.18 + tSec * 3) * 16 * intensity +
                   Math.cos(r * 0.08 - tSec * 2) * 8 * intensity
               );
-              const targetC = c + waveOffset;
-              if (targetC >= 0 && targetC < totalSubCols) {
-                const targetIdx = r * totalSubCols + targetC;
-                activeBuf[targetIdx] = baseActive[idx];
-                normBuf[targetIdx] = baseNorm[idx];
-              }
-              continue;
-            }
-
-            if (mode === "scatter") {
-              // Modules scatter outwards
+              targetC = c + wave;
+            } else if (mode === "scatter") {
               const modR = Math.floor(r / subPerModule);
               const modC = Math.floor(c / subPerModule);
               const modIdx = modR * cols + modC;
               const p = scatterParticlesRef.current[modIdx];
-
               const cycleT = 0.5 + 0.5 * Math.sin(tSec * 1.5);
-              const currentDx = Math.round((p ? p.targetDx : 0) * cycleT * intensity);
-              const currentDy = Math.round((p ? p.targetDy : 0) * cycleT * intensity);
-
-              const targetR = r + currentDy;
-              const targetC = c + currentDx;
-
-              if (targetR >= 0 && targetR < totalSubRows && targetC >= 0 && targetC < totalSubCols) {
-                const targetIdx = targetR * totalSubCols + targetC;
-                activeBuf[targetIdx] = baseActive[idx];
-                normBuf[targetIdx] = baseNorm[idx];
-              }
-              continue;
+              targetR = r + Math.round((p ? p.targetDy : 0) * cycleT * intensity);
+              targetC = c + Math.round((p ? p.targetDx : 0) * cycleT * intensity);
             }
 
-            // Static base face background (contour, hair, chin)
-            if (!inEyes && !inMouth && !inLeftEar && !inRightEar && !inNose) {
-              activeBuf[idx] = baseActive[idx];
-              normBuf[idx] = baseNorm[idx];
-            } else if (mode === "idle") {
-              activeBuf[idx] = baseActive[idx];
-              normBuf[idx] = baseNorm[idx];
+            // Interpolate from original position (r, c) to (targetR, targetC) by morph
+            const finalR = Math.round(r + (targetR - r) * effectiveMorph + jitterR);
+            const finalC = Math.round(c + (targetC - c) * effectiveMorph + jitterC);
+
+            if (finalR >= 0 && finalR < totalSubRows && finalC >= 0 && finalC < totalSubCols) {
+              const destIdx = finalR * totalSubCols + finalC;
+              activeBuf[destIdx] = baseActive[srcIdx];
+              normBuf[destIdx] = Math.max(normBuf[destIdx], baseNorm[srcIdx]);
             }
           }
         }
 
-        // Draw animated feature layers on top if not liquid or scatter
-        if (mode !== "liquid" && mode !== "scatter" && mode !== "idle") {
-          // A. Draw Eyes
-          for (let r = eyesBox.minR; r <= eyesBox.maxR; r++) {
-            for (let c = eyesBox.minC; c <= eyesBox.maxC; c++) {
-              const srcIdx = r * totalSubCols + c;
-              if (baseActive[srcIdx] === 0) continue;
-
-              const targetR = Math.round(r + eyesOffset.dr);
-              const targetC = Math.round(c + eyesOffset.dc);
-
-              if (targetR >= 0 && targetR < totalSubRows && targetC >= 0 && targetC < totalSubCols) {
-                const targetIdx = targetR * totalSubCols + targetC;
-                activeBuf[targetIdx] = baseActive[srcIdx];
-                normBuf[targetIdx] = baseNorm[srcIdx];
-              }
-            }
-          }
-
-          // B. Draw Mouth
-          for (let r = mouthBox.minR; r <= mouthBox.maxR; r++) {
-            for (let c = mouthBox.minC; c <= mouthBox.maxC; c++) {
-              const srcIdx = r * totalSubCols + c;
-              if (baseActive[srcIdx] === 0) continue;
-
-              const targetR = Math.round(r + mouthOffset.dr);
-              const targetC = Math.round(c + mouthOffset.dc);
-
-              if (targetR >= 0 && targetR < totalSubRows && targetC >= 0 && targetC < totalSubCols) {
-                const targetIdx = targetR * totalSubCols + targetC;
-                activeBuf[targetIdx] = baseActive[srcIdx];
-                normBuf[targetIdx] = baseNorm[srcIdx];
-              }
-            }
-          }
-
-          // C. Draw Left Ear
-          for (let r = leftEarBox.minR; r <= leftEarBox.maxR; r++) {
-            for (let c = leftEarBox.minC; c <= leftEarBox.maxC; c++) {
-              const srcIdx = r * totalSubCols + c;
-              if (baseActive[srcIdx] === 0) continue;
-
-              const targetR = Math.round(r + leftEarOffset.dr);
-              const targetC = Math.round(c + leftEarOffset.dc);
-
-              if (targetR >= 0 && targetR < totalSubRows && targetC >= 0 && targetC < totalSubCols) {
-                const targetIdx = targetR * totalSubCols + targetC;
-                activeBuf[targetIdx] = baseActive[srcIdx];
-                normBuf[targetIdx] = baseNorm[srcIdx];
-              }
-            }
-          }
-
-          // D. Draw Right Ear
-          for (let r = rightEarBox.minR; r <= rightEarBox.maxR; r++) {
-            for (let c = rightEarBox.minC; c <= rightEarBox.maxC; c++) {
-              const srcIdx = r * totalSubCols + c;
-              if (baseActive[srcIdx] === 0) continue;
-
-              const targetR = Math.round(r + rightEarOffset.dr);
-              const targetC = Math.round(c + rightEarOffset.dc);
-
-              if (targetR >= 0 && targetR < totalSubRows && targetC >= 0 && targetC < totalSubCols) {
-                const targetIdx = targetR * totalSubCols + targetC;
-                activeBuf[targetIdx] = baseActive[srcIdx];
-                normBuf[targetIdx] = baseNorm[srcIdx];
-              }
-            }
-          }
-
-          // E. Draw Nose
-          for (let r = noseBox.minR; r <= noseBox.maxR; r++) {
-            for (let c = noseBox.minC; c <= noseBox.maxC; c++) {
-              const srcIdx = r * totalSubCols + c;
-              if (baseActive[srcIdx] === 0) continue;
-
-              const targetR = Math.round(r + noseOffset.dr);
-              const targetC = Math.round(c + noseOffset.dc);
-
-              if (targetR >= 0 && targetR < totalSubRows && targetC >= 0 && targetC < totalSubCols) {
-                const targetIdx = targetR * totalSubCols + targetC;
-                activeBuf[targetIdx] = baseActive[srcIdx];
-                normBuf[targetIdx] = baseNorm[srcIdx];
-              }
-            }
-          }
-        }
-
-        // 3. CANVAS RENDER LOOP (18x18px modules with 2x2px micro-pixels)
+        // 2. CANVAS RENDER LOOP (18x18px modules with 2x2px micro-pixels)
         ctx.clearRect(0, 0, totalWidth, totalHeight);
 
         const now = performance.now();
@@ -626,11 +575,9 @@ export const FunLedMatrix = React.forwardRef<HTMLDivElement, FunLedMatrixProps>(
             const modIgniteTime = modSeed * ignitionWindow;
             const modAge = elapsed - modIgniteTime;
 
-            // Flat module ground
             ctx.fillStyle = isHovered ? tokens.colors.surfacePill : tokens.colors.surface;
             ctx.fillRect(modX, modY, pixelSize, pixelSize);
 
-            // Render 9x9 micro-pixels
             for (let subR = 0; subR < subPerModule; subR++) {
               const globalR = r * subPerModule + subR;
               const py = modY + subR * subPixelSize;
@@ -709,8 +656,7 @@ export const FunLedMatrix = React.forwardRef<HTMLDivElement, FunLedMatrixProps>(
           }
         }
 
-        // Loop continuously when playing or igniting
-        if (isPlaying || isIgniting) {
+        if (isPlaying || isIgniting || typeof manualMorphProgress === "number") {
           animId = requestAnimationFrame(render);
         }
       };
@@ -725,6 +671,7 @@ export const FunLedMatrix = React.forwardRef<HTMLDivElement, FunLedMatrixProps>(
       speed,
       intensity,
       isPlaying,
+      manualMorphProgress,
       theme,
       animPhase,
       hoveredModule,
@@ -740,7 +687,6 @@ export const FunLedMatrix = React.forwardRef<HTMLDivElement, FunLedMatrixProps>(
       totalHeight,
     ]);
 
-    // Handle interactive hover over 18x18px modules
     const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
       if (!interactive) return;
       const canvas = canvasRef.current;

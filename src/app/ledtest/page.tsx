@@ -6,12 +6,14 @@ import { FunLedMatrix, type FunAnimationMode } from "@/shared/ui/led-matrix";
 import { Section } from "@/shared/ui/section";
 
 export default function LedTestPage() {
-  const [mode, setMode] = useState<FunAnimationMode>("swap");
+  const [mode, setMode] = useState<FunAnimationMode>("squished-goofy");
   const [isPlaying, setIsPlaying] = useState<boolean>(true);
   const [speed, setSpeed] = useState<number>(1.0);
   const [intensity, setIntensity] = useState<number>(1.0);
   const [theme, setTheme] = useState<"amber" | "monochrome">("amber");
   const [igniteTrigger, setIgniteTrigger] = useState<boolean>(false);
+  const [isManualScrub, setIsManualScrub] = useState<boolean>(false);
+  const [morphPercent, setMorphPercent] = useState<number>(100);
 
   const handleTriggerIgnite = () => {
     setIgniteTrigger(true);
@@ -19,6 +21,12 @@ export default function LedTestPage() {
   };
 
   const modeDescriptions: Record<FunAnimationMode, string> = {
+    "squished-goofy":
+      "Глаза опускаются вниз (+13 строк), а рот подтягивается вверх (-5 строк) прямо к ним в упор. Получается смешное компактное микро-лицо, нос уезжает на лоб, а правое ухо — на макушку.",
+    "pixel-sort":
+      "Попиксельный сдвиг со струйной турбулентностью: в моменты перехода пиксели вибрируют и текут цифровыми полосами, собираясь в комичную гримасу.",
+    picasso:
+      "Кубистический коллаж: левый глаз уходит под подбородок, правый — на лоб, рот сдвинут на щеку, а ухо на подбородке.",
     swap: "Рот и глаза плавно меняются местами по дуге, задерживаются и возвращаются обратно.",
     "rolling-ears":
       "Уши отсоединяются от головы и катаются в стороны к границам экрана на синусоиде.",
@@ -51,8 +59,7 @@ export default function LedTestPage() {
             LED Matrix Lab · /portrait-2.png
           </h1>
           <p className="text-[18px] font-light leading-[26px] text-content-secondary">
-            Отдельный вариант компонента Led с кинетической лицевой анимацией.
-            Второе фото с динамическим разбеганием частей лица.
+            Попиксельная пересортировка: глаза и рот стягиваются вместе в упор, создавая смешную гримасу с цифровой турбулентностью.
           </p>
         </div>
 
@@ -64,6 +71,7 @@ export default function LedTestPage() {
             speed={speed}
             intensity={intensity}
             isPlaying={isPlaying}
+            manualMorphProgress={isManualScrub ? morphPercent / 100 : undefined}
             theme={theme}
             cols={28}
             rows={13}
@@ -78,6 +86,9 @@ export default function LedTestPage() {
         {/* Mode Description Bar */}
         <div className="flex w-full flex-col gap-[4px] rounded-[10px] bg-surface p-[16px] border border-border-hardware">
           <span className="font-hauora font-medium text-[14px] text-signal-amber uppercase tracking-wider">
+            {mode === "squished-goofy" && "🤪 Режим: Глаза + Рот вместе (Микро-лицо)"}
+            {mode === "pixel-sort" && "⚡ Режим: Попиксельная сортировка (Stream Sort)"}
+            {mode === "picasso" && "🎨 Режим: Пикассо / Кубизм"}
             {mode === "swap" && "🎭 Режим: Рот ↔ Глаза"}
             {mode === "rolling-ears" && "👂 Режим: Катающиеся уши"}
             {mode === "carnival" && "🎪 Режим: Карнавал / Полный разнос"}
@@ -99,32 +110,68 @@ export default function LedTestPage() {
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-[8px] w-full">
             <button
               type="button"
+              onClick={() => setMode("squished-goofy")}
+              className={`flex h-[42px] items-center justify-center rounded-[8px] px-[12px] font-hauora text-[13px] font-medium transition-all duration-150 ${
+                mode === "squished-goofy"
+                  ? "bg-signal-amber text-[#1a1a1a] shadow-[0_0_12px_rgba(255,170,0,0.4)]"
+                  : "bg-surface-pill text-content-secondary hover:text-content-primary hover:bg-[#383838]"
+              }`}
+            >
+              🤪 Рот + Глаза
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setMode("pixel-sort")}
+              className={`flex h-[42px] items-center justify-center rounded-[8px] px-[12px] font-hauora text-[13px] font-medium transition-all duration-150 ${
+                mode === "pixel-sort"
+                  ? "bg-signal-amber text-[#1a1a1a] shadow-[0_0_12px_rgba(255,170,0,0.4)]"
+                  : "bg-surface-pill text-content-secondary hover:text-content-primary hover:bg-[#383838]"
+              }`}
+            >
+              ⚡ Сортировка
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setMode("picasso")}
+              className={`flex h-[42px] items-center justify-center rounded-[8px] px-[12px] font-hauora text-[13px] font-medium transition-all duration-150 ${
+                mode === "picasso"
+                  ? "bg-signal-amber text-[#1a1a1a] shadow-[0_0_12px_rgba(255,170,0,0.4)]"
+                  : "bg-surface-pill text-content-secondary hover:text-content-primary hover:bg-[#383838]"
+              }`}
+            >
+              🎨 Пикассо
+            </button>
+
+            <button
+              type="button"
               onClick={() => setMode("swap")}
-              className={`flex h-[42px] items-center justify-center rounded-[8px] px-[12px] font-hauora text-[14px] font-medium transition-all duration-150 ${
+              className={`flex h-[42px] items-center justify-center rounded-[8px] px-[12px] font-hauora text-[13px] font-medium transition-all duration-150 ${
                 mode === "swap"
                   ? "bg-signal-amber text-[#1a1a1a] shadow-[0_0_12px_rgba(255,170,0,0.4)]"
                   : "bg-surface-pill text-content-secondary hover:text-content-primary hover:bg-[#383838]"
               }`}
             >
-              Рот ↔ Глаза
+              🎭 Рот ↔ Глаза
             </button>
 
             <button
               type="button"
               onClick={() => setMode("rolling-ears")}
-              className={`flex h-[42px] items-center justify-center rounded-[8px] px-[12px] font-hauora text-[14px] font-medium transition-all duration-150 ${
+              className={`flex h-[42px] items-center justify-center rounded-[8px] px-[12px] font-hauora text-[13px] font-medium transition-all duration-150 ${
                 mode === "rolling-ears"
                   ? "bg-signal-amber text-[#1a1a1a] shadow-[0_0_12px_rgba(255,170,0,0.4)]"
                   : "bg-surface-pill text-content-secondary hover:text-content-primary hover:bg-[#383838]"
               }`}
             >
-              Катающиеся уши
+              👂 Уши
             </button>
 
             <button
               type="button"
               onClick={() => setMode("carnival")}
-              className={`flex h-[42px] items-center justify-center rounded-[8px] px-[12px] font-hauora text-[14px] font-medium transition-all duration-150 ${
+              className={`flex h-[42px] items-center justify-center rounded-[8px] px-[12px] font-hauora text-[13px] font-medium transition-all duration-150 ${
                 mode === "carnival"
                   ? "bg-signal-amber text-[#1a1a1a] shadow-[0_0_12px_rgba(255,170,0,0.4)]"
                   : "bg-surface-pill text-content-secondary hover:text-content-primary hover:bg-[#383838]"
@@ -136,42 +183,124 @@ export default function LedTestPage() {
             <button
               type="button"
               onClick={() => setMode("scatter")}
-              className={`flex h-[42px] items-center justify-center rounded-[8px] px-[12px] font-hauora text-[14px] font-medium transition-all duration-150 ${
+              className={`flex h-[42px] items-center justify-center rounded-[8px] px-[12px] font-hauora text-[13px] font-medium transition-all duration-150 ${
                 mode === "scatter"
                   ? "bg-signal-amber text-[#1a1a1a] shadow-[0_0_12px_rgba(255,170,0,0.4)]"
                   : "bg-surface-pill text-content-secondary hover:text-content-primary hover:bg-[#383838]"
               }`}
             >
-              Распад & Сборка
+              💥 Распад
             </button>
 
             <button
               type="button"
               onClick={() => setMode("liquid")}
-              className={`flex h-[42px] items-center justify-center rounded-[8px] px-[12px] font-hauora text-[14px] font-medium transition-all duration-150 ${
+              className={`flex h-[42px] items-center justify-center rounded-[8px] px-[12px] font-hauora text-[13px] font-medium transition-all duration-150 ${
                 mode === "liquid"
                   ? "bg-signal-amber text-[#1a1a1a] shadow-[0_0_12px_rgba(255,170,0,0.4)]"
                   : "bg-surface-pill text-content-secondary hover:text-content-primary hover:bg-[#383838]"
               }`}
             >
-              Плавление
+              🌊 Плавление
             </button>
 
             <button
               type="button"
               onClick={() => setMode("idle")}
-              className={`flex h-[42px] items-center justify-center rounded-[8px] px-[12px] font-hauora text-[14px] font-medium transition-all duration-150 ${
+              className={`flex h-[42px] items-center justify-center rounded-[8px] px-[12px] font-hauora text-[13px] font-medium transition-all duration-150 ${
                 mode === "idle"
                   ? "bg-signal-amber text-[#1a1a1a] shadow-[0_0_12px_rgba(255,170,0,0.4)]"
                   : "bg-surface-pill text-content-secondary hover:text-content-primary hover:bg-[#383838]"
               }`}
             >
-              Оригинал
+              👤 Оригинал
             </button>
           </div>
         </Section>
 
-        {/* SECTION 2: HARDWARE PLAYBACK CONTROLS */}
+        {/* SECTION 2: MORPH SCRUBBER (PIXEL-BY-PIXEL POSITIONING) */}
+        <Section
+          label="SCRUB"
+          direction="column"
+          className="w-full gap-[12px] p-[16px] sm:p-[20px]"
+        >
+          <div className="flex w-full items-center justify-between">
+            <span className="font-hauora text-[14px] font-medium text-content-primary">
+              Скраб перемещения пикселей
+            </span>
+            <div className="flex items-center gap-[6px] bg-[#1a1a1a] p-[3px] rounded-[8px]">
+              <button
+                type="button"
+                onClick={() => setIsManualScrub(false)}
+                className={`h-[28px] px-[10px] rounded-[6px] font-hauora text-[12px] font-medium transition-colors ${
+                  !isManualScrub
+                    ? "bg-signal-amber text-[#1a1a1a]"
+                    : "text-content-secondary hover:text-content-primary"
+                }`}
+              >
+                Auto-Loop
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsManualScrub(true)}
+                className={`h-[28px] px-[10px] rounded-[6px] font-hauora text-[12px] font-medium transition-colors ${
+                  isManualScrub
+                    ? "bg-signal-amber text-[#1a1a1a]"
+                    : "text-content-secondary hover:text-content-primary"
+                }`}
+              >
+                Ручной скраб
+              </button>
+            </div>
+          </div>
+
+          {isManualScrub ? (
+            <div className="flex w-full flex-col gap-[10px] pt-[4px]">
+              <div className="flex w-full items-center gap-[12px]">
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={morphPercent}
+                  onChange={(e) => setMorphPercent(Number(e.target.value))}
+                  className="w-full accent-signal-amber cursor-pointer"
+                />
+                <span className="font-mono text-[14px] text-signal-amber w-[48px] text-right">
+                  {morphPercent}%
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-[12px] text-content-secondary">
+                <button
+                  type="button"
+                  onClick={() => setMorphPercent(0)}
+                  className="hover:text-content-primary underline decoration-dotted"
+                >
+                  0% (Оригинал)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMorphPercent(50)}
+                  className="hover:text-content-primary underline decoration-dotted"
+                >
+                  50% (В движении)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMorphPercent(100)}
+                  className="hover:text-content-primary underline decoration-dotted"
+                >
+                  100% (Глаза + рот вместе)
+                </button>
+              </div>
+            </div>
+          ) : (
+            <p className="font-hauora font-light text-[13px] text-content-secondary">
+              Включен циклический авто-луп: лицо держит форму, затем плавно перетекает в смешную позу, фиксируется и возвращается обратно. Переключите на «Ручной скраб», чтобы двигать ползунок вручную.
+            </p>
+          )}
+        </Section>
+
+        {/* SECTION 3: HARDWARE PLAYBACK CONTROLS */}
         <Section
           label="CTRL"
           direction="column"
@@ -275,7 +404,7 @@ export default function LedTestPage() {
           </div>
         </Section>
 
-        {/* SECTION 3: HARDWARE SPECIFICATIONS */}
+        {/* SECTION 4: HARDWARE SPECIFICATIONS */}
         <div className="flex w-full flex-col gap-[8px] pb-[40px] text-content-secondary text-[12px] font-hauora font-light">
           <div className="flex justify-between border-b border-border-hardware py-[6px]">
             <span>Модульная сетка:</span>
@@ -290,8 +419,8 @@ export default function LedTestPage() {
             <span className="text-content-primary">/portrait-2.png (313×260px contain)</span>
           </div>
           <div className="flex justify-between py-[6px]">
-            <span>Интерактивность:</span>
-            <span className="text-content-primary">Наведите курсор на экран для локальной подсветки модулей</span>
+            <span>Анатомический сдвиг:</span>
+            <span className="text-content-primary">Глаза (+13 строк), Рот (-5 строк), Нос (-24 строки на лоб)</span>
           </div>
         </div>
       </div>
