@@ -46,7 +46,7 @@ export default function LedTestPage() {
         <nav className="flex w-full items-center justify-start">
           <Link
             href="/"
-            className="inline-flex items-center gap-[8px] font-hauora text-[18px] font-light leading-[26px] text-content-secondary hover:text-content-primary transition-colors duration-150"
+            className="inline-flex items-center gap-[8px] font-hauora text-[16px] font-light leading-[24px] text-content-secondary hover:text-content-primary transition-colors duration-150"
           >
             <span>←</span>
             <span>back to portfolio</span>
