@@ -391,7 +391,7 @@ export function CaseBlockRenderer({ block, id }: CaseBlockRendererProps) {
                   {m.value}
                 </span>
                 <div className="flex flex-col gap-[2px]">
-                  <span className="font-hauora font-light text-[14px] leading-[20px] text-content-primary">
+                  <span className="font-hauora font-medium text-[14px] leading-[20px] text-content-primary">
                     {m.label}
                   </span>
                   {m.description && (
