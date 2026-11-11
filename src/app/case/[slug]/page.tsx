@@ -84,13 +84,20 @@ async function getCaseStudy(slug: string): Promise<CaseStudyData | null> {
         tagline,
         "coverImage": coverImage.asset->url,
         "projectAnchor": project->anchorId,
+        sections[]{
+          _key,
+          anchor,
+          title,
+          blocks
+        },
         blocks
       }`,
       { slug }
     );
 
-    if (sanityCase?.blocks) {
-      sanityCase.blocks = sanityCase.blocks.map((block: any) => {
+    const resolveGalleryImages = (blocksList: any[]) => {
+      if (!Array.isArray(blocksList)) return [];
+      return blocksList.map((block: any) => {
         if (block._type === "galleryBlock" && Array.isArray(block.images)) {
           return {
             ...block,
@@ -110,6 +117,18 @@ async function getCaseStudy(slug: string): Promise<CaseStudyData | null> {
         }
         return block;
       });
+    };
+
+    if (sanityCase) {
+      if (Array.isArray(sanityCase.sections)) {
+        sanityCase.sections = sanityCase.sections.map((sec) => ({
+          ...sec,
+          blocks: resolveGalleryImages(sec.blocks),
+        }));
+      }
+      if (Array.isArray(sanityCase.blocks)) {
+        sanityCase.blocks = resolveGalleryImages(sanityCase.blocks);
+      }
     }
 
     return sanityCase || null;

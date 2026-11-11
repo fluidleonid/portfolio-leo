@@ -4,125 +4,73 @@ import React, { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { TopBar, type TunerFrame } from "@/widgets/top-bar";
 import { CaseBlockRenderer } from "./CaseBlockRenderer";
-import type { CaseStudyData } from "@/entities/case-study";
+import {
+  type CaseStudyData,
+  normalizeCaseSections,
+} from "@/entities/case-study";
 
 export interface CaseStudyViewProps {
   caseData: CaseStudyData;
 }
 
 export function CaseStudyView({ caseData }: CaseStudyViewProps) {
-  const [activeStation, setActiveStation] = useState<string>("overview");
+  // Resolve sections (using explicit sections if defined, or auto-grouping legacy blocks)
+  const sections = useMemo(() => {
+    return normalizeCaseSections(caseData);
+  }, [caseData]);
+
+  const [activeStation, setActiveStation] = useState<string>(
+    sections[0]?.anchor || "overview"
+  );
 
   // Destination on the main page: back to the specific project block we came from
   const backHref = caseData.projectAnchor ? `/#${caseData.projectAnchor}` : "/";
 
-  // Generate tuner stations:
-  // First station is always 'overview' (encompassing title, description, metadata table, and initial problem)
-  // Subsequent stations are distinct major chapters, strictly excluding horizontal breakout galleries
+  // Generate tuner stations directly from section anchors
   const caseStations = useMemo<TunerFrame[]>(() => {
-    const list: TunerFrame[] = [
-      { id: "overview", label: "overview", targetId: "overview" },
-    ];
+    return sections.map((sec) => ({
+      id: sec.anchor,
+      label: sec.anchor.toLowerCase(),
+      targetId: sec.anchor,
+    }));
+  }, [sections]);
 
-    const isOverviewContext = (badgeOrTitle: string) => {
-      const lower = badgeOrTitle.toLowerCase();
-      return (
-        lower.includes("overview") ||
-        lower.includes("challenge") ||
-        lower.includes("problem") ||
-        lower.includes("context") ||
-        lower.includes("intro")
-      );
-    };
-
-    let passedOverview = false;
-    let lastLabel = "overview";
-
-    (caseData.blocks || []).forEach((block, idx) => {
-      // 1. Strictly exclude horizontal breakout galleries from the tuner bar
-      if (block._type === "galleryBlock") return;
-
-      // 2. Metadata table is always part of the overview block
-      if (block._type === "metadataTable") return;
-
-      // Extract candidate badge
-      let rawBadge = "";
-      if ("badge" in block && typeof block.badge === "string" && block.badge.trim()) {
-        rawBadge = block.badge.trim();
-      }
-
-      // Check if this block is part of the introductory problem/overview
-      if (!passedOverview) {
-        if (
-          (rawBadge && isOverviewContext(rawBadge)) ||
-          block._type === "problemList"
-        ) {
-          return;
-        }
-        passedOverview = true;
-      }
-
-      // Determine clean chapter label
-      let label = rawBadge.toLowerCase();
-      if (!label) {
-        if (block._type === "teamSection") label = "team";
-        else if (block._type === "discoverySection") label = "discovery";
-        else if (block._type === "hypothesesSection") label = "hypotheses";
-        else if (block._type === "metricsBlock") label = "impact";
-        else if (block._type === "sectionHeading" && "title" in block && typeof block.title === "string") {
-          label = block.title.split(" ")[0].toLowerCase();
-        } else {
-          label = block._type
-            .replace("Section", "")
-            .replace("Block", "")
-            .toLowerCase();
-        }
-      }
-
-      // Avoid consecutive duplicate stations (e.g. sectionHeading "discovery" + discoverySection)
-      if (label && label !== lastLabel) {
-        const blockId = `block-${idx}`;
-        list.push({
-          id: blockId,
-          label,
-          targetId: blockId,
-        });
-        lastLabel = label;
-      }
-    });
-
-    return list;
-  }, [caseData.blocks]);
-
-  // Synchronize active station based on scroll position within the case study
+  // Synchronize active station based on scroll position
   useEffect(() => {
     const handleScroll = () => {
-      for (let i = caseStations.length - 1; i >= 1; i--) {
-        const item = caseStations[i];
-        const el = document.getElementById(item.targetId);
+      const topOffset = 160;
+      for (let i = sections.length - 1; i >= 1; i--) {
+        const item = sections[i];
+        const el = document.getElementById(item.anchor);
         if (el) {
           const rect = el.getBoundingClientRect();
-          if (rect.top <= 160) {
-            setActiveStation(item.id);
+          if (rect.top <= topOffset) {
+            setActiveStation(item.anchor);
             return;
           }
         }
       }
-      setActiveStation("overview");
+      setActiveStation(sections[0]?.anchor || "overview");
     };
 
     window.addEventListener("scroll", handleScroll, { passive: true });
     handleScroll();
     return () => window.removeEventListener("scroll", handleScroll);
-  }, [caseStations]);
+  }, [sections]);
 
   const handleStationChange = (stationId: string) => {
     setActiveStation(stationId);
-    const target = caseStations.find((s) => s.id === stationId);
+    const target = sections.find((s) => s.anchor === stationId);
     if (target) {
-      const el = document.getElementById(target.targetId);
+      if (target.anchor === sections[0]?.anchor) {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+        return;
+      }
+      const el = document.getElementById(target.anchor);
       if (el) {
-        el.scrollIntoView({ behavior: "smooth" });
+        const rect = el.getBoundingClientRect();
+        const targetScroll = Math.max(0, rect.top + window.scrollY - 100);
+        window.scrollTo({ top: targetScroll, behavior: "smooth" });
       }
     }
   };
@@ -131,7 +79,7 @@ export function CaseStudyView({ caseData }: CaseStudyViewProps) {
     <>
       {/* 
         Full-width vintage stereo radio tuner TopBar for Case Study
-        Displays non-gallery block labels in the exact same style as on the main page
+        Displays section anchors in the exact same style as on the main page
       */}
       <TopBar
         stations={caseStations}
@@ -140,7 +88,7 @@ export function CaseStudyView({ caseData }: CaseStudyViewProps) {
       />
 
       <article className="relative flex w-full max-w-[564px] flex-col pb-[96px] sm:pb-[120px] select-none">
-        {/* 1. TOP NAVIGATION / BACK LINK (Smooth color shift on hover, zero icon movement, returns to project anchor) */}
+        {/* 1. TOP NAVIGATION / BACK LINK */}
         <nav className="flex w-full items-center justify-start pt-[8px] sm:pt-[16px]">
           <Link
             href={backHref}
@@ -151,7 +99,7 @@ export function CaseStudyView({ caseData }: CaseStudyViewProps) {
           </Link>
         </nav>
 
-        {/* 2. CASE STUDY HEADER (Part of overview: title & description) */}
+        {/* 2. CASE STUDY HEADER (Title & Pitch) */}
         <header
           id="overview"
           className="flex w-full flex-col gap-[8px] mt-[40px] sm:mt-[60px] scroll-mt-[100px]"
@@ -166,15 +114,38 @@ export function CaseStudyView({ caseData }: CaseStudyViewProps) {
           )}
         </header>
 
-        {/* 3. MODULAR CASE BLOCKS (Strictly font-hauora matching main page typography) */}
+        {/* 3. STRUCTURED SECTIONS */}
         <div className="flex w-full flex-col">
-          {caseData.blocks.map((block, idx) => (
-            <CaseBlockRenderer
-              key={block._key || idx}
-              id={`block-${idx}`}
-              block={block}
-            />
-          ))}
+          {sections.map((section, sectionIdx) => {
+            const isFirst = sectionIdx === 0;
+            return (
+              <section
+                key={section._key || section.anchor || sectionIdx}
+                id={section.anchor}
+                className={`relative flex w-full flex-col scroll-mt-[100px] select-none ${
+                  isFirst ? "mt-[32px] sm:mt-[48px]" : "mt-[80px] sm:mt-[100px]"
+                }`}
+              >
+                {/* Optional Section Heading */}
+                {section.title && (
+                  <h2 className="text-[18px] font-medium leading-[24px] text-content-primary font-hauora tracking-normal mb-[16px] sm:mb-[24px]">
+                    {section.title}
+                  </h2>
+                )}
+
+                {/* Vertical stack of blocks: gap 32px on desktop, 20px on mobile */}
+                <div className="flex w-full flex-col gap-[20px] sm:gap-[32px]">
+                  {section.blocks.map((block, blockIdx) => (
+                    <CaseBlockRenderer
+                      key={block._key || blockIdx}
+                      id={`${section.anchor}-block-${blockIdx}`}
+                      block={block}
+                    />
+                  ))}
+                </div>
+              </section>
+            );
+          })}
         </div>
 
         {/* 4. FOOTER RETURN */}

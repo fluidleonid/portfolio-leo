@@ -1,6 +1,530 @@
 import { defineType, defineField, defineArrayMember } from "sanity";
 import { MultipleImageUploadInput } from "../components/MultipleImageUploadInput";
 
+/**
+ * Reusable Modular Content Blocks for Case Studies
+ * Each block can be used freely inside any Section (or inside legacy blocks).
+ */
+export const caseBlockMembers = [
+  // 1. 2-Column Metadata Table
+  defineArrayMember({
+    name: "metadataTable",
+    title: "Metadata Table (Client / Role / Team / Delivered)",
+    type: "object",
+    fields: [
+      defineField({
+        name: "title",
+        title: "Block Title (Optional)",
+        type: "string",
+      }),
+      defineField({
+        name: "rows",
+        title: "Rows",
+        type: "array",
+        of: [
+          defineArrayMember({
+            type: "object",
+            fields: [
+              defineField({ name: "label", title: "Label", type: "string" }),
+              defineField({ name: "value", title: "Value", type: "string" }),
+            ],
+            preview: {
+              select: { title: "label", subtitle: "value" },
+            },
+          }),
+        ],
+      }),
+    ],
+    preview: {
+      select: { title: "title" },
+      prepare({ title }) {
+        return {
+          title: title || "Metadata Table",
+          subtitle: "Key-Value Spec Grid",
+        };
+      },
+    },
+  }),
+
+  // 2. Section Heading / Story Divider
+  defineArrayMember({
+    name: "sectionHeading",
+    title: "Section Heading",
+    type: "object",
+    fields: [
+      defineField({
+        name: "badge",
+        title: "Hardware Badge (e.g. OVERVIEW, DESIGN, DISCOVERY)",
+        type: "string",
+      }),
+      defineField({
+        name: "title",
+        title: "Title",
+        type: "string",
+      }),
+      defineField({
+        name: "description",
+        title: "Description",
+        type: "text",
+        rows: 3,
+      }),
+    ],
+    preview: {
+      select: { title: "title", subtitle: "badge" },
+      prepare({ title, subtitle }) {
+        return {
+          title: title || "Untitled Heading",
+          subtitle: subtitle ? `[${subtitle}]` : "Heading Block",
+        };
+      },
+    },
+  }),
+
+  // 3. Problem List
+  defineArrayMember({
+    name: "problemList",
+    title: "Key Problems & Challenges",
+    type: "object",
+    fields: [
+      defineField({
+        name: "badge",
+        title: "Badge",
+        type: "string",
+        initialValue: "PROBLEMS",
+      }),
+      defineField({
+        name: "title",
+        title: "Block Title (Optional)",
+        type: "string",
+      }),
+      defineField({
+        name: "items",
+        title: "Problems",
+        type: "array",
+        of: [
+          defineArrayMember({
+            type: "object",
+            fields: [
+              defineField({ name: "title", title: "Problem Title", type: "string" }),
+              defineField({ name: "description", title: "Problem Description", type: "text", rows: 2 }),
+              defineField({ name: "metric", title: "Negative Impact / Metric", type: "string" }),
+            ],
+            preview: {
+              select: { title: "title", subtitle: "metric" },
+            },
+          }),
+        ],
+      }),
+    ],
+    preview: {
+      select: { title: "title", items: "items" },
+      prepare({ title, items }) {
+        const count = Array.isArray(items) ? items.length : 0;
+        return {
+          title: title || "Key Problems",
+          subtitle: `${count} problem items`,
+        };
+      },
+    },
+  }),
+
+  // 4. Team Section
+  defineArrayMember({
+    name: "teamSection",
+    title: "Team & Composition",
+    type: "object",
+    fields: [
+      defineField({
+        name: "badge",
+        title: "Badge",
+        type: "string",
+        initialValue: "TEAM",
+      }),
+      defineField({
+        name: "title",
+        title: "Block Title (Optional)",
+        type: "string",
+      }),
+      defineField({
+        name: "composition",
+        title: "Team Composition",
+        type: "array",
+        of: [
+          defineArrayMember({
+            type: "object",
+            fields: [
+              defineField({ name: "role", title: "Role", type: "string" }),
+              defineField({ name: "name", title: "Name / Size", type: "string" }),
+              defineField({ name: "details", title: "Details", type: "string" }),
+            ],
+            preview: {
+              select: { title: "role", subtitle: "name" },
+            },
+          }),
+        ],
+      }),
+    ],
+    preview: {
+      select: { title: "title" },
+      prepare({ title }) {
+        return {
+          title: title || "Team Composition",
+        };
+      },
+    },
+  }),
+
+  // 5. Discovery Section
+  defineArrayMember({
+    name: "discoverySection",
+    title: "Discovery & User Research",
+    type: "object",
+    fields: [
+      defineField({
+        name: "badge",
+        title: "Badge",
+        type: "string",
+        initialValue: "DISCOVERY",
+      }),
+      defineField({
+        name: "title",
+        title: "Block Title (Optional)",
+        type: "string",
+      }),
+      defineField({
+        name: "method",
+        title: "Research Method (e.g. Contextual inquiry, Mouseflow)",
+        type: "string",
+      }),
+      defineField({
+        name: "findings",
+        title: "Key Findings",
+        type: "array",
+        of: [
+          defineArrayMember({
+            type: "object",
+            fields: [
+              defineField({ name: "title", title: "Finding Title", type: "string" }),
+              defineField({ name: "description", title: "Finding Description", type: "text", rows: 2 }),
+              defineField({ name: "stat", title: "Statistic / Percentage", type: "string" }),
+            ],
+            preview: {
+              select: { title: "title", subtitle: "stat" },
+            },
+          }),
+        ],
+      }),
+    ],
+    preview: {
+      select: { title: "title", method: "method" },
+      prepare({ title, method }) {
+        return {
+          title: title || "Discovery & Research",
+          subtitle: method || "Research block",
+        };
+      },
+    },
+  }),
+
+  // 6. Hypotheses Section
+  defineArrayMember({
+    name: "hypothesesSection",
+    title: "Hypotheses & Architecture",
+    type: "object",
+    fields: [
+      defineField({
+        name: "badge",
+        title: "Badge",
+        type: "string",
+        initialValue: "HYPOTHESES",
+      }),
+      defineField({
+        name: "title",
+        title: "Block Title (Optional)",
+        type: "string",
+      }),
+      defineField({
+        name: "items",
+        title: "Hypotheses",
+        type: "array",
+        of: [
+          defineArrayMember({
+            type: "object",
+            fields: [
+              defineField({ name: "title", title: "Hypothesis", type: "string" }),
+              defineField({ name: "description", title: "Rationale / Implementation", type: "text", rows: 2 }),
+              defineField({ name: "expectedOutcome", title: "Expected Outcome", type: "string" }),
+            ],
+            preview: {
+              select: { title: "title", subtitle: "expectedOutcome" },
+            },
+          }),
+        ],
+      }),
+    ],
+    preview: {
+      select: { title: "title" },
+      prepare({ title }) {
+        return {
+          title: title || "Hypotheses & Architecture",
+        };
+      },
+    },
+  }),
+
+  // 7. Horizontal Breakout Gallery
+  defineArrayMember({
+    name: "galleryBlock",
+    title: "Horizontal Gallery (Full Bleed Breakout)",
+    type: "object",
+    fields: [
+      defineField({
+        name: "title",
+        title: "Gallery Title (Optional)",
+        type: "string",
+      }),
+      defineField({
+        name: "images",
+        title: "Images",
+        type: "array",
+        description:
+          "Изображения галереи кейса. Можно загружать сразу несколько файлов через кнопку или Drag & Drop.",
+        options: {
+          layout: "grid",
+        },
+        components: {
+          input: MultipleImageUploadInput,
+        },
+        of: [
+          defineArrayMember({
+            type: "image",
+            options: { hotspot: true },
+            fields: [
+              defineField({
+                name: "alt",
+                title: "Alt Text / Описание для тултипа",
+                type: "string",
+                description:
+                  "Текст для всплывающего тултипа на прогресс-баре галереи (шрифт Hauora 10px)",
+              }),
+            ],
+          }),
+          defineArrayMember({
+            type: "object",
+            name: "imagePath",
+            title: "Custom Image Path / URL",
+            fields: [
+              defineField({
+                name: "url",
+                title: "Path or URL",
+                type: "string",
+                validation: (Rule) => Rule.required(),
+              }),
+              defineField({
+                name: "alt",
+                title: "Alt Text / Описание для тултипа",
+                type: "string",
+              }),
+            ],
+            preview: {
+              select: { title: "url", subtitle: "alt" },
+            },
+          }),
+        ],
+      }),
+      defineField({
+        name: "height",
+        title: "Height (px)",
+        type: "number",
+        initialValue: 600,
+      }),
+      defineField({
+        name: "caption",
+        title: "Caption",
+        type: "string",
+      }),
+    ],
+    preview: {
+      select: { title: "title", images: "images" },
+      prepare({ title, images }) {
+        const count = Array.isArray(images) ? images.length : 0;
+        return {
+          title: title || "Horizontal Gallery",
+          subtitle: `${count} image${count === 1 ? "" : "s"}`,
+        };
+      },
+    },
+  }),
+
+  // 8. Results & Impact Metrics
+  defineArrayMember({
+    name: "metricsBlock",
+    title: "Results & Impact Metrics",
+    type: "object",
+    fields: [
+      defineField({
+        name: "badge",
+        title: "Badge",
+        type: "string",
+        initialValue: "RESULTS",
+      }),
+      defineField({
+        name: "title",
+        title: "Block Title (Optional)",
+        type: "string",
+      }),
+      defineField({
+        name: "items",
+        title: "Metrics",
+        type: "array",
+        of: [
+          defineArrayMember({
+            type: "object",
+            fields: [
+              defineField({
+                name: "value",
+                title: "Impact Value (e.g. 70%, 15 min, 2.5x)",
+                type: "string",
+              }),
+              defineField({ name: "label", title: "Metric Label", type: "string" }),
+              defineField({ name: "description", title: "Context / Proof", type: "text", rows: 2 }),
+            ],
+            preview: {
+              select: { title: "value", subtitle: "label" },
+            },
+          }),
+        ],
+      }),
+    ],
+    preview: {
+      select: { title: "title", items: "items" },
+      prepare({ title, items }) {
+        const count = Array.isArray(items) ? items.length : 0;
+        return {
+          title: title || "Results & Impact Metrics",
+          subtitle: `${count} metrics`,
+        };
+      },
+    },
+  }),
+
+  // 9. Plain / Story Paragraphs
+  defineArrayMember({
+    name: "textBlock",
+    title: "Text / Story Paragraphs",
+    type: "object",
+    fields: [
+      defineField({
+        name: "title",
+        title: "Block Title (Optional)",
+        type: "string",
+      }),
+      defineField({
+        name: "content",
+        title: "Content",
+        type: "text",
+        rows: 4,
+      }),
+    ],
+    preview: {
+      select: { title: "title", content: "content" },
+      prepare({ title, content }) {
+        return {
+          title: title || "Text Block",
+          subtitle: content ? content.slice(0, 60) + "..." : "Empty",
+        };
+      },
+    },
+  }),
+
+  // 10. Quote Callout
+  defineArrayMember({
+    name: "quoteCallout",
+    title: "Quote / Key Takeaway",
+    type: "object",
+    fields: [
+      defineField({
+        name: "title",
+        title: "Block Title (Optional)",
+        type: "string",
+      }),
+      defineField({
+        name: "quote",
+        title: "Quote",
+        type: "text",
+        rows: 2,
+      }),
+      defineField({ name: "author", title: "Author", type: "string" }),
+      defineField({ name: "role", title: "Role", type: "string" }),
+    ],
+    preview: {
+      select: { title: "quote", subtitle: "author" },
+      prepare({ title, subtitle }) {
+        return {
+          title: title ? `"${title.slice(0, 50)}..."` : "Quote",
+          subtitle: subtitle || "Quote block",
+        };
+      },
+    },
+  }),
+];
+
+/**
+ * Case Section Member Definition
+ * Sections structure the case study into distinct chapters (overview, discovery, design, impact, etc.)
+ * Each Section has an anchor that links into the TopBar radio tuner.
+ */
+export const caseSectionMember = defineArrayMember({
+  name: "caseSection",
+  title: "Case Section (Раздел кейса)",
+  type: "object",
+  fields: [
+    defineField({
+      name: "anchor",
+      title: "Tuner Anchor / ID (Якорь для топбара)",
+      type: "string",
+      description:
+        "Идентификатор раздела для верхнего радио-тюнера TopBar (например: overview, discovery, design, impact, team). Только строчные буквы и дефис.",
+      validation: (Rule) =>
+        Rule.required()
+          .regex(/^[a-z0-9_-]+$/, {
+            name: "slug",
+            invert: false,
+          })
+          .error("Якорь должен состоять только из строчных букв, цифр и дефиса (например: overview, discovery, design)"),
+    }),
+    defineField({
+      name: "title",
+      title: "Section Heading (Опциональный заголовок секции)",
+      type: "string",
+      description: "Опциональный заголовок, отображаемый над блоками секции (шрифт Hauora 18px)",
+    }),
+    defineField({
+      name: "blocks",
+      title: "Section Blocks (Блоки внутри раздела)",
+      type: "array",
+      description:
+        "Добавляйте любые блоки в этот раздел (галерея, проблемы, метрики, команда, текст и т.д.)",
+      of: caseBlockMembers,
+    }),
+  ],
+  preview: {
+    select: {
+      anchor: "anchor",
+      title: "title",
+      blocks: "blocks",
+    },
+    prepare({ anchor, title, blocks }) {
+      const count = Array.isArray(blocks) ? blocks.length : 0;
+      const anchorTag = anchor ? `[${anchor}]` : "[untitled]";
+      return {
+        title: title ? `${title} · ${anchorTag}` : anchorTag,
+        subtitle: `${count} ${count === 1 ? "block" : "blocks"} inside`,
+      };
+    },
+  },
+});
+
 export const caseStudyType = defineType({
   name: "caseStudy",
   title: "Case Study",
@@ -74,259 +598,26 @@ export const caseStudyType = defineType({
         hotspot: true,
       },
     }),
+
+    // 1. New Structured Sections
+    defineField({
+      name: "sections",
+      title: "Case Sections (Разделы кейса)",
+      type: "array",
+      description:
+        "Секции кейса (например: overview, discovery, design, impact). Каждая секция формирует станцию в верхнем радио-тюнере TopBar и содержит в себе любые блоки.",
+      of: [caseSectionMember],
+    }),
+
+    // 2. Legacy Flat Blocks (Maintained for complete backward-compatibility)
     defineField({
       name: "blocks",
-      title: "Page Blocks (Modular Layout Engine)",
+      title: "Legacy Blocks (Deprecated — используйте Секции выше)",
       type: "array",
-      of: [
-        // 1. 2-Column Metadata Table
-        defineArrayMember({
-          name: "metadataTable",
-          title: "Metadata Table (Client / Role / Team / Delivered / etc.)",
-          type: "object",
-          fields: [
-            defineField({
-              name: "rows",
-              title: "Rows",
-              type: "array",
-              of: [
-                defineArrayMember({
-                  type: "object",
-                  fields: [
-                    defineField({ name: "label", title: "Label", type: "string" }),
-                    defineField({ name: "value", title: "Value", type: "string" }),
-                  ],
-                }),
-              ],
-            }),
-          ],
-        }),
-
-        // 2. Section Heading
-        defineArrayMember({
-          name: "sectionHeading",
-          title: "Section Heading",
-          type: "object",
-          fields: [
-            defineField({ name: "badge", title: "Hardware Badge (e.g. OVERVIEW, DESIGN)", type: "string" }),
-            defineField({ name: "title", title: "Title", type: "string" }),
-            defineField({ name: "description", title: "Description", type: "text" }),
-          ],
-        }),
-
-        // 3. Problem List
-        defineArrayMember({
-          name: "problemList",
-          title: "Key Problems",
-          type: "object",
-          fields: [
-            defineField({ name: "badge", title: "Badge", type: "string", initialValue: "PROBLEMS" }),
-            defineField({ name: "title", title: "Section Title", type: "string" }),
-            defineField({
-              name: "items",
-              title: "Problems",
-              type: "array",
-              of: [
-                defineArrayMember({
-                  type: "object",
-                  fields: [
-                    defineField({ name: "title", title: "Problem Title", type: "string" }),
-                    defineField({ name: "description", title: "Problem Description", type: "text" }),
-                    defineField({ name: "metric", title: "Negative Impact / Metric", type: "string" }),
-                  ],
-                }),
-              ],
-            }),
-          ],
-        }),
-
-        // 4. Team Section
-        defineArrayMember({
-          name: "teamSection",
-          title: "Team & Composition",
-          type: "object",
-          fields: [
-            defineField({ name: "badge", title: "Badge", type: "string", initialValue: "TEAM" }),
-            defineField({ name: "title", title: "Title", type: "string" }),
-            defineField({
-              name: "composition",
-              title: "Team Composition",
-              type: "array",
-              of: [
-                defineArrayMember({
-                  type: "object",
-                  fields: [
-                    defineField({ name: "role", title: "Role", type: "string" }),
-                    defineField({ name: "name", title: "Name / Size", type: "string" }),
-                    defineField({ name: "details", title: "Details", type: "string" }),
-                  ],
-                }),
-              ],
-            }),
-          ],
-        }),
-
-        // 5. Discovery Section
-        defineArrayMember({
-          name: "discoverySection",
-          title: "Discovery & User Research",
-          type: "object",
-          fields: [
-            defineField({ name: "badge", title: "Badge", type: "string", initialValue: "DISCOVERY" }),
-            defineField({ name: "title", title: "Title", type: "string" }),
-            defineField({ name: "method", title: "Research Method (e.g. Mouseflow, Ops Interviews)", type: "string" }),
-            defineField({
-              name: "findings",
-              title: "Key Findings",
-              type: "array",
-              of: [
-                defineArrayMember({
-                  type: "object",
-                  fields: [
-                    defineField({ name: "title", title: "Finding Title", type: "string" }),
-                    defineField({ name: "description", title: "Finding Description", type: "text" }),
-                    defineField({ name: "stat", title: "Statistic / Percentage", type: "string" }),
-                  ],
-                }),
-              ],
-            }),
-          ],
-        }),
-
-        // 6. Hypotheses Section
-        defineArrayMember({
-          name: "hypothesesSection",
-          title: "Hypotheses & Architecture",
-          type: "object",
-          fields: [
-            defineField({ name: "badge", title: "Badge", type: "string", initialValue: "HYPOTHESES" }),
-            defineField({ name: "title", title: "Title", type: "string" }),
-            defineField({
-              name: "items",
-              title: "Hypotheses",
-              type: "array",
-              of: [
-                defineArrayMember({
-                  type: "object",
-                  fields: [
-                    defineField({ name: "title", title: "Hypothesis", type: "string" }),
-                    defineField({ name: "description", title: "Rationale / Implementation", type: "text" }),
-                    defineField({ name: "expectedOutcome", title: "Expected Outcome", type: "string" }),
-                  ],
-                }),
-              ],
-            }),
-          ],
-        }),
-
-        // 7. Horizontal Breakout Gallery
-        defineArrayMember({
-          name: "galleryBlock",
-          title: "Horizontal Gallery (Full Bleed Breakout)",
-          type: "object",
-          fields: [
-            defineField({
-              name: "images",
-              title: "Images",
-              type: "array",
-              description:
-                "Изображения галереи кейса. Можно загружать сразу несколько файлов через кнопку или Drag & Drop.",
-              options: {
-                layout: "grid",
-              },
-              components: {
-                input: MultipleImageUploadInput,
-              },
-              of: [
-                defineArrayMember({
-                  type: "image",
-                  options: { hotspot: true },
-                  fields: [
-                    defineField({
-                      name: "alt",
-                      title: "Alt Text / Описание для тултипа",
-                      type: "string",
-                      description:
-                        "Текст для всплывающего тултипа на прогресс-баре галереи (шрифт Hauora 10px)",
-                    }),
-                  ],
-                }),
-                defineArrayMember({
-                  type: "object",
-                  name: "imagePath",
-                  title: "Custom Image Path / URL",
-                  fields: [
-                    defineField({
-                      name: "url",
-                      title: "Path or URL",
-                      type: "string",
-                      validation: (Rule) => Rule.required(),
-                    }),
-                    defineField({
-                      name: "alt",
-                      title: "Alt Text / Описание для тултипа",
-                      type: "string",
-                    }),
-                  ],
-                  preview: {
-                    select: { title: "url", subtitle: "alt" },
-                  },
-                }),
-              ],
-            }),
-            defineField({ name: "height", title: "Height (px)", type: "number", initialValue: 600 }),
-            defineField({ name: "caption", title: "Caption", type: "string" }),
-          ],
-        }),
-
-        // 8. Results & Metrics
-        defineArrayMember({
-          name: "metricsBlock",
-          title: "Results & Impact Metrics",
-          type: "object",
-          fields: [
-            defineField({ name: "badge", title: "Badge", type: "string", initialValue: "RESULTS" }),
-            defineField({ name: "title", title: "Title", type: "string" }),
-            defineField({
-              name: "items",
-              title: "Metrics",
-              type: "array",
-              of: [
-                defineArrayMember({
-                  type: "object",
-                  fields: [
-                    defineField({ name: "value", title: "Impact Value (e.g. 70% Faster, 2.5x, 30s)", type: "string" }),
-                    defineField({ name: "label", title: "Metric Label", type: "string" }),
-                    defineField({ name: "description", title: "Context / Proof", type: "text" }),
-                  ],
-                }),
-              ],
-            }),
-          ],
-        }),
-
-        // 9. Plain / Rich Text Block
-        defineArrayMember({
-          name: "textBlock",
-          title: "Text / Story Paragraphs",
-          type: "object",
-          fields: [
-            defineField({ name: "content", title: "Content", type: "text" }),
-          ],
-        }),
-
-        // 10. Quote Callout
-        defineArrayMember({
-          name: "quoteCallout",
-          title: "Quote / Key Takeaway",
-          type: "object",
-          fields: [
-            defineField({ name: "quote", title: "Quote", type: "text" }),
-            defineField({ name: "author", title: "Author", type: "string" }),
-            defineField({ name: "role", title: "Role", type: "string" }),
-          ],
-        }),
-      ],
+      description: "Старые плоские блоки. Рекомендуется использовать секции выше.",
+      hidden: ({ document }) =>
+        Boolean(Array.isArray(document?.sections) && document.sections.length > 0),
+      of: caseBlockMembers,
     }),
   ],
   orderings: [
@@ -344,14 +635,17 @@ export const caseStudyType = defineType({
       buttonLabel: "buttonLabel",
       isButtonActive: "isButtonActive",
       media: "coverImage",
+      sections: "sections",
     },
-    prepare({ title, order, projectName, buttonLabel, isButtonActive, media }) {
+    prepare({ title, order, projectName, buttonLabel, isButtonActive, media, sections }) {
       const status = isButtonActive !== false ? "🟢 ON" : "⚪ OFF";
       const btn = buttonLabel ? ` [Btn: ${buttonLabel}]` : "";
       const orderPrefix = order ? `#${order} ` : "";
+      const secCount = Array.isArray(sections) ? sections.length : 0;
+      const secInfo = secCount > 0 ? ` · ${secCount} sections` : "";
       return {
         title: `${orderPrefix}${title}`,
-        subtitle: `Project: ${projectName || "Unassigned"}${btn} · ${status}`,
+        subtitle: `Project: ${projectName || "Unassigned"}${btn}${secInfo} · ${status}`,
         media,
       };
     },

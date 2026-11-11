@@ -1,4 +1,3 @@
-import React from "react";
 import type { MetadataRow } from "@/shared/ui";
 
 export type CaseBlockType =
@@ -16,6 +15,7 @@ export type CaseBlockType =
 export interface MetadataTableBlock {
   _type: "metadataTable";
   _key?: string;
+  title?: string;
   rows: MetadataRow[];
 }
 
@@ -87,6 +87,7 @@ export interface HypothesesSectionBlock {
 export interface GalleryBlock {
   _type: "galleryBlock";
   _key?: string;
+  title?: string;
   images: (string | { url: string; alt?: string })[];
   height?: number;
   caption?: string;
@@ -109,12 +110,14 @@ export interface MetricsBlock {
 export interface TextBlock {
   _type: "textBlock";
   _key?: string;
+  title?: string;
   content: string;
 }
 
 export interface QuoteCalloutBlock {
   _type: "quoteCallout";
   _key?: string;
+  title?: string;
   quote: string;
   author?: string;
   role?: string;
@@ -132,6 +135,13 @@ export type CaseContentBlock =
   | TextBlock
   | QuoteCalloutBlock;
 
+export interface CaseSection {
+  _key?: string;
+  anchor: string;
+  title?: string;
+  blocks: CaseContentBlock[];
+}
+
 export interface CaseStudyData {
   _id?: string;
   title: string;
@@ -141,5 +151,6 @@ export interface CaseStudyData {
   projectAnchor?: string;
   tagline?: string;
   coverImage?: string;
-  blocks: CaseContentBlock[];
+  sections?: CaseSection[];
+  blocks?: CaseContentBlock[];
 }
