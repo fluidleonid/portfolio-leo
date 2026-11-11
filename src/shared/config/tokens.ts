@@ -33,6 +33,13 @@ export const tokens = {
   fonts: {
     hauora: "'Hauora', -apple-system, sans-serif",
     stetica: "'AA Stetica', sans-serif",
+    weights: {
+      light: 300,
+      normal: 400,
+      medium: 500,
+      semibold: 650,
+      bold: 700,
+    },
   },
   geometry: {
     containerWidth: 564,

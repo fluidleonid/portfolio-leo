@@ -5,6 +5,9 @@
   --font-hauora: "Hauora", -apple-system, sans-serif;
   --font-stetica: "AA Stetica", sans-serif;
 
+  /* Typography Font Weights */
+  --font-weight-semibold: 650;
+
   /* Canvas & Surface Tokens */
   --color-canvas: #292929;
   --color-surface: #242424;
@@ -30,6 +33,10 @@
   /* Signal & Physical Accent Lights */
   --color-signal-amber: #FFAA00;
   --color-signal-amber-glow: #FFB733;
+}
+
+@utility font-semibold {
+  font-weight: 650;
 }
 
 @utility text-content-quaternary {
