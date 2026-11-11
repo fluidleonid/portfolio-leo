@@ -51,77 +51,103 @@ export interface FunLedMatrixProps
 }
 
 /**
- * Picasso Cubism Permutation:
+ * Full-Portrait Picasso Cubism Permutation (98 active modules):
  * - Left eye: 4 modules (2x2 group) [3..4, 11..12] -> moves as an intact unit down to [6..7, 11..12]
  * - Right eye: 2 modules (2x1 group) [3..4, 14] -> moves as an intact unit down to [6..7, 14]
- * - Mouth & Nose: moves to the top [1..3, 12..14] with vertical mirroring (flipY: true)
- * - ALL 36 modules in the face move to new positions with ZERO overlapping squares.
+ * - Mouth & Nose: moves to top [1..3, 12..14] with vertical mirroring (flipY: true)
+ * - Head & hair (rows 1..8): all modules permuted
+ * - Collar, chest, shoulders & T-shirt (rows 8..12, cols 7..20): ALL modules cross-swapped & scrambled!
+ * - Closed 1-to-1 bijection: EVERY module moves, ZERO overlaps, ZERO empty holes!
  */
 interface PicassoModuleSpec {
   from: [number, number];
   to: [number, number];
   flipY: boolean;
+  flipX: boolean;
   sign: number;
 }
 
 const PICASSO_SPECS: PicassoModuleSpec[] = [
   // Group 1: Left eye (4 modules 2x2) -> rows 6..7, cols 11..12 (moves down as intact eye!)
-  { from: [3, 11], to: [6, 11], flipY: false, sign: 1 },
-  { from: [3, 12], to: [6, 12], flipY: false, sign: 1 },
-  { from: [4, 11], to: [7, 11], flipY: false, sign: 1 },
-  { from: [4, 12], to: [7, 12], flipY: false, sign: 1 },
+  { from: [3, 11], to: [6, 11], flipY: false, flipX: false, sign: 1 },
+  { from: [3, 12], to: [6, 12], flipY: false, flipX: false, sign: 1 },
+  { from: [4, 11], to: [7, 11], flipY: false, flipX: false, sign: 1 },
+  { from: [4, 12], to: [7, 12], flipY: false, flipX: false, sign: 1 },
 
   // Group 2: Right eye (2 modules 2x1) -> rows 6..7, col 14 (moves down as intact eye!)
-  { from: [3, 14], to: [6, 14], flipY: false, sign: -1 },
-  { from: [4, 14], to: [7, 14], flipY: false, sign: -1 },
+  { from: [3, 14], to: [6, 14], flipY: false, flipX: false, sign: -1 },
+  { from: [4, 14], to: [7, 14], flipY: false, flipX: false, sign: -1 },
 
   // Group 3: Mouth & Nose (5 modules) -> Top rows 1..3, vertically mirrored (flipY: true)
-  { from: [6, 13], to: [1, 13], flipY: true, sign: 1 }, // mouth inverted at top
-  { from: [5, 13], to: [2, 13], flipY: true, sign: 1 }, // nose tip inverted
-  { from: [4, 13], to: [3, 13], flipY: true, sign: 1 }, // nose bridge inverted
-  { from: [5, 12], to: [2, 12], flipY: true, sign: 1 }, // mustache left inverted
-  { from: [5, 14], to: [2, 14], flipY: true, sign: -1 }, // mustache right inverted
+  { from: [6, 13], to: [1, 13], flipY: true, flipX: false, sign: 1 }, // mouth inverted at top
+  { from: [5, 13], to: [2, 13], flipY: true, flipX: false, sign: 1 }, // nose tip inverted
+  { from: [4, 13], to: [3, 13], flipY: true, flipX: false, sign: 1 }, // nose bridge inverted
+  { from: [5, 12], to: [2, 12], flipY: true, flipX: false, sign: 1 }, // mustache left inverted
+  { from: [5, 14], to: [2, 14], flipY: true, flipX: false, sign: -1 }, // mustache right inverted
 
   // Group 4: Forehead / Hair -> Fills vacated mouth, nose, chin
-  { from: [1, 12], to: [5, 12], flipY: false, sign: -1 },
-  { from: [1, 13], to: [5, 13], flipY: false, sign: -1 },
-  { from: [1, 14], to: [5, 14], flipY: false, sign: 1 },
-  { from: [2, 12], to: [6, 13], flipY: false, sign: -1 },
-  { from: [2, 13], to: [7, 13], flipY: false, sign: -1 },
-  { from: [2, 14], to: [8, 13], flipY: false, sign: 1 },
+  { from: [1, 12], to: [5, 12], flipY: false, flipX: false, sign: -1 },
+  { from: [1, 13], to: [5, 13], flipY: false, flipX: false, sign: -1 },
+  { from: [1, 14], to: [5, 14], flipY: false, flipX: false, sign: 1 },
+  { from: [2, 12], to: [6, 13], flipY: false, flipX: false, sign: -1 },
+  { from: [2, 13], to: [7, 13], flipY: false, flipX: false, sign: -1 },
+  { from: [2, 14], to: [8, 13], flipY: false, flipX: false, sign: 1 },
 
   // Group 5: Hair sides & upper face -> Fills vacated left eye
-  { from: [1, 15], to: [3, 11], flipY: false, sign: 1 },
-  { from: [2, 11], to: [3, 12], flipY: false, sign: 1 },
-  { from: [2, 15], to: [4, 11], flipY: false, sign: -1 },
-  { from: [2, 16], to: [4, 12], flipY: false, sign: -1 },
+  { from: [1, 15], to: [3, 11], flipY: false, flipX: false, sign: 1 },
+  { from: [2, 11], to: [3, 12], flipY: false, flipX: false, sign: 1 },
+  { from: [2, 15], to: [4, 11], flipY: false, flipX: false, sign: -1 },
+  { from: [2, 16], to: [4, 12], flipY: false, flipX: false, sign: -1 },
 
   // Group 6: Right Ear [4,16], [5,16] -> Fills vacated right eye [3,14], [4,14]
-  { from: [4, 16], to: [3, 14], flipY: false, sign: 1 },
-  { from: [5, 16], to: [4, 14], flipY: false, sign: 1 },
+  { from: [4, 16], to: [3, 14], flipY: false, flipX: false, sign: 1 },
+  { from: [5, 16], to: [4, 14], flipY: false, flipX: false, sign: 1 },
 
   // Group 7: Cheeks & sides
-  { from: [5, 11], to: [4, 16], flipY: false, sign: -1 },
-  { from: [5, 15], to: [5, 16], flipY: false, sign: -1 },
-  { from: [4, 15], to: [4, 13], flipY: false, sign: 1 },
-  { from: [3, 15], to: [2, 11], flipY: false, sign: 1 },
-  { from: [3, 13], to: [1, 14], flipY: false, sign: -1 },
+  { from: [5, 11], to: [4, 16], flipY: false, flipX: false, sign: -1 },
+  { from: [5, 15], to: [5, 16], flipY: false, flipX: false, sign: -1 },
+  { from: [4, 15], to: [4, 13], flipY: false, flipX: false, sign: 1 },
+  { from: [3, 15], to: [2, 11], flipY: false, flipX: false, sign: 1 },
+  { from: [3, 13], to: [1, 14], flipY: false, flipX: false, sign: -1 },
 
   // Group 8: Lower beard & jaw -> Fills top hairline & sides
-  { from: [6, 11], to: [1, 12], flipY: false, sign: -1 },
-  { from: [6, 12], to: [1, 15], flipY: false, sign: -1 },
-  { from: [7, 11], to: [2, 15], flipY: false, sign: 1 },
-  { from: [7, 12], to: [2, 16], flipY: false, sign: 1 },
-  { from: [7, 13], to: [3, 15], flipY: false, sign: 1 },
-  { from: [6, 14], to: [4, 15], flipY: false, sign: -1 },
-  { from: [7, 14], to: [5, 11], flipY: false, sign: 1 },
-  { from: [8, 13], to: [5, 15], flipY: false, sign: 1 },
+  { from: [6, 11], to: [1, 12], flipY: false, flipX: false, sign: -1 },
+  { from: [6, 12], to: [1, 15], flipY: false, flipX: false, sign: -1 },
+  { from: [7, 11], to: [2, 15], flipY: false, flipX: false, sign: 1 },
+  { from: [7, 12], to: [2, 16], flipY: false, flipX: false, sign: 1 },
+  { from: [7, 13], to: [3, 15], flipY: false, flipX: false, sign: 1 },
+  { from: [6, 14], to: [4, 15], flipY: false, flipX: false, sign: -1 },
+  { from: [7, 14], to: [5, 11], flipY: false, flipX: false, sign: 1 },
+  { from: [8, 13], to: [5, 15], flipY: false, flipX: false, sign: 1 },
 ];
+
+// Add collar modules (Row 8)
+const ROW8_COLLAR_PAIRS: Array<[[number, number], [number, number]]> = [
+  [[8, 10], [8, 16]],
+  [[8, 11], [8, 15]],
+  [[8, 12], [8, 14]],
+];
+ROW8_COLLAR_PAIRS.forEach(([a, b]) => {
+  PICASSO_SPECS.push({ from: a, to: b, flipY: false, flipX: true, sign: 1 });
+  PICASSO_SPECS.push({ from: b, to: a, flipY: false, flipX: true, sign: -1 });
+});
+
+// Add entire T-shirt and shoulders (rows 9..12, cols 7..20) - 56 modules cross-swapped!
+for (let r = 9; r <= 12; r++) {
+  for (let c = 7; c <= 13; c++) {
+    const oppC = 20 - (c - 7); // cross mirror: 7 <-> 20, 8 <-> 19, etc.
+    const oppR = r === 9 ? 11 : r === 11 ? 9 : r === 10 ? 12 : 10;
+    const signVal = (r + c) % 2 === 0 ? 1 : -1;
+    PICASSO_SPECS.push({ from: [r, c], to: [oppR, oppC], flipY: false, flipX: true, sign: signVal });
+    PICASSO_SPECS.push({ from: [oppR, oppC], to: [r, c], flipY: false, flipX: true, sign: -signVal });
+  }
+}
 
 interface PicassoSwapLookup {
   targetModR: number;
   targetModC: number;
   flipY: boolean;
+  flipX: boolean;
   deltaR: number; // in subpixels
   deltaC: number; // in subpixels
   normalR: number;
@@ -144,6 +170,7 @@ PICASSO_SPECS.forEach((spec) => {
     targetModR: rB,
     targetModC: cB,
     flipY: spec.flipY,
+    flipX: spec.flipX,
     deltaR: dr,
     deltaC: dc,
     normalR: normR,
@@ -464,7 +491,7 @@ export const FunLedMatrix = React.memo(
 
           const tSec = (time / 1000) * speed;
 
-          // Calculate morph progress (0 = normal face, 1 = funny re-sorted face)
+          // Calculate morph progress (0 = normal face, 1 = fully scrambled Picasso pose)
           let morph = 0;
           if (typeof manualMorphProgress === "number") {
             morph = Math.max(0, Math.min(1, manualMorphProgress));
@@ -497,8 +524,8 @@ export const FunLedMatrix = React.memo(
           // 1. RE-SORTING PIXEL MAP ENGINE
           // -------------------------------------------------------------
           if (mode === "picasso") {
-            // PURE NON-OVERLAPPING CUBIST PERMUTATION OF 36 MODULES
-            // Pass 1: Stationary modules (outside the 36 head modules)
+            // FULL PORTRAIT CUBIST PERMUTATION (EVERY ACTIVE MODULE SCRAMBLES!)
+            // Pass 1: Background empty modules (outside the 98 figure modules)
             for (let r = 0; r < totalSubRows; r++) {
               const modR = Math.floor(r / subPerModule);
               for (let c = 0; c < totalSubCols; c++) {
@@ -513,7 +540,7 @@ export const FunLedMatrix = React.memo(
               }
             }
 
-            // Pass 2: The 36 rearranging head modules (eyes intact, mouth mirrored at top)
+            // Pass 2: All 98 modules of the portrait (head, eyes, mouth, neck, shoulders, T-shirt)
             for (let r = 0; r < totalSubRows; r++) {
               const modR = Math.floor(r / subPerModule);
               const subR = r % subPerModule;
@@ -537,9 +564,9 @@ export const FunLedMatrix = React.memo(
                   jitterC = Math.cos(noiseAngle * 1.2) * mag;
                 }
 
-                // If flipY is enabled, mirror vertically inside the module/group
+                // Mirrored coordinates inside the module
                 const targetSubR = spec.flipY ? 8 - subR : subR;
-                const targetSubC = subC;
+                const targetSubC = spec.flipX ? 8 - subC : subC;
 
                 const startR = r;
                 const startC = c;
