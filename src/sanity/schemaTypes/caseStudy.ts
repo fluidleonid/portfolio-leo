@@ -204,6 +204,8 @@ export const caseBlockMembers = [
         type: "array",
         of: [
           defineArrayMember({
+            name: "cardItem",
+            title: "Card",
             type: "object",
             fields: [
               defineField({
