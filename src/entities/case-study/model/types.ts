@@ -4,6 +4,7 @@ export type CaseBlockType =
   | "metadataTable"
   | "sectionHeading"
   | "problemList"
+  | "cardsBlock"
   | "teamSection"
   | "discoverySection"
   | "hypothesesSection"
@@ -137,10 +138,28 @@ export interface QuoteCalloutBlock {
   role?: string;
 }
 
+export interface CardItem {
+  _key?: string;
+  title?: string;
+  description?: string;
+  tag?: string;
+}
+
+export interface CardsBlock {
+  _type: "cardsBlock";
+  _key?: string;
+  anchor?: string;
+  badge?: string;
+  title?: string;
+  description?: string;
+  items: CardItem[];
+}
+
 export type CaseContentBlock =
   | MetadataTableBlock
   | SectionHeadingBlock
   | ProblemListBlock
+  | CardsBlock
   | TeamSectionBlock
   | DiscoverySectionBlock
   | HypothesesSectionBlock

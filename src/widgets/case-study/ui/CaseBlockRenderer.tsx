@@ -7,6 +7,7 @@ import type {
   MetadataTableBlock,
   SectionHeadingBlock,
   ProblemListBlock,
+  CardsBlock,
   TeamSectionBlock,
   DiscoverySectionBlock,
   HypothesesSectionBlock,
@@ -93,7 +94,7 @@ export function CaseBlockRenderer({ block, id }: CaseBlockRendererProps) {
           )}
           <div className="flex w-full flex-col gap-[8px]">
             {b.items.map((item, idx) => (
-              <div key={idx} className="flex w-full flex-row items-start gap-[8px] select-none">
+              <div key={idx} className="flex w-full flex-row items-start gap-[8px]">
                 <span className="shrink-0 font-hauora font-light text-[18px] leading-[24px] text-content-primary">
                   —
                 </span>
@@ -112,6 +113,58 @@ export function CaseBlockRenderer({ block, id }: CaseBlockRendererProps) {
                     {item.description}
                   </span>
                 </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    case "cardsBlock": {
+      const b = block as CardsBlock;
+      return (
+        <div id={blockDomId} className="flex w-full flex-col gap-[12px] scroll-mt-[100px]">
+          {b.badge && (
+            <span
+              className="text-[14px] font-normal leading-[24px] text-content-badge font-hauora uppercase tracking-normal"
+              style={{ color: "var(--color-content-badge, rgba(204, 204, 204, 0.16))" }}
+            >
+              {b.badge}
+            </span>
+          )}
+          {b.title && (
+            <h3 className="text-[18px] font-medium leading-[24px] text-content-primary font-hauora tracking-normal">
+              {b.title}
+            </h3>
+          )}
+          {b.description && (
+            <p className="text-[16px] sm:text-[18px] font-light leading-[22px] sm:leading-[24px] text-content-secondary font-hauora whitespace-pre-line tracking-normal">
+              {b.description}
+            </p>
+          )}
+          <div className="flex w-full flex-col gap-[12px] sm:gap-[16px] mt-[4px]">
+            {(b.items || []).map((card, idx) => (
+              <div
+                key={card._key || idx}
+                className="flex w-full flex-col gap-[6px] sm:gap-[8px] rounded-[12px] bg-[#242424] p-[16px] sm:p-[20px]"
+              >
+                <div className="flex items-center justify-between gap-[8px]">
+                  {card.title && (
+                    <h4 className="font-hauora font-medium text-[16px] sm:text-[18px] leading-[22px] sm:leading-[24px] text-content-primary">
+                      {card.title}
+                    </h4>
+                  )}
+                  {card.tag && (
+                    <span className="font-hauora font-light text-[14px] text-content-secondary shrink-0">
+                      ({card.tag})
+                    </span>
+                  )}
+                </div>
+                {card.description && (
+                  <p className="font-hauora font-light text-[14px] sm:text-[15px] leading-[20px] sm:leading-[22px] text-content-secondary whitespace-pre-line">
+                    {card.description}
+                  </p>
+                )}
               </div>
             ))}
           </div>
@@ -181,7 +234,7 @@ export function CaseBlockRenderer({ block, id }: CaseBlockRendererProps) {
           )}
           <div className="flex w-full flex-col gap-[8px]">
             {b.findings.map((f, idx) => (
-              <div key={idx} className="flex w-full flex-row items-start gap-[8px] select-none">
+              <div key={idx} className="flex w-full flex-row items-start gap-[8px]">
                 <span className="shrink-0 font-hauora font-light text-[18px] leading-[24px] text-content-primary">
                   —
                 </span>
@@ -226,7 +279,7 @@ export function CaseBlockRenderer({ block, id }: CaseBlockRendererProps) {
           )}
           <div className="flex w-full flex-col gap-[8px]">
             {b.items.map((hyp, idx) => (
-              <div key={idx} className="flex w-full flex-row items-start gap-[8px] select-none">
+              <div key={idx} className="flex w-full flex-row items-start gap-[8px]">
                 <span className="shrink-0 font-hauora font-light text-[18px] leading-[24px] text-content-primary">
                   —
                 </span>
@@ -313,7 +366,7 @@ export function CaseBlockRenderer({ block, id }: CaseBlockRendererProps) {
             {b.items.map((m, idx) => (
               <div
                 key={idx}
-                className="relative flex flex-col justify-between rounded-[12px] border border-border-hardware bg-transparent p-[16px] sm:p-[20px] gap-[8px] select-none"
+                className="relative flex flex-col justify-between rounded-[12px] border border-border-hardware bg-transparent p-[16px] sm:p-[20px] gap-[8px]"
               >
                 <span className="font-hauora text-[28px] sm:text-[34px] font-medium leading-[34px] sm:leading-[40px] text-content-primary tracking-tight">
                   {m.value}

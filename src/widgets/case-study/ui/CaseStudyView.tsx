@@ -111,7 +111,7 @@ export function CaseStudyView({ caseData }: CaseStudyViewProps) {
         onStationChange={handleStationChange}
       />
 
-      <article className="relative flex w-full max-w-[564px] flex-col pb-[96px] sm:pb-[120px] select-none">
+      <article className="relative flex w-full max-w-[564px] flex-col pb-[96px] sm:pb-[120px]">
         {/* 1. TOP NAVIGATION / BACK LINK */}
         <nav className="flex w-full items-center justify-start pt-[8px] sm:pt-[16px]">
           <Link
@@ -146,7 +146,7 @@ export function CaseStudyView({ caseData }: CaseStudyViewProps) {
               <section
                 key={section._key || section.anchor || sectionIdx}
                 id={section.anchor}
-                className={`relative flex w-full flex-col scroll-mt-[100px] select-none ${
+                className={`relative flex w-full flex-col scroll-mt-[100px] ${
                   isFirst ? "mt-[32px] sm:mt-[48px]" : "mt-[80px] sm:mt-[100px]"
                 }`}
               >

@@ -166,7 +166,84 @@ export const caseBlockMembers = [
     },
   }),
 
-  // 4. Team / Roles Roster
+  // 4. Cards Block (Separate cards with #242424 background, no border, optional title & description)
+  defineArrayMember({
+    name: "cardsBlock",
+    title: "Cards List (Карточки #242424)",
+    description:
+      "Отдельные карточки с фоном #242424 без бордера (ставки, предпосылки, гипотезы, ключевые решения). Опциональный заголовок и описание блока.",
+    type: "object",
+    fields: [
+      defineField({
+        name: "anchor",
+        title: "Tuner Anchor / ID (Опциональный якорь блока)",
+        type: "string",
+        description:
+          "Если заполнено, секция в TopBar дробится на сегменты, и этот блок становится отдельной засечкой в шкале радио-тюнера.",
+      }),
+      defineField({
+        name: "badge",
+        title: "Badge (Optional)",
+        type: "string",
+      }),
+      defineField({
+        name: "title",
+        title: "Block Title (Optional)",
+        type: "string",
+      }),
+      defineField({
+        name: "description",
+        title: "Block Description / Lead (Optional)",
+        type: "text",
+        rows: 3,
+        description: "Опциональное вводное описание перед карточками",
+      }),
+      defineField({
+        name: "items",
+        title: "Cards (Карточки)",
+        type: "array",
+        of: [
+          defineArrayMember({
+            type: "object",
+            fields: [
+              defineField({
+                name: "title",
+                title: "Card Title (Заголовок карточки)",
+                type: "string",
+              }),
+              defineField({
+                name: "description",
+                title: "Card Text / Description (Текст карточки)",
+                type: "text",
+                rows: 3,
+              }),
+              defineField({
+                name: "tag",
+                title: "Tag / Metric (Optional)",
+                type: "string",
+              }),
+            ],
+            preview: {
+              select: { title: "title", subtitle: "description" },
+            },
+          }),
+        ],
+      }),
+    ],
+    preview: {
+      select: { title: "title", items: "items", anchor: "anchor" },
+      prepare({ title, items, anchor }) {
+        const count = Array.isArray(items) ? items.length : 0;
+        const tag = anchor ? ` [#${anchor}]` : "";
+        return {
+          title: (title || "Cards List") + tag,
+          subtitle: `${count} card${count === 1 ? "" : "s"}`,
+        };
+      },
+    },
+  }),
+
+  // 5. Team / Roles Roster
   defineArrayMember({
     name: "teamSection",
     title: "Roles & Roster List",

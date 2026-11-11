@@ -25,7 +25,7 @@ export const MetadataTable = React.forwardRef<HTMLDivElement, MetadataTableProps
     return (
       <div
         ref={ref}
-        className={`w-full flex flex-col border-t border-border-hardware select-none ${className}`}
+        className={`w-full flex flex-col border-t border-border-hardware ${className}`}
         {...props}
       >
         {rows.map((row, idx) => (
