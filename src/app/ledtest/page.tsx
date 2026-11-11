@@ -6,7 +6,7 @@ import { FunLedMatrix, type FunAnimationMode } from "@/shared/ui/led-matrix";
 import { Section } from "@/shared/ui/section";
 
 export default function LedTestPage() {
-  const [mode, setMode] = useState<FunAnimationMode>("squished-goofy");
+  const [mode, setMode] = useState<FunAnimationMode>("picasso");
   const [isPlaying, setIsPlaying] = useState<boolean>(true);
   const [speed, setSpeed] = useState<number>(1.0);
   const [intensity, setIntensity] = useState<number>(1.0);
@@ -26,7 +26,7 @@ export default function LedTestPage() {
     "pixel-sort":
       "Попиксельный сдвиг со струйной турбулентностью: в моменты перехода пиксели вибрируют и текут цифровыми полосами, собираясь в комичную гримасу.",
     picasso:
-      "Кубистический коллаж: левый глаз уходит под подбородок, правый — на лоб, рот сдвинут на щеку, а ухо на подбородке.",
+      "Кубистическая перестановка квадратиков без наложения: 10 взаимных пар модулей меняются местами по дуговым орбитам (глаза в бороду и на лоб, рот на щеку, ухо под подбородок). Каждый квадратик занимает ровно одну ячейку сетки без наложений.",
     swap: "Рот и глаза плавно меняются местами по дуге, задерживаются и возвращаются обратно.",
     "rolling-ears":
       "Уши отсоединяются от головы и катаются в стороны к границам экрана на синусоиде.",
