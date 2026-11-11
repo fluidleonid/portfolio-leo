@@ -142,15 +142,15 @@ export function CaseBlockRenderer({ block, id }: CaseBlockRendererProps) {
               {b.description}
             </p>
           )}
-          <div className="flex w-full flex-col gap-[12px] sm:gap-[16px] mt-[4px]">
+          <div className="flex w-full flex-col gap-[8px] mt-[4px]">
             {(b.items || []).map((card, idx) => (
               <div
                 key={card._key || idx}
-                className="flex w-full flex-col gap-[6px] sm:gap-[8px] rounded-[12px] bg-[#242424] p-[16px] sm:p-[20px]"
+                className="flex w-full flex-col gap-[2px] rounded-[12px] bg-[#242424] p-[16px] sm:p-[20px]"
               >
                 <div className="flex items-center justify-between gap-[8px]">
                   {card.title && (
-                    <h4 className="font-hauora font-medium text-[16px] sm:text-[18px] leading-[22px] sm:leading-[24px] text-content-primary">
+                    <h4 className="font-hauora font-medium text-[18px] leading-[24px] text-content-primary">
                       {card.title}
                     </h4>
                   )}
@@ -161,7 +161,7 @@ export function CaseBlockRenderer({ block, id }: CaseBlockRendererProps) {
                   )}
                 </div>
                 {card.description && (
-                  <p className="font-hauora font-light text-[14px] sm:text-[15px] leading-[20px] sm:leading-[22px] text-content-secondary whitespace-pre-line">
+                  <p className="font-hauora font-light text-[18px] leading-[24px] text-content-secondary whitespace-pre-line">
                     {card.description}
                   </p>
                 )}
