@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import type { CaseStudyData } from "@/entities/case-study";
@@ -23,36 +24,60 @@ export async function generateStaticParams() {
   }
 }
 
-export async function generateMetadata({ params }: PageProps) {
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
   try {
-    const caseData = await client.fetch<{
-      title?: string;
-      tagline?: string;
-      coverImage?: string;
-    }>(
-      `*[_type == "caseStudy" && slug.current == $slug][0]{
-        title,
-        tagline,
-        "coverImage": coverImage.asset->url
-      }`,
-      { slug }
-    );
+    const [caseData, siteSettings] = await Promise.all([
+      client.fetch<{
+        title?: string;
+        tagline?: string;
+        coverImage?: string;
+      }>(
+        `*[_type == "caseStudy" && slug.current == $slug][0]{
+          title,
+          tagline,
+          "coverImage": coverImage.asset->url
+        }`,
+        { slug }
+      ),
+      client.fetch<{
+        siteTitle?: string;
+        metaDescription?: string;
+        faviconUrl?: string;
+        ogImageUrl?: string;
+      }>(
+        `*[_type == "siteSettings"][0]{
+          siteTitle,
+          metaDescription,
+          "faviconUrl": favicon.asset->url,
+          "ogImageUrl": ogImage.asset->url
+        }`
+      ),
+    ]);
 
     const title = caseData?.title || "Case Study";
-    const description = caseData?.tagline || `${title} — Leonid Dmitriev`;
-    const image = caseData?.coverImage || "/quickaccess.png";
+    const ogTitle = `${title} — Leonid Dmitriev`;
+    const pitch =
+      caseData?.tagline ||
+      siteSettings?.metaDescription ||
+      "Product Designer specializing in complex B2B platforms, enterprise tools, and FinTech systems.";
+    const ogImage =
+      caseData?.coverImage || siteSettings?.ogImageUrl || "/quickaccess.png";
+    const faviconUrl = siteSettings?.faviconUrl;
 
     return {
       title,
-      description,
+      description: pitch,
+      icons: faviconUrl
+        ? { icon: faviconUrl, apple: faviconUrl, shortcut: faviconUrl }
+        : undefined,
       openGraph: {
-        title: `${title} — Leonid Dmitriev`,
-        description,
+        title: ogTitle,
+        description: pitch,
         type: "article",
         images: [
           {
-            url: image,
+            url: ogImage,
             width: 1200,
             height: 630,
             alt: title,
@@ -61,9 +86,9 @@ export async function generateMetadata({ params }: PageProps) {
       },
       twitter: {
         card: "summary_large_image",
-        title: `${title} — Leonid Dmitriev`,
-        description,
-        images: [image],
+        title: ogTitle,
+        description: pitch,
+        images: [ogImage],
       },
     };
   } catch (err) {
