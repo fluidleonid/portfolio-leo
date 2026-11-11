@@ -34,12 +34,12 @@ export const MetadataTable = React.forwardRef<HTMLDivElement, MetadataTableProps
             className="flex w-full flex-row items-start justify-between border-b border-border-hardware py-[14px] sm:py-[16px] gap-[16px] sm:gap-[24px]"
           >
             {/* Left Column: Label in #8C8C8C */}
-            <span className="w-[110px] sm:w-[140px] shrink-0 font-hauora text-[15px] sm:text-[16px] font-normal leading-[22px] sm:leading-[24px] text-content-secondary">
+            <span className="w-[110px] sm:w-[140px] shrink-0 font-hauora text-[14px] font-normal leading-[20px] sm:leading-[22px] text-content-secondary">
               {row.label}
             </span>
 
             {/* Right Column: Value in #CCCCCC */}
-            <span className="flex-1 min-w-0 font-hauora text-[15px] sm:text-[16px] font-normal leading-[22px] sm:leading-[24px] text-content-primary whitespace-pre-line break-words">
+            <span className="flex-1 min-w-0 font-hauora text-[14px] font-normal leading-[20px] sm:leading-[22px] text-content-primary whitespace-pre-line break-words">
               {row.value}
             </span>
           </div>
