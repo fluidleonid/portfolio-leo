@@ -3,8 +3,10 @@ import Link from "next/link";
 import { Lamp } from "@/shared/ui/lamp";
 
 export interface CaseLinkProps extends React.HTMLAttributes<HTMLElement> {
-  /** Text label of the case study */
+  /** Text label of the case study (line 1) */
   label: string;
+  /** Optional secondary line / subtitle (line 2) */
+  sublabel?: string;
   /** Optional external link destination */
   href?: string;
   /** Whether the case study is active and accessible (default true) */
@@ -31,6 +33,7 @@ export const CaseLink = React.forwardRef<HTMLElement, CaseLinkProps>(
   (
     {
       label,
+      sublabel,
       href,
       active = true,
       onClick,
@@ -44,25 +47,41 @@ export const CaseLink = React.forwardRef<HTMLElement, CaseLinkProps>(
 
     const innerContent = (
       <>
-        {/* Skeuomorphic Indicator Lamp */}
-        <div className="shrink-0 flex items-center justify-center w-[20px] h-[20px]">
+        {/* Skeuomorphic Indicator Lamp - vertically centered with the 26px first line */}
+        <div className="shrink-0 flex items-center justify-center w-[20px] h-[26px]">
           <Lamp size={lampSize} active={isAvailable} />
         </div>
 
-        {/* Case Title with Hauora Light 18 */}
-        <span
-          className={`flex-1 min-w-0 font-hauora font-light text-[18px] leading-[26px] ${
-            isAvailable
-              ? "text-content-primary group-hover:text-content-contrast"
-              : "text-content-muted"
-          } transition-colors duration-150 break-words whitespace-normal text-left`}
-        >
-          {label}
-        </span>
+        {/* Case Title and optional Sublabel (2-line structure) */}
+        <div className="flex flex-1 min-w-0 flex-col items-start text-left">
+          {/* First line: Semibold, Primary color (#E5E5E5), Hauora 18px / 26px */}
+          <span
+            className={`w-full font-hauora font-semibold text-[18px] leading-[26px] ${
+              isAvailable
+                ? "text-content-primary group-hover:text-content-contrast"
+                : "text-content-muted"
+            } transition-colors duration-150 break-words whitespace-normal text-left`}
+          >
+            {label}
+          </span>
+
+          {/* Second line: Light, Secondary color (#CCCCCC), Hauora 18px / 26px */}
+          {sublabel && (
+            <span
+              className={`w-full font-hauora font-light text-[18px] leading-[26px] ${
+                isAvailable
+                  ? "text-content-secondary group-hover:text-content-primary"
+                  : "text-content-muted"
+              } transition-colors duration-150 break-words whitespace-normal text-left`}
+            >
+              {sublabel}
+            </span>
+          )}
+        </div>
       </>
     );
 
-    const baseClasses = `group flex min-h-[28px] w-full flex-row items-center gap-[10px] select-none transition-colors duration-150 ${
+    const baseClasses = `group flex min-h-[28px] w-full flex-row items-start gap-[10px] select-none transition-colors duration-150 ${
       isAvailable
         ? "cursor-pointer"
         : "cursor-default"

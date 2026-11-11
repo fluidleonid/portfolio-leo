@@ -62,6 +62,7 @@ export default async function Home() {
           order,
           "caseSlug": slug.current,
           buttonLabel,
+          buttonSublabel,
           isButtonActive,
           externalUrl
         }
@@ -114,12 +115,14 @@ export default async function Home() {
         keyAchievements: p.keyAchievements || [],
         caseStudies: (p.caseStudies || []).map((cs: any) => {
           const label = cs.buttonLabel?.trim() || cs.title || "Case Study";
+          const sublabel = cs.buttonSublabel?.trim() || undefined;
           const href =
             cs.externalUrl || (cs.caseSlug ? `/case/${cs.caseSlug}` : undefined);
           const active = cs.isButtonActive !== false;
           return {
             id: cs._id,
             label,
+            sublabel,
             href: active ? href : undefined,
             active,
           };

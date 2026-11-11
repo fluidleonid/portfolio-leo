@@ -1,6 +1,7 @@
 export interface CaseItem {
   id?: string | number;
   label: string;
+  sublabel?: string;
   href?: string;
   active?: boolean;
   onClick?: () => void;

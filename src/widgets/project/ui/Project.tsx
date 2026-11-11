@@ -111,6 +111,7 @@ export const Project = React.forwardRef<HTMLDivElement, ProjectProps>(
                 <CaseLink
                   key={item.id ?? idx}
                   label={item.label}
+                  sublabel={item.sublabel}
                   href={item.href}
                   active={item.active}
                   onClick={item.onClick}

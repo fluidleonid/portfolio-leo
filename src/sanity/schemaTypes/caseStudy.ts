@@ -780,10 +780,17 @@ export const caseStudyType = defineType({
     }),
     defineField({
       name: "buttonLabel",
-      title: "Button Label (Опциональный текст кнопки)",
+      title: "Button Label (Первая строка кнопки)",
       type: "string",
       description:
-        "Оставьте пустым, чтобы название кнопки бралось автоматически из заголовка кейса.",
+        "Первая строка кнопки в проекте (шрифт Hauora Semibold #E5E5E5). Оставьте пустым, чтобы бралось автоматически из заголовка кейса.",
+    }),
+    defineField({
+      name: "buttonSublabel",
+      title: "Button Sublabel (Вторая строка кнопки)",
+      type: "string",
+      description:
+        "Вторая строка кнопки в проекте под заголовком (шрифт Hauora Light #CCCCCC).",
     }),
     defineField({
       name: "isButtonActive",
@@ -848,13 +855,16 @@ export const caseStudyType = defineType({
       order: "order",
       projectName: "project.title",
       buttonLabel: "buttonLabel",
+      buttonSublabel: "buttonSublabel",
       isButtonActive: "isButtonActive",
       media: "coverImage",
       sections: "sections",
     },
-    prepare({ title, order, projectName, buttonLabel, isButtonActive, media, sections }) {
+    prepare({ title, order, projectName, buttonLabel, buttonSublabel, isButtonActive, media, sections }) {
       const status = isButtonActive !== false ? "🟢 ON" : "⚪ OFF";
-      const btn = buttonLabel ? ` [Btn: ${buttonLabel}]` : "";
+      const btn = buttonLabel
+        ? ` [Btn: ${buttonLabel}${buttonSublabel ? ` / ${buttonSublabel}` : ""}]`
+        : "";
       const orderPrefix = order ? `#${order} ` : "";
       const secCount = Array.isArray(sections) ? sections.length : 0;
       const secInfo = secCount > 0 ? ` · ${secCount} sections` : "";
