@@ -502,19 +502,33 @@ export const TopBar: React.FC<TopBarProps> = ({
             })}
           </div>
 
-          {/* Row 3: Labels row proportional to dynamic frames */}
-          <div className="relative flex h-[17px] w-full flex-row items-start gap-[2px] pt-[3px] select-none">
+          {/* Row 3: Labels row with dynamic extent relative to adjacent anchors */}
+          <div className="relative h-[17px] w-full select-none">
             {frames.map((frame, idx) => {
-              const weight = frameFractions[idx] ?? (1 / frameCount);
-              if (!frame.label) {
-                // Empty notch for subsequent project frames
-                return (
-                  <div
-                    key={frame.id}
-                    style={{ flex: `${weight} 1 0%` }}
-                    className="min-w-0 select-none"
-                  />
-                );
+              if (!frame.label) return null;
+
+              // Find the next frame that has a label
+              let nextLabeledIdx = -1;
+              for (let j = idx + 1; j < frameCount; j++) {
+                if (frames[j].label) {
+                  nextLabeledIdx = j;
+                  break;
+                }
+              }
+
+              const leftRatio = stationRatios[idx] ?? (idx / frameCount);
+              const leftPercent = leftRatio * 100;
+
+              let maxWidthStyle: string;
+              if (nextLabeledIdx !== -1) {
+                const nextRatio = stationRatios[nextLabeledIdx] ?? (nextLabeledIdx / frameCount);
+                const spanPercent = Math.max(0, (nextRatio - leftRatio) * 100);
+                // Keep the exact same gap between anchors as between segments (2px)
+                maxWidthStyle = `calc(${spanPercent}% - 2px)`;
+              } else {
+                // Last labeled anchor: expands to the container/screen boundary
+                const remainingPercent = Math.max(0, (1 - leftRatio) * 100);
+                maxWidthStyle = `${remainingPercent}%`;
               }
 
               const activeFrame = frames.find((f) => f.id === currentActiveStation);
@@ -536,8 +550,11 @@ export const TopBar: React.FC<TopBarProps> = ({
                     e.stopPropagation();
                     handleFrameClick(idx);
                   }}
-                  style={{ flex: `${weight} 1 0%` }}
-                  className="min-w-0 text-left cursor-pointer select-none"
+                  style={{
+                    left: `${leftPercent}%`,
+                    maxWidth: maxWidthStyle,
+                  }}
+                  className="absolute top-0 pt-[3px] text-left cursor-pointer select-none"
                 >
                   <span
                     className={`font-stetica text-[10px] leading-[14px] font-medium uppercase select-none truncate block transition-colors duration-150 ${
