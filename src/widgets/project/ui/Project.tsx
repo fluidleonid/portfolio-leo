@@ -30,7 +30,7 @@ export interface ProjectProps extends React.HTMLAttributes<HTMLDivElement> {
  *    - Inner wrapper 600px tall with 28px padding and 20px gap, scrolls together with images.
  * 2. Title Block:
  *    - Heading: "Project name", Hauora 18px / 24px medium, text-content-primary
- *    - Description: "Project description", Hauora 18px / 24px regular, text-content-primary
+ *    - Description: "Project description", Hauora 18px / 24px regular, text-content-secondary
  * 3. Cases Row:
  *    - Left Section (KEY): achievements list with skeuomorphic amber indicator lamps
  *    - Right Section (CASE): interactive case study buttons (completely hidden if 0 cases, KEY expands to full width)
@@ -90,7 +90,7 @@ export const Project = React.forwardRef<HTMLDivElement, ProjectProps>(
               .map((para, idx) => (
                 <p
                   key={idx}
-                  className="text-[18px] font-light leading-[24px] text-content-primary font-hauora whitespace-pre-line tracking-normal"
+                  className="text-[18px] font-light leading-[24px] text-content-secondary font-hauora whitespace-pre-line tracking-normal"
                 >
                   {para}
                 </p>
