@@ -8,10 +8,11 @@ import { MultipleImageUploadInput } from "../components/MultipleImageUploadInput
  * If a block defines an `anchor`, the parent section in TopBar splits into sub-segments.
  */
 export const caseBlockMembers = [
-  // 1. 2-Column Metadata Table
+  // 1. 2-Column Metadata / Spec Table
   defineArrayMember({
     name: "metadataTable",
-    title: "Metadata Table (Client / Role / Team / Delivered)",
+    title: "Spec / Key-Value Table",
+    description: "2-колоночная таблица характеристик или спецификаций (Role, Team, Scope, Tools, Deliverables, Client)",
     type: "object",
     fields: [
       defineField({
@@ -39,7 +40,7 @@ export const caseBlockMembers = [
           defineArrayMember({
             type: "object",
             fields: [
-              defineField({ name: "label", title: "Label", type: "string" }),
+              defineField({ name: "label", title: "Key / Label", type: "string" }),
               defineField({ name: "value", title: "Value", type: "string" }),
             ],
             preview: {
@@ -54,17 +55,18 @@ export const caseBlockMembers = [
       prepare({ title, anchor }) {
         const tag = anchor ? ` [#${anchor}]` : "";
         return {
-          title: (title || "Metadata Table") + tag,
+          title: (title || "Spec Table") + tag,
           subtitle: "Key-Value Spec Grid",
         };
       },
     },
   }),
 
-  // 2. Section Heading / Story Divider
+  // 2. Section Heading / Lead Text
   defineArrayMember({
     name: "sectionHeading",
-    title: "Section Heading",
+    title: "Heading & Lead Text",
+    description: "Акцентный заголовок с вводным описанием / лид-абзацем",
     type: "object",
     fields: [
       defineField({
@@ -86,7 +88,7 @@ export const caseBlockMembers = [
       }),
       defineField({
         name: "description",
-        title: "Description",
+        title: "Description / Lead Text",
         type: "text",
         rows: 3,
       }),
@@ -96,17 +98,19 @@ export const caseBlockMembers = [
       prepare({ title, subtitle, anchor }) {
         const tag = anchor ? ` [#${anchor}]` : "";
         return {
-          title: (title || "Untitled Heading") + tag,
+          title: (title || "Heading & Lead") + tag,
           subtitle: subtitle ? `[${subtitle}]` : "Heading Block",
         };
       },
     },
   }),
 
-  // 3. Problem List
+  // 3. Problem / Point List
   defineArrayMember({
     name: "problemList",
-    title: "Key Problems & Challenges",
+    title: "Points List (with Tags/Metrics)",
+    description:
+      "Универсальный структурированный список пунктов с тире: проблемы, барьеры, предпосылки, гипотезы, задачи. Каждый пункт поддерживает заголовок, описание и тег/метрику.",
     type: "object",
     fields: [
       defineField({
@@ -128,15 +132,19 @@ export const caseBlockMembers = [
       }),
       defineField({
         name: "items",
-        title: "Problems",
+        title: "Items",
         type: "array",
         of: [
           defineArrayMember({
             type: "object",
             fields: [
-              defineField({ name: "title", title: "Problem Title", type: "string" }),
-              defineField({ name: "description", title: "Problem Description", type: "text", rows: 2 }),
-              defineField({ name: "metric", title: "Negative Impact / Metric", type: "string" }),
+              defineField({ name: "title", title: "Item Title", type: "string" }),
+              defineField({ name: "description", title: "Description", type: "text", rows: 2 }),
+              defineField({
+                name: "metric",
+                title: "Tag / Metric (Optional, e.g. '3 days', 'Critical', '0 tolerance')",
+                type: "string",
+              }),
             ],
             preview: {
               select: { title: "title", subtitle: "metric" },
@@ -151,17 +159,18 @@ export const caseBlockMembers = [
         const count = Array.isArray(items) ? items.length : 0;
         const tag = anchor ? ` [#${anchor}]` : "";
         return {
-          title: (title || "Key Problems") + tag,
-          subtitle: `${count} problem items`,
+          title: (title || "Points List") + tag,
+          subtitle: `${count} item${count === 1 ? "" : "s"}`,
         };
       },
     },
   }),
 
-  // 4. Team Section
+  // 4. Team / Roles Roster
   defineArrayMember({
     name: "teamSection",
-    title: "Team & Composition",
+    title: "Roles & Roster List",
+    description: "Список участников команды или задействованных ролей в формате 'Роль: Имя / Описание'",
     type: "object",
     fields: [
       defineField({
@@ -183,15 +192,15 @@ export const caseBlockMembers = [
       }),
       defineField({
         name: "composition",
-        title: "Team Composition",
+        title: "Roles & People",
         type: "array",
         of: [
           defineArrayMember({
             type: "object",
             fields: [
-              defineField({ name: "role", title: "Role", type: "string" }),
-              defineField({ name: "name", title: "Name / Size", type: "string" }),
-              defineField({ name: "details", title: "Details", type: "string" }),
+              defineField({ name: "role", title: "Role / Category", type: "string" }),
+              defineField({ name: "name", title: "Name / Size / Details", type: "string" }),
+              defineField({ name: "details", title: "Extra Details (Optional)", type: "string" }),
             ],
             preview: {
               select: { title: "role", subtitle: "name" },
@@ -205,16 +214,17 @@ export const caseBlockMembers = [
       prepare({ title, anchor }) {
         const tag = anchor ? ` [#${anchor}]` : "";
         return {
-          title: (title || "Team Composition") + tag,
+          title: (title || "Roles & Roster") + tag,
         };
       },
     },
   }),
 
-  // 5. Discovery Section
+  // 5. Insights & Research
   defineArrayMember({
     name: "discoverySection",
-    title: "Discovery & User Research",
+    title: "Insights & Research (with Stats)",
+    description: "Исследовательский блок: строка методики (Method: ...) и список инсайтов с выделенными показателями/статами справа",
     type: "object",
     fields: [
       defineField({
@@ -236,20 +246,20 @@ export const caseBlockMembers = [
       }),
       defineField({
         name: "method",
-        title: "Research Method (e.g. Contextual inquiry, Mouseflow)",
+        title: "Methodology (e.g. Contextual inquiry, Mouseflow, User interviews)",
         type: "string",
       }),
       defineField({
         name: "findings",
-        title: "Key Findings",
+        title: "Key Findings / Insights",
         type: "array",
         of: [
           defineArrayMember({
             type: "object",
             fields: [
-              defineField({ name: "title", title: "Finding Title", type: "string" }),
-              defineField({ name: "description", title: "Finding Description", type: "text", rows: 2 }),
-              defineField({ name: "stat", title: "Statistic / Percentage", type: "string" }),
+              defineField({ name: "title", title: "Insight Title", type: "string" }),
+              defineField({ name: "description", title: "Description", type: "text", rows: 2 }),
+              defineField({ name: "stat", title: "Stat / Highlight (e.g. '92% preference', '100% drop')", type: "string" }),
             ],
             preview: {
               select: { title: "title", subtitle: "stat" },
@@ -263,17 +273,18 @@ export const caseBlockMembers = [
       prepare({ title, method, anchor }) {
         const tag = anchor ? ` [#${anchor}]` : "";
         return {
-          title: (title || "Discovery & Research") + tag,
+          title: (title || "Insights & Research") + tag,
           subtitle: method || "Research block",
         };
       },
     },
   }),
 
-  // 6. Hypotheses Section
+  // 6. Hypotheses & Validation
   defineArrayMember({
     name: "hypothesesSection",
-    title: "Hypotheses & Architecture",
+    title: "Hypotheses & Outcomes",
+    description: "Список гипотез с описанием логики и ожидаемым результатом (Expected outcome)",
     type: "object",
     fields: [
       defineField({
@@ -301,7 +312,7 @@ export const caseBlockMembers = [
           defineArrayMember({
             type: "object",
             fields: [
-              defineField({ name: "title", title: "Hypothesis", type: "string" }),
+              defineField({ name: "title", title: "Hypothesis / Solution", type: "string" }),
               defineField({ name: "description", title: "Rationale / Implementation", type: "text", rows: 2 }),
               defineField({ name: "expectedOutcome", title: "Expected Outcome", type: "string" }),
             ],
@@ -317,7 +328,7 @@ export const caseBlockMembers = [
       prepare({ title, anchor }) {
         const tag = anchor ? ` [#${anchor}]` : "";
         return {
-          title: (title || "Hypotheses & Architecture") + tag,
+          title: (title || "Hypotheses & Outcomes") + tag,
         };
       },
     },
@@ -326,7 +337,8 @@ export const caseBlockMembers = [
   // 7. Horizontal Breakout Gallery
   defineArrayMember({
     name: "galleryBlock",
-    title: "Horizontal Gallery (Full Bleed Breakout)",
+    title: "Image Gallery (Slider)",
+    description: "Горизонтальная full-bleed галерея с кастомным скролл-баром/прогресс-баром и тултипами",
     type: "object",
     fields: [
       defineField({
@@ -413,7 +425,7 @@ export const caseBlockMembers = [
         const count = Array.isArray(images) ? images.length : 0;
         const tag = anchor ? ` [#${anchor}]` : "";
         return {
-          title: (title || "Horizontal Gallery") + tag,
+          title: (title || "Image Gallery") + tag,
           subtitle: `${count} image${count === 1 ? "" : "s"}`,
         };
       },
@@ -423,7 +435,8 @@ export const caseBlockMembers = [
   // 8. Results & Impact Metrics
   defineArrayMember({
     name: "metricsBlock",
-    title: "Results & Impact Metrics",
+    title: "Metric Cards (KPIs / Stats)",
+    description: "Сетка аппаратных карточек с крупными цифрами (KPIs, результаты, бизнес-эффект)",
     type: "object",
     fields: [
       defineField({
@@ -472,8 +485,8 @@ export const caseBlockMembers = [
         const count = Array.isArray(items) ? items.length : 0;
         const tag = anchor ? ` [#${anchor}]` : "";
         return {
-          title: (title || "Results & Impact Metrics") + tag,
-          subtitle: `${count} metrics`,
+          title: (title || "Metric Cards") + tag,
+          subtitle: `${count} metric${count === 1 ? "" : "s"}`,
         };
       },
     },
@@ -482,7 +495,8 @@ export const caseBlockMembers = [
   // 9. Plain / Story Paragraphs
   defineArrayMember({
     name: "textBlock",
-    title: "Text / Story Paragraphs",
+    title: "Text / Paragraphs",
+    description: "Обычный текстовый блок для связного повествования (поддерживает разделение на параграфы)",
     type: "object",
     fields: [
       defineField({
@@ -504,7 +518,7 @@ export const caseBlockMembers = [
       }),
       defineField({
         name: "content",
-        title: "Content",
+        title: "Paragraphs Content",
         type: "text",
         rows: 4,
       }),
@@ -524,7 +538,8 @@ export const caseBlockMembers = [
   // 10. Quote Callout
   defineArrayMember({
     name: "quoteCallout",
-    title: "Quote / Key Takeaway",
+    title: "Quote / Callout",
+    description: "Выделенная цитата пользователя, клиента или ключевой вывод с автором и ролью",
     type: "object",
     fields: [
       defineField({
@@ -546,7 +561,7 @@ export const caseBlockMembers = [
       }),
       defineField({
         name: "quote",
-        title: "Quote",
+        title: "Quote text",
         type: "text",
         rows: 2,
       }),
