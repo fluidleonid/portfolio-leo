@@ -56,7 +56,6 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     ]);
 
     const title = caseData?.title || "Case Study";
-    const ogTitle = `${title} — Leonid Dmitriev`;
     const pitch =
       caseData?.tagline ||
       siteSettings?.metaDescription ||
@@ -66,13 +65,15 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     const faviconUrl = siteSettings?.faviconUrl;
 
     return {
-      title,
+      title: {
+        absolute: title,
+      },
       description: pitch,
       icons: faviconUrl
         ? { icon: faviconUrl, apple: faviconUrl, shortcut: faviconUrl }
         : undefined,
       openGraph: {
-        title: ogTitle,
+        title,
         description: pitch,
         type: "article",
         images: [
@@ -86,7 +87,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       },
       twitter: {
         card: "summary_large_image",
-        title: ogTitle,
+        title,
         description: pitch,
         images: [ogImage],
       },
@@ -94,7 +95,15 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   } catch (err) {
     console.warn("[Sanity Case Metadata Error]:", err);
     return {
-      title: "Case Study — Leonid Dmitriev",
+      title: {
+        absolute: "Case Study",
+      },
+      openGraph: {
+        title: "Case Study",
+      },
+      twitter: {
+        title: "Case Study",
+      },
     };
   }
 }
