@@ -4,9 +4,9 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { tokens } from "@/shared/config/tokens";
 
 export type FunAnimationMode =
+  | "picasso" // Pure cubist module permutation: eyes bottom, mirrored mouth top, all modules move
   | "squished-goofy" // Eyes and mouth assembled right together into a funny micro-face
   | "pixel-sort" // Turbulent streaming pixel sort into goofy face
-  | "picasso" // Pure cubist module permutation: clean non-overlapping tile swap
   | "swap" // Eyes and mouth completely swap places
   | "rolling-ears" // Ears rolling to screen edges
   | "carnival" // Total chaos: swap + rolling ears + floating nose
@@ -51,84 +51,117 @@ export interface FunLedMatrixProps
 }
 
 /**
- * 10 mutual module swap pairs (20 unique modules) for Picasso Cubism.
- * Every module has a distinct partner; at morph = 1, each module lands
- * exactly in its partner's grid slot with ZERO overlapping modules.
+ * Picasso Cubism Permutation:
+ * - Left eye: 4 modules (2x2 group) [3..4, 11..12] -> moves as an intact unit down to [6..7, 11..12]
+ * - Right eye: 2 modules (2x1 group) [3..4, 14] -> moves as an intact unit down to [6..7, 14]
+ * - Mouth & Nose: moves to the top [1..3, 12..14] with vertical mirroring (flipY: true)
+ * - ALL 36 modules in the face move to new positions with ZERO overlapping squares.
  */
-const PICASSO_MODULE_SWAPS: Array<[[number, number], [number, number]]> = [
-  // Pair 1: Left eye pupil <-> Left lower jaw / beard
-  [[4, 12], [7, 12]],
-  // Pair 2: Left eyebrow & top lid <-> Left mid jaw
-  [[3, 12], [6, 12]],
-  // Pair 3: Right eye pupil <-> Upper forehead / hair
-  [[4, 14], [2, 14]],
-  // Pair 4: Right eyebrow & top lid <-> Hair peak
-  [[3, 14], [1, 14]],
-  // Pair 5: Mouth center & lips <-> Right cheek
-  [[6, 13], [4, 15]],
-  // Pair 6: Nose tip & mustache <-> Right temple
-  [[5, 13], [3, 15]],
-  // Pair 7: Right ear main body <-> Center chin
-  [[4, 16], [7, 13]],
-  // Pair 8: Right ear lobe <-> Center neck / collar
-  [[5, 16], [8, 13]],
-  // Pair 9: Nose bridge <-> Left upper forehead
-  [[4, 13], [2, 12]],
-  // Pair 10: Left cheek <-> Right lower beard
-  [[5, 11], [6, 14]],
-];
-
-interface PicassoSwapMeta {
-  targetModR: number;
-  targetModC: number;
-  deltaR: number; // in subpixels (9 per module)
-  deltaC: number; // in subpixels
-  normalR: number; // perpendicular unit vector for arced flight
-  normalC: number;
-  sign: number; // +1 for A, -1 for B (divergent orbits)
+interface PicassoModuleSpec {
+  from: [number, number];
+  to: [number, number];
+  flipY: boolean;
+  sign: number;
 }
 
-const PICASSO_SWAP_MAP = new Map<number, PicassoSwapMeta>();
+const PICASSO_SPECS: PicassoModuleSpec[] = [
+  // Group 1: Left eye (4 modules 2x2) -> rows 6..7, cols 11..12 (moves down as intact eye!)
+  { from: [3, 11], to: [6, 11], flipY: false, sign: 1 },
+  { from: [3, 12], to: [6, 12], flipY: false, sign: 1 },
+  { from: [4, 11], to: [7, 11], flipY: false, sign: 1 },
+  { from: [4, 12], to: [7, 12], flipY: false, sign: 1 },
 
-PICASSO_MODULE_SWAPS.forEach(([[rA, cA], [rB, cB]]) => {
+  // Group 2: Right eye (2 modules 2x1) -> rows 6..7, col 14 (moves down as intact eye!)
+  { from: [3, 14], to: [6, 14], flipY: false, sign: -1 },
+  { from: [4, 14], to: [7, 14], flipY: false, sign: -1 },
+
+  // Group 3: Mouth & Nose (5 modules) -> Top rows 1..3, vertically mirrored (flipY: true)
+  { from: [6, 13], to: [1, 13], flipY: true, sign: 1 }, // mouth inverted at top
+  { from: [5, 13], to: [2, 13], flipY: true, sign: 1 }, // nose tip inverted
+  { from: [4, 13], to: [3, 13], flipY: true, sign: 1 }, // nose bridge inverted
+  { from: [5, 12], to: [2, 12], flipY: true, sign: 1 }, // mustache left inverted
+  { from: [5, 14], to: [2, 14], flipY: true, sign: -1 }, // mustache right inverted
+
+  // Group 4: Forehead / Hair -> Fills vacated mouth, nose, chin
+  { from: [1, 12], to: [5, 12], flipY: false, sign: -1 },
+  { from: [1, 13], to: [5, 13], flipY: false, sign: -1 },
+  { from: [1, 14], to: [5, 14], flipY: false, sign: 1 },
+  { from: [2, 12], to: [6, 13], flipY: false, sign: -1 },
+  { from: [2, 13], to: [7, 13], flipY: false, sign: -1 },
+  { from: [2, 14], to: [8, 13], flipY: false, sign: 1 },
+
+  // Group 5: Hair sides & upper face -> Fills vacated left eye
+  { from: [1, 15], to: [3, 11], flipY: false, sign: 1 },
+  { from: [2, 11], to: [3, 12], flipY: false, sign: 1 },
+  { from: [2, 15], to: [4, 11], flipY: false, sign: -1 },
+  { from: [2, 16], to: [4, 12], flipY: false, sign: -1 },
+
+  // Group 6: Right Ear [4,16], [5,16] -> Fills vacated right eye [3,14], [4,14]
+  { from: [4, 16], to: [3, 14], flipY: false, sign: 1 },
+  { from: [5, 16], to: [4, 14], flipY: false, sign: 1 },
+
+  // Group 7: Cheeks & sides
+  { from: [5, 11], to: [4, 16], flipY: false, sign: -1 },
+  { from: [5, 15], to: [5, 16], flipY: false, sign: -1 },
+  { from: [4, 15], to: [4, 13], flipY: false, sign: 1 },
+  { from: [3, 15], to: [2, 11], flipY: false, sign: 1 },
+  { from: [3, 13], to: [1, 14], flipY: false, sign: -1 },
+
+  // Group 8: Lower beard & jaw -> Fills top hairline & sides
+  { from: [6, 11], to: [1, 12], flipY: false, sign: -1 },
+  { from: [6, 12], to: [1, 15], flipY: false, sign: -1 },
+  { from: [7, 11], to: [2, 15], flipY: false, sign: 1 },
+  { from: [7, 12], to: [2, 16], flipY: false, sign: 1 },
+  { from: [7, 13], to: [3, 15], flipY: false, sign: 1 },
+  { from: [6, 14], to: [4, 15], flipY: false, sign: -1 },
+  { from: [7, 14], to: [5, 11], flipY: false, sign: 1 },
+  { from: [8, 13], to: [5, 15], flipY: false, sign: 1 },
+];
+
+interface PicassoSwapLookup {
+  targetModR: number;
+  targetModC: number;
+  flipY: boolean;
+  deltaR: number; // in subpixels
+  deltaC: number; // in subpixels
+  normalR: number;
+  normalC: number;
+  sign: number;
+}
+
+const PICASSO_LOOKUP = new Map<number, PicassoSwapLookup>();
+
+PICASSO_SPECS.forEach((spec) => {
+  const [rA, cA] = spec.from;
+  const [rB, cB] = spec.to;
   const dr = (rB - rA) * 9;
   const dc = (cB - cA) * 9;
   const len = Math.hypot(dr, dc) || 1;
   const normR = -dc / len;
   const normC = dr / len;
 
-  // Module A -> B
-  PICASSO_SWAP_MAP.set(rA * 28 + cA, {
+  PICASSO_LOOKUP.set(rA * 28 + cA, {
     targetModR: rB,
     targetModC: cB,
+    flipY: spec.flipY,
     deltaR: dr,
     deltaC: dc,
     normalR: normR,
     normalC: normC,
-    sign: 1,
-  });
-
-  // Module B -> A
-  PICASSO_SWAP_MAP.set(rB * 28 + cB, {
-    targetModR: rA,
-    targetModC: cA,
-    deltaR: -dr,
-    deltaC: -dc,
-    normalR: normR,
-    normalC: normC,
-    sign: -1,
+    sign: spec.sign,
   });
 });
 
 /**
- * Process HTMLImageElement into downsampled sub-pixel arrays with unsharp mask and contrast
+ * Process HTMLImageElement into downsampled sub-pixel arrays with unsharp mask,
+ * box area sampling, and gamma 2.2 tone mapping (prevents overexposure / засвет)
  */
 function processImageToSubPixels(
   img: HTMLImageElement,
   totalSubCols: number,
   totalSubRows: number,
   contrast: number
-): { active: Uint8Array; norm: Float32Array; drawW: number; drawH: number; startCol: number; startRow: number } | null {
+): { active: Uint8Array; norm: Float32Array } | null {
   const imgAspect = img.width / img.height;
   const targetAspect = totalSubCols / totalSubRows;
 
@@ -171,64 +204,75 @@ function processImageToSubPixels(
         sr < startRow ||
         sr >= startRow + drawH
       ) {
+        activeArr[idx] = 0;
+        rawBri[idx] = 0;
         continue;
       }
 
-      const imgX = Math.floor((sc - startCol) * cellW);
-      const imgY = Math.floor((sr - startRow) * cellH);
-      const pIdx = (imgY * img.width + imgX) * 4;
+      const imgX = sc - startCol;
+      const imgY = sr - startRow;
 
-      const r = imgData[pIdx];
-      const g = imgData[pIdx + 1];
-      const b = imgData[pIdx + 2];
-      const a = imgData[pIdx + 3] / 255;
+      const sx = Math.floor(imgX * cellW);
+      const ex = Math.floor((imgX + 1) * cellW);
+      const sy = Math.floor(imgY * cellH);
+      const ey = Math.floor((imgY + 1) * cellH);
 
-      // Perceptual luminance
-      const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-      rawBri[idx] = lum * a;
-    }
-  }
-
-  // 3x3 unsharp mask filter
-  for (let sr = 0; sr < totalSubRows; sr++) {
-    for (let sc = 0; sc < totalSubCols; sc++) {
-      const idx = sr * totalSubCols + sc;
-      const center = rawBri[idx];
-      if (center <= 0) continue;
-
-      let blur = 0;
+      let sumBri = 0;
+      let sumAlpha = 0;
       let count = 0;
-      for (let dy = -1; dy <= 1; dy++) {
-        for (let dx = -1; dx <= 1; dx++) {
-          const ny = sr + dy;
-          const nx = sc + dx;
-          if (ny >= 0 && ny < totalSubRows && nx >= 0 && nx < totalSubCols) {
-            blur += rawBri[ny * totalSubCols + nx];
+
+      for (let y = sy; y < ey; y++) {
+        for (let x = sx; x < ex; x++) {
+          const pIdx = (y * img.width + x) * 4;
+          sumAlpha += imgData[pIdx + 3];
+          if (imgData[pIdx + 3] > 20) {
+            sumBri +=
+              imgData[pIdx] * 0.299 +
+              imgData[pIdx + 1] * 0.587 +
+              imgData[pIdx + 2] * 0.114;
             count++;
           }
         }
       }
-      blur /= count;
 
-      const sharp = center + 0.35 * (center - blur);
-      const adjusted = Math.pow(Math.max(0, Math.min(1, sharp)), 1 / contrast);
+      const total = (ex - sx) * (ey - sy) || 1;
+      const avgAlpha = sumAlpha / total;
+      const avgBri = count > 0 ? sumBri / count : 0;
 
-      const threshold = 0.08;
-      if (adjusted > threshold) {
-        activeArr[idx] = 1;
-        normArr[idx] = Math.min(1, Math.max(0, (adjusted - threshold) / (1 - threshold)));
-      }
+      rawBri[idx] = avgBri;
+      activeArr[idx] = avgAlpha >= 25 ? 1 : 0;
     }
   }
 
-  return {
-    active: activeArr,
-    norm: normArr,
-    drawW,
-    drawH,
-    startCol,
-    startRow,
-  };
+  // High-Contrast Tone Mapping with gamma 2.2 curve (strictly eliminates засвет)
+  for (let sr = 0; sr < totalSubRows; sr++) {
+    for (let sc = 0; sc < totalSubCols; sc++) {
+      const idx = sr * totalSubCols + sc;
+      if (activeArr[idx] === 0) {
+        normArr[idx] = 0;
+        continue;
+      }
+
+      const b = rawBri[idx];
+      const left = sc > 0 && activeArr[idx - 1] ? rawBri[idx - 1] : b;
+      const right = sc < totalSubCols - 1 && activeArr[idx + 1] ? rawBri[idx + 1] : b;
+      const up = sr > 0 && activeArr[idx - totalSubCols] ? rawBri[idx - totalSubCols] : b;
+      const down = sr < totalSubRows - 1 && activeArr[idx + totalSubCols] ? rawBri[idx + totalSubCols] : b;
+
+      const localAvg = (left + right + up + down) / 4;
+      const delta = b - localAvg;
+      const sharpened = Math.max(0, Math.min(255, b + delta * 1.3));
+
+      let x = (sharpened - 45) / (242 - 45);
+      x = Math.max(0, Math.min(1, x));
+
+      const gamma = 2.2 * contrast;
+      const norm = Math.pow(x, gamma);
+      normArr[idx] = norm;
+    }
+  }
+
+  return { active: activeArr, norm: normArr };
 }
 
 export const FunLedMatrix = React.memo(
@@ -270,10 +314,6 @@ export const FunLedMatrix = React.memo(
       const baseBufferRef = useRef<{
         active: Uint8Array;
         norm: Float32Array;
-        drawW: number;
-        drawH: number;
-        startCol: number;
-        startRow: number;
       } | null>(null);
 
       // Dynamic frame buffer passed to renderer
@@ -346,8 +386,7 @@ export const FunLedMatrix = React.memo(
             baseBufferRef.current = processed;
             frameActiveRef.current.set(processed.active);
             frameNormRef.current.set(processed.norm);
-            setAnimPhase("igniting");
-            animStartTimeRef.current = performance.now();
+            setAnimPhase("settled");
           }
         };
 
@@ -364,7 +403,7 @@ export const FunLedMatrix = React.memo(
         }
       }, [triggerIgnite]);
 
-      // Color conversion
+      // Color conversion with true contrast curves
       const getLuminanceColor = (norm: number, colorTheme: "monochrome" | "amber") => {
         if (colorTheme === "amber") {
           if (norm > 0.85) return { r: 255, g: 226, b: 138 };
@@ -400,9 +439,6 @@ export const FunLedMatrix = React.memo(
 
         let animId: number;
 
-        // Anatomical bounding boxes extracted directly from portrait-2.png on 252x117 subpixels:
-        const leftEyeBox = { minR: 26, maxR: 44, minC: 104, maxC: 119, centerR: 35, centerC: 112 };
-        const rightEyeBox = { minR: 26, maxR: 44, minC: 122, maxC: 137, centerR: 35, centerC: 129 };
         const eyesAllBox = { minR: 26, maxR: 44, minC: 104, maxC: 137, centerR: 35, centerC: 121 };
         const noseBox = { minR: 38, maxR: 52, minC: 114, maxC: 127, centerR: 45, centerC: 121 };
         const mouthBox = { minR: 50, maxR: 66, minC: 104, maxC: 137, centerR: 58, centerC: 121 };
@@ -433,7 +469,6 @@ export const FunLedMatrix = React.memo(
           if (typeof manualMorphProgress === "number") {
             morph = Math.max(0, Math.min(1, manualMorphProgress));
           } else if (isPlaying && mode !== "idle") {
-            // Smooth cycle: 1.8s at normal, 1.2s smooth morph, 2.0s at funny face, 1.2s smooth return
             const cyclePeriod = 6.2;
             const cycle = (tSec % cyclePeriod) / cyclePeriod;
 
@@ -443,7 +478,7 @@ export const FunLedMatrix = React.memo(
               const localT = (cycle - 0.25) / 0.2;
               morph = 0.5 - 0.5 * Math.cos(localT * Math.PI); // smooth sine ease in
             } else if (cycle < 0.75) {
-              morph = 1; // fully scrambled and together!
+              morph = 1; // fully settled in Picasso / funny pose!
             } else if (cycle < 0.95) {
               const localT = (cycle - 0.75) / 0.2;
               morph = 0.5 + 0.5 * Math.cos(localT * Math.PI); // smooth return
@@ -453,8 +488,6 @@ export const FunLedMatrix = React.memo(
           }
 
           const effectiveMorph = morph * intensity;
-
-          // Turbulent pixel-sorting streaming trail during transition
           const streamTurbulence = Math.sin(morph * Math.PI) * intensity;
 
           const baseActive = base.active;
@@ -464,13 +497,13 @@ export const FunLedMatrix = React.memo(
           // 1. RE-SORTING PIXEL MAP ENGINE
           // -------------------------------------------------------------
           if (mode === "picasso") {
-            // PURE NON-OVERLAPPING CUBIST PERMUTATION
-            // Pass 1: Stationary background modules (never overlap, stay locked to their cells)
+            // PURE NON-OVERLAPPING CUBIST PERMUTATION OF 36 MODULES
+            // Pass 1: Stationary modules (outside the 36 head modules)
             for (let r = 0; r < totalSubRows; r++) {
               const modR = Math.floor(r / subPerModule);
               for (let c = 0; c < totalSubCols; c++) {
                 const modC = Math.floor(c / subPerModule);
-                if (PICASSO_SWAP_MAP.has(modR * cols + modC)) continue;
+                if (PICASSO_LOOKUP.has(modR * cols + modC)) continue;
 
                 const srcIdx = r * totalSubCols + c;
                 if (baseActive[srcIdx] === 0) continue;
@@ -480,36 +513,49 @@ export const FunLedMatrix = React.memo(
               }
             }
 
-            // Pass 2: The 20 mutually swapped modules (10 pairs)
-            // They fly along divergent arced orbits so they never collide mid-air,
-            // and at morph = 1 each lands with 100% precision into its partner's vacated cell.
+            // Pass 2: The 36 rearranging head modules (eyes intact, mouth mirrored at top)
             for (let r = 0; r < totalSubRows; r++) {
               const modR = Math.floor(r / subPerModule);
+              const subR = r % subPerModule;
+
               for (let c = 0; c < totalSubCols; c++) {
                 const modC = Math.floor(c / subPerModule);
-                const swap = PICASSO_SWAP_MAP.get(modR * cols + modC);
-                if (!swap) continue;
+                const subC = c % subPerModule;
+                const spec = PICASSO_LOOKUP.get(modR * cols + modC);
+                if (!spec) continue;
 
                 const srcIdx = r * totalSubCols + c;
                 if (baseActive[srcIdx] === 0) continue;
 
-                // Stream jitter during transition
+                // Stream jitter during flight
                 let jitterR = 0;
                 let jitterC = 0;
                 if (streamTurbulence > 0.001) {
                   const noiseAngle = r * 0.28 + c * 0.22 + tSec * 6;
-                  const mag = streamTurbulence * 4;
+                  const mag = streamTurbulence * 3;
                   jitterR = Math.sin(noiseAngle) * mag;
                   jitterC = Math.cos(noiseAngle * 1.2) * mag;
                 }
 
-                // Smooth divergent arced flight: peaks at morph = 0.5, returns to exactly 0 at morph = 1
-                const arcDist = 14 * Math.sin(effectiveMorph * Math.PI) * intensity;
-                const arcR = swap.normalR * arcDist * swap.sign;
-                const arcC = swap.normalC * arcDist * swap.sign;
+                // If flipY is enabled, mirror vertically inside the module/group
+                const targetSubR = spec.flipY ? 8 - subR : subR;
+                const targetSubC = subC;
 
-                const finalR = Math.round(r + swap.deltaR * effectiveMorph + arcR + jitterR);
-                const finalC = Math.round(c + swap.deltaC * effectiveMorph + arcC + jitterC);
+                const startR = r;
+                const startC = c;
+                const endR = spec.targetModR * subPerModule + targetSubR;
+                const endC = spec.targetModC * subPerModule + targetSubC;
+
+                const dR = endR - startR;
+                const dC = endC - startC;
+
+                // Divergent arced flight so modules bypass each other cleanly
+                const arcDist = 12 * Math.sin(effectiveMorph * Math.PI) * intensity;
+                const arcR = spec.normalR * arcDist * spec.sign;
+                const arcC = spec.normalC * arcDist * spec.sign;
+
+                const finalR = Math.round(startR + dR * effectiveMorph + arcR + jitterR);
+                const finalC = Math.round(startC + dC * effectiveMorph + arcC + jitterC);
 
                 if (finalR >= 0 && finalR < totalSubRows && finalC >= 0 && finalC < totalSubCols) {
                   const destIdx = finalR * totalSubCols + finalC;
@@ -528,7 +574,6 @@ export const FunLedMatrix = React.memo(
                 let targetR = r;
                 let targetC = c;
 
-                // Stream jitter during transit
                 let jitterR = 0;
                 let jitterC = 0;
                 if (streamTurbulence > 0.001) {
@@ -540,24 +585,20 @@ export const FunLedMatrix = React.memo(
 
                 if (mode === "squished-goofy" || mode === "pixel-sort") {
                   if (isInside(r, c, eyesAllBox)) {
-                    // EYES: Pulled DOWN by +13 rows to meet the mouth!
                     const dr = 13;
                     const dc = (121 - c) * 0.15;
                     targetR = r + dr;
                     targetC = c + dc;
                   } else if (isInside(r, c, mouthBox)) {
-                    // MOUTH: Pulled UP by -5 rows
                     const dr = -5;
                     const dc = (c - 121) * 0.28;
                     targetR = r + dr;
                     targetC = c + dc;
                   } else if (isInside(r, c, noseBox)) {
-                    // NOSE: Moved UP to forehead
                     const dr = -24;
                     targetR = r + dr;
                     targetC = c;
                   } else if (isInside(r, c, rightEarBox)) {
-                    // RIGHT EAR: Slides to head crown
                     const dr = -28;
                     const dc = -24;
                     targetR = r + dr;
