@@ -265,6 +265,14 @@ export function CaseBlockRenderer({ block, id }: CaseBlockRendererProps) {
 
     case "metricsBlock": {
       const b = block as MetricsBlock;
+      const count = b.items?.length || 0;
+      const gridCols =
+        count === 2
+          ? "grid-cols-1 sm:grid-cols-2"
+          : count === 4
+          ? "grid-cols-1 sm:grid-cols-2"
+          : "grid-cols-1 sm:grid-cols-3";
+
       return (
         <div id={id} className="flex w-full flex-col gap-[12px] scroll-mt-[100px]">
           {b.badge && (
@@ -280,20 +288,25 @@ export function CaseBlockRenderer({ block, id }: CaseBlockRendererProps) {
               {b.title}
             </h3>
           )}
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-[24px] sm:gap-[32px] w-full pt-[8px]">
+          <div className={`grid ${gridCols} gap-[12px] sm:gap-[16px] w-full`}>
             {b.items.map((m, idx) => (
-              <div key={idx} className="flex flex-col gap-[4px]">
+              <div
+                key={idx}
+                className="relative flex flex-col justify-between rounded-[12px] border border-border-hardware bg-transparent p-[16px] sm:p-[20px] gap-[8px] select-none"
+              >
                 <span className="font-hauora text-[28px] sm:text-[34px] font-medium leading-[34px] sm:leading-[40px] text-content-primary tracking-tight">
                   {m.value}
                 </span>
-                <span className="font-hauora font-medium text-[14px] leading-[20px] text-content-secondary">
-                  {m.label}
-                </span>
-                {m.description && (
-                  <span className="font-hauora font-light text-[14px] leading-[18px] text-content-secondary/80">
-                    {m.description}
+                <div className="flex flex-col gap-[2px]">
+                  <span className="font-hauora font-medium text-[14px] leading-[20px] text-content-secondary">
+                    {m.label}
                   </span>
-                )}
+                  {m.description && (
+                    <span className="font-hauora font-light text-[14px] leading-[18px] text-content-secondary/80">
+                      {m.description}
+                    </span>
+                  )}
+                </div>
               </div>
             ))}
           </div>
