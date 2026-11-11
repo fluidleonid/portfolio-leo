@@ -22,7 +22,7 @@
 
   /* Typography / Content Colors */
   --color-content-primary: #E5E5E5;
-  --color-content-secondary: #CCCCCC;
+  --color-content-secondary: rgba(204, 204, 204, 0.8);
   --color-content-tertiary: #8C8C8C;
   --color-content-quaternary: rgba(204, 204, 204, 0.16);
   --color-content-badge: rgba(204, 204, 204, 0.16);
@@ -37,6 +37,10 @@
 
 @utility font-semibold {
   font-weight: 650;
+}
+
+@utility text-content-secondary {
+  color: var(--color-content-secondary, rgba(204, 204, 204, 0.8));
 }
 
 @utility text-content-quaternary {
