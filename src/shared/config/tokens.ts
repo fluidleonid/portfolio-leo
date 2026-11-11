@@ -18,9 +18,10 @@ export const tokens = {
 
     // Content & Typography
     contentPrimary: "#E5E5E5",
-    contentBadge: "rgba(229, 229, 229, 0.16)",
     contentSecondary: "#CCCCCC",
     contentTertiary: "#8C8C8C",
+    contentQuaternary: "rgba(204, 204, 204, 0.16)",
+    contentBadge: "rgba(204, 204, 204, 0.16)",
     contentHover: "#D4D4D4",
     contentContrast: "#FFFFFF",
     contentMuted: "#8C8C8C",

@@ -19,9 +19,10 @@
 
   /* Typography / Content Colors */
   --color-content-primary: #E5E5E5;
-  --color-content-badge: rgba(229, 229, 229, 0.16);
   --color-content-secondary: #CCCCCC;
   --color-content-tertiary: #8C8C8C;
+  --color-content-quaternary: rgba(204, 204, 204, 0.16);
+  --color-content-badge: rgba(204, 204, 204, 0.16);
   --color-content-hover: #D4D4D4;
   --color-content-contrast: #FFFFFF;
   --color-content-muted: #8C8C8C;
@@ -31,8 +32,12 @@
   --color-signal-amber-glow: #FFB733;
 }
 
+@utility text-content-quaternary {
+  color: var(--color-content-quaternary, rgba(204, 204, 204, 0.16));
+}
+
 @utility text-content-badge {
-  color: var(--color-content-badge, rgba(229, 229, 229, 0.16));
+  color: var(--color-content-badge, rgba(204, 204, 204, 0.16));
 }
 
 html, body {
