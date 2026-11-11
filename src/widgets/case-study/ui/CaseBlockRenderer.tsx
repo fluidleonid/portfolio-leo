@@ -100,7 +100,7 @@ export function CaseBlockRenderer({ block, id }: CaseBlockRendererProps) {
                 </span>
                 <div className="flex flex-1 flex-col gap-[2px]">
                   <div className="flex items-center justify-between gap-[8px]">
-                    <span className="font-hauora font-semibold text-[18px] leading-[26px] text-content-primary">
+                    <span className="font-hauora font-medium text-[18px] leading-[26px] text-content-primary">
                       {item.title}
                     </span>
                     {item.metric && (
@@ -150,7 +150,7 @@ export function CaseBlockRenderer({ block, id }: CaseBlockRendererProps) {
               >
                 <div className="flex items-center justify-between gap-[8px]">
                   {card.title && (
-                    <h4 className="font-hauora font-semibold text-[18px] leading-[26px] text-content-primary">
+                    <h4 className="font-hauora font-medium text-[18px] leading-[26px] text-content-primary">
                       {card.title}
                     </h4>
                   )}
@@ -196,7 +196,7 @@ export function CaseBlockRenderer({ block, id }: CaseBlockRendererProps) {
                   —
                 </span>
                 <div className="flex flex-1 flex-row flex-wrap items-baseline gap-[8px]">
-                  <span className="font-hauora text-[18px] font-semibold leading-[26px] text-content-primary">
+                  <span className="font-hauora text-[18px] font-medium leading-[26px] text-content-primary">
                     {member.role}:
                   </span>
                   <span className="font-hauora font-light text-[18px] leading-[26px] text-content-secondary">
@@ -240,7 +240,7 @@ export function CaseBlockRenderer({ block, id }: CaseBlockRendererProps) {
                 </span>
                 <div className="flex flex-1 flex-col gap-[2px]">
                   <div className="flex items-center justify-between gap-[8px]">
-                    <span className="font-hauora font-semibold text-[18px] leading-[26px] text-content-primary">
+                    <span className="font-hauora font-medium text-[18px] leading-[26px] text-content-primary">
                       {f.title}
                     </span>
                     {f.stat && (
@@ -284,7 +284,7 @@ export function CaseBlockRenderer({ block, id }: CaseBlockRendererProps) {
                   —
                 </span>
                 <div className="flex flex-1 flex-col gap-[2px]">
-                  <span className="font-hauora font-semibold text-[18px] leading-[26px] text-content-primary">
+                  <span className="font-hauora font-medium text-[18px] leading-[26px] text-content-primary">
                     {hyp.title}
                   </span>
                   <span className="font-hauora font-light text-[18px] leading-[26px] text-content-secondary">
