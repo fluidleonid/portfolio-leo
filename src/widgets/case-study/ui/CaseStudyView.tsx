@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import Link from "next/link";
 import { TopBar, type TunerFrame } from "@/widgets/top-bar";
 import { CaseBlockRenderer } from "./CaseBlockRenderer";
@@ -22,6 +22,7 @@ export function CaseStudyView({ caseData }: CaseStudyViewProps) {
   const [activeStation, setActiveStation] = useState<string>(
     sections[0]?.anchor || "overview"
   );
+  const isInitialScrollDone = useRef(false);
 
   // Destination on the main page: back to the specific project block we came from
   const backHref = caseData.projectAnchor ? `/#${caseData.projectAnchor}` : "/";
@@ -59,28 +60,75 @@ export function CaseStudyView({ caseData }: CaseStudyViewProps) {
     return list;
   }, [sections]);
 
-  // Synchronize active station based on scroll position across sections and sub-blocks
+  // Helper to safely synchronize hash in browser address bar without jarring navigation
+  const syncAddressBarHash = (station: string) => {
+    if (typeof window === "undefined") return;
+    const targetHash = !station ? "" : `#${station}`;
+    const currentHash = window.location.hash;
+    if (currentHash !== targetHash) {
+      const newUrl = `${window.location.pathname}${window.location.search}${targetHash}`;
+      window.history.replaceState(null, "", newUrl);
+    }
+  };
+
+  // 1. Initial hash scroll support (e.g. landing on /case/[slug]#results directly)
   useEffect(() => {
+    if (isInitialScrollDone.current || typeof window === "undefined") return;
+    const initialHash = window.location.hash.replace("#", "").toLowerCase().trim();
+    if (initialHash) {
+      const target = caseStations.find(
+        (s) => s.id.toLowerCase() === initialHash || s.targetId.toLowerCase() === initialHash
+      );
+      const targetId = target?.targetId || initialHash;
+      const el = document.getElementById(targetId);
+      if (el) {
+        setTimeout(() => {
+          const rect = el.getBoundingClientRect();
+          const targetScroll = Math.max(0, rect.top + window.scrollY - 100);
+          window.scrollTo({ top: targetScroll, behavior: "smooth" });
+          setActiveStation(target?.id || initialHash);
+        }, 80);
+        isInitialScrollDone.current = true;
+      }
+    }
+  }, [caseStations]);
+
+  // 2. Synchronize active station and address bar URL hash based on viewport scroll position
+  useEffect(() => {
+    if (caseStations.length === 0) return;
+
     const handleScroll = () => {
+      const scrollY = window.scrollY;
       const topOffset = 160;
-      for (let i = caseStations.length - 1; i >= 1; i--) {
+
+      // If user is at the very top of the page (looking at back link / header)
+      if (scrollY < 80) {
+        setActiveStation(caseStations[0]?.id || "overview");
+        syncAddressBarHash("");
+        return;
+      }
+
+      for (let i = caseStations.length - 1; i >= 0; i--) {
         const station = caseStations[i];
         const el = document.getElementById(station.targetId);
         if (el) {
           const rect = el.getBoundingClientRect();
           if (rect.top <= topOffset) {
             setActiveStation(station.id);
+            syncAddressBarHash(station.id);
             return;
           }
         }
       }
-      setActiveStation(caseStations[0]?.id || sections[0]?.anchor || "overview");
+
+      setActiveStation(caseStations[0]?.id || "overview");
+      syncAddressBarHash("");
     };
 
     window.addEventListener("scroll", handleScroll, { passive: true });
     handleScroll();
     return () => window.removeEventListener("scroll", handleScroll);
-  }, [sections, caseStations]);
+  }, [caseStations]);
 
   const handleStationChange = (stationId: string) => {
     setActiveStation(stationId);
@@ -88,8 +136,10 @@ export function CaseStudyView({ caseData }: CaseStudyViewProps) {
     if (target) {
       if (target.id === caseStations[0]?.id) {
         window.scrollTo({ top: 0, behavior: "smooth" });
+        syncAddressBarHash("");
         return;
       }
+      syncAddressBarHash(stationId);
       const el = document.getElementById(target.targetId);
       if (el) {
         const rect = el.getBoundingClientRect();
@@ -142,10 +192,13 @@ export function CaseStudyView({ caseData }: CaseStudyViewProps) {
         <div className="flex w-full flex-col">
           {sections.map((section, sectionIdx) => {
             const isFirst = sectionIdx === 0;
+            // If the first section is also named "overview", avoid duplicate DOM id with header
+            const sectionDomId = isFirst && section.anchor === "overview" ? "overview-content" : section.anchor;
+
             return (
               <section
                 key={section._key || section.anchor || sectionIdx}
-                id={section.anchor}
+                id={sectionDomId}
                 className={`relative flex w-full flex-col scroll-mt-[100px] ${
                   isFirst ? "mt-[20px] sm:mt-[32px]" : "mt-[80px] sm:mt-[100px]"
                 }`}
