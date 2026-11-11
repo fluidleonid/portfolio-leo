@@ -101,6 +101,8 @@ export interface GalleryBlock {
   images: (string | { url: string; alt?: string })[];
   height?: number;
   caption?: string;
+  spacing?: "default" | "tight" | "flush" | "relaxed";
+  marginTopOffset?: number;
 }
 
 export interface MetricItem {

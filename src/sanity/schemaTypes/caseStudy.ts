@@ -491,6 +491,30 @@ export const caseBlockMembers = [
         initialValue: 600,
       }),
       defineField({
+        name: "spacing",
+        title: "Vertical Spacing (Вертикальный отступ галереи)",
+        type: "string",
+        description:
+          "По умолчанию действует общее правило расстояния (32px на десктопе, 20px на мобильном). Можно прижать ближе к блоку выше или сделать увеличенный отступ.",
+        options: {
+          list: [
+            { title: "По общим правилам (Standard / 32px)", value: "default" },
+            { title: "Ближе к предыдущему блоку (Tight / 16px)", value: "tight" },
+            { title: "Вплотную к предыдущему блоку (Flush / 0px)", value: "flush" },
+            { title: "Увеличенный отступ (Relaxed / 48px)", value: "relaxed" },
+          ],
+          layout: "radio",
+        },
+        initialValue: "default",
+      }),
+      defineField({
+        name: "marginTopOffset",
+        title: "Fine-tune Top Offset in px (Точная подстройка отступа сверху, px)",
+        type: "number",
+        description:
+          "Опционально: числовое смещение в пикселях (например -16 чтобы прижать еще ближе, или +16 чтобы отодвинуть).",
+      }),
+      defineField({
         name: "caption",
         title: "Caption",
         type: "string",

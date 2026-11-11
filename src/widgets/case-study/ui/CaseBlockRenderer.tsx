@@ -305,8 +305,27 @@ export function CaseBlockRenderer({ block, id }: CaseBlockRendererProps) {
 
     case "galleryBlock": {
       const b = block as GalleryBlock;
+
+      const spacingClass =
+        b.spacing === "tight"
+          ? "-mt-[10px] sm:-mt-[16px]"
+          : b.spacing === "flush"
+          ? "-mt-[20px] sm:-mt-[32px]"
+          : b.spacing === "relaxed"
+          ? "mt-[16px] sm:mt-[24px]"
+          : "";
+
+      const customMarginTop =
+        typeof b.marginTopOffset === "number" && !isNaN(b.marginTopOffset)
+          ? `${b.marginTopOffset}px`
+          : undefined;
+
       return (
-        <div id={blockDomId} className="w-full flex flex-col gap-[8px] scroll-mt-[100px]">
+        <div
+          id={blockDomId}
+          className={`w-full flex flex-col gap-[8px] scroll-mt-[100px] ${spacingClass}`}
+          style={customMarginTop ? { marginTop: customMarginTop } : undefined}
+        >
           {b.badge && (
             <span
               className="text-[14px] font-normal leading-[24px] text-content-badge font-hauora uppercase tracking-normal"

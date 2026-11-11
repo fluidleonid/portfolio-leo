@@ -147,7 +147,7 @@ export function CaseStudyView({ caseData }: CaseStudyViewProps) {
                 key={section._key || section.anchor || sectionIdx}
                 id={section.anchor}
                 className={`relative flex w-full flex-col scroll-mt-[100px] ${
-                  isFirst ? "mt-[32px] sm:mt-[48px]" : "mt-[80px] sm:mt-[100px]"
+                  isFirst ? "mt-[20px] sm:mt-[32px]" : "mt-[80px] sm:mt-[100px]"
                 }`}
               >
                 {/* Optional Section Heading */}
