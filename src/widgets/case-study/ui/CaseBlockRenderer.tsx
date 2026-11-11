@@ -42,7 +42,7 @@ export function CaseBlockRenderer({ block, id }: CaseBlockRendererProps) {
             </span>
           )}
           {b.title && (
-            <h3 className="text-[18px] font-medium leading-[24px] text-content-primary font-hauora tracking-normal">
+            <h3 className="text-[18px] font-medium leading-[26px] text-content-primary font-hauora tracking-normal">
               {b.title}
             </h3>
           )}
@@ -63,11 +63,11 @@ export function CaseBlockRenderer({ block, id }: CaseBlockRendererProps) {
               {b.badge}
             </span>
           )}
-          <h2 className="text-[18px] font-medium leading-[24px] text-content-primary font-hauora tracking-normal">
+          <h2 className="text-[18px] font-medium leading-[26px] text-content-primary font-hauora tracking-normal">
             {b.title}
           </h2>
           {b.description && (
-            <p className="text-[18px] font-light leading-[24px] text-content-primary font-hauora whitespace-pre-line tracking-normal">
+            <p className="text-[18px] font-light leading-[26px] text-content-primary font-hauora whitespace-pre-line tracking-normal">
               {b.description}
             </p>
           )}
@@ -88,19 +88,19 @@ export function CaseBlockRenderer({ block, id }: CaseBlockRendererProps) {
             </span>
           )}
           {b.title && (
-            <h3 className="text-[18px] font-medium leading-[24px] text-content-primary font-hauora tracking-normal">
+            <h3 className="text-[18px] font-medium leading-[26px] text-content-primary font-hauora tracking-normal">
               {b.title}
             </h3>
           )}
           <div className="flex w-full flex-col gap-[8px]">
             {b.items.map((item, idx) => (
               <div key={idx} className="flex w-full flex-row items-start gap-[8px]">
-                <span className="shrink-0 font-hauora font-light text-[18px] leading-[24px] text-content-primary">
+                <span className="shrink-0 font-hauora font-light text-[18px] leading-[26px] text-content-primary">
                   —
                 </span>
                 <div className="flex flex-1 flex-col gap-[2px]">
                   <div className="flex items-center justify-between gap-[8px]">
-                    <span className="font-hauora font-medium text-[18px] leading-[24px] text-content-primary">
+                    <span className="font-hauora font-medium text-[18px] leading-[26px] text-content-primary">
                       {item.title}
                     </span>
                     {item.metric && (
@@ -109,7 +109,7 @@ export function CaseBlockRenderer({ block, id }: CaseBlockRendererProps) {
                       </span>
                     )}
                   </div>
-                  <span className="font-hauora font-light text-[18px] leading-[24px] text-content-secondary">
+                  <span className="font-hauora font-light text-[18px] leading-[26px] text-content-secondary">
                     {item.description}
                   </span>
                 </div>
@@ -133,12 +133,12 @@ export function CaseBlockRenderer({ block, id }: CaseBlockRendererProps) {
             </span>
           )}
           {b.title && (
-            <h3 className="text-[18px] font-medium leading-[24px] text-content-primary font-hauora tracking-normal">
+            <h3 className="text-[18px] font-medium leading-[26px] text-content-primary font-hauora tracking-normal">
               {b.title}
             </h3>
           )}
           {b.description && (
-            <p className="text-[16px] sm:text-[18px] font-light leading-[22px] sm:leading-[24px] text-content-secondary font-hauora whitespace-pre-line tracking-normal">
+            <p className="text-[16px] sm:text-[18px] font-light leading-[22px] sm:leading-[26px] text-content-secondary font-hauora whitespace-pre-line tracking-normal">
               {b.description}
             </p>
           )}
@@ -150,7 +150,7 @@ export function CaseBlockRenderer({ block, id }: CaseBlockRendererProps) {
               >
                 <div className="flex items-center justify-between gap-[8px]">
                   {card.title && (
-                    <h4 className="font-hauora font-medium text-[18px] leading-[24px] text-content-primary">
+                    <h4 className="font-hauora font-medium text-[18px] leading-[26px] text-content-primary">
                       {card.title}
                     </h4>
                   )}
@@ -161,7 +161,7 @@ export function CaseBlockRenderer({ block, id }: CaseBlockRendererProps) {
                   )}
                 </div>
                 {card.description && (
-                  <p className="font-hauora font-light text-[18px] leading-[24px] text-content-secondary whitespace-pre-line">
+                  <p className="font-hauora font-light text-[18px] leading-[26px] text-content-secondary whitespace-pre-line">
                     {card.description}
                   </p>
                 )}
@@ -185,21 +185,21 @@ export function CaseBlockRenderer({ block, id }: CaseBlockRendererProps) {
             </span>
           )}
           {b.title && (
-            <h3 className="text-[18px] font-medium leading-[24px] text-content-primary font-hauora tracking-normal">
+            <h3 className="text-[18px] font-medium leading-[26px] text-content-primary font-hauora tracking-normal">
               {b.title}
             </h3>
           )}
           <div className="flex w-full flex-col gap-[8px]">
             {b.composition.map((member, idx) => (
               <div key={idx} className="flex w-full flex-row items-start gap-[8px]">
-                <span className="shrink-0 font-hauora font-light text-[18px] leading-[24px] text-content-primary">
+                <span className="shrink-0 font-hauora font-light text-[18px] leading-[26px] text-content-primary">
                   —
                 </span>
                 <div className="flex flex-1 flex-row flex-wrap items-baseline gap-[8px]">
-                  <span className="font-hauora text-[18px] font-medium leading-[24px] text-content-primary">
+                  <span className="font-hauora text-[18px] font-medium leading-[26px] text-content-primary">
                     {member.role}:
                   </span>
-                  <span className="font-hauora font-light text-[18px] leading-[24px] text-content-secondary">
+                  <span className="font-hauora font-light text-[18px] leading-[26px] text-content-secondary">
                     {member.name || member.details}
                   </span>
                 </div>
@@ -223,24 +223,24 @@ export function CaseBlockRenderer({ block, id }: CaseBlockRendererProps) {
             </span>
           )}
           {b.title && (
-            <h3 className="text-[18px] font-medium leading-[24px] text-content-primary font-hauora tracking-normal">
+            <h3 className="text-[18px] font-medium leading-[26px] text-content-primary font-hauora tracking-normal">
               {b.title}
             </h3>
           )}
           {b.method && (
-            <p className="font-hauora font-light text-[18px] leading-[24px] text-content-secondary">
+            <p className="font-hauora font-light text-[18px] leading-[26px] text-content-secondary">
               Method: {b.method}
             </p>
           )}
           <div className="flex w-full flex-col gap-[8px]">
             {b.findings.map((f, idx) => (
               <div key={idx} className="flex w-full flex-row items-start gap-[8px]">
-                <span className="shrink-0 font-hauora font-light text-[18px] leading-[24px] text-content-primary">
+                <span className="shrink-0 font-hauora font-light text-[18px] leading-[26px] text-content-primary">
                   —
                 </span>
                 <div className="flex flex-1 flex-col gap-[2px]">
                   <div className="flex items-center justify-between gap-[8px]">
-                    <span className="font-hauora font-medium text-[18px] leading-[24px] text-content-primary">
+                    <span className="font-hauora font-medium text-[18px] leading-[26px] text-content-primary">
                       {f.title}
                     </span>
                     {f.stat && (
@@ -249,7 +249,7 @@ export function CaseBlockRenderer({ block, id }: CaseBlockRendererProps) {
                       </span>
                     )}
                   </div>
-                  <span className="font-hauora font-light text-[18px] leading-[24px] text-content-secondary">
+                  <span className="font-hauora font-light text-[18px] leading-[26px] text-content-secondary">
                     {f.description}
                   </span>
                 </div>
@@ -273,21 +273,21 @@ export function CaseBlockRenderer({ block, id }: CaseBlockRendererProps) {
             </span>
           )}
           {b.title && (
-            <h3 className="text-[18px] font-medium leading-[24px] text-content-primary font-hauora tracking-normal">
+            <h3 className="text-[18px] font-medium leading-[26px] text-content-primary font-hauora tracking-normal">
               {b.title}
             </h3>
           )}
           <div className="flex w-full flex-col gap-[8px]">
             {b.items.map((hyp, idx) => (
               <div key={idx} className="flex w-full flex-row items-start gap-[8px]">
-                <span className="shrink-0 font-hauora font-light text-[18px] leading-[24px] text-content-primary">
+                <span className="shrink-0 font-hauora font-light text-[18px] leading-[26px] text-content-primary">
                   —
                 </span>
                 <div className="flex flex-1 flex-col gap-[2px]">
-                  <span className="font-hauora font-medium text-[18px] leading-[24px] text-content-primary">
+                  <span className="font-hauora font-medium text-[18px] leading-[26px] text-content-primary">
                     {hyp.title}
                   </span>
-                  <span className="font-hauora font-light text-[18px] leading-[24px] text-content-secondary">
+                  <span className="font-hauora font-light text-[18px] leading-[26px] text-content-secondary">
                     {hyp.description}
                   </span>
                   {hyp.expectedOutcome && (
@@ -335,7 +335,7 @@ export function CaseBlockRenderer({ block, id }: CaseBlockRendererProps) {
             </span>
           )}
           {b.title && (
-            <h3 className="text-[18px] font-medium leading-[24px] text-content-primary font-hauora tracking-normal px-[4px]">
+            <h3 className="text-[18px] font-medium leading-[26px] text-content-primary font-hauora tracking-normal px-[4px]">
               {b.title}
             </h3>
           )}
@@ -348,7 +348,7 @@ export function CaseBlockRenderer({ block, id }: CaseBlockRendererProps) {
             images={b.images}
           />
           {b.caption && (
-            <p className="font-hauora font-light text-[18px] leading-[24px] text-content-secondary px-[4px]">
+            <p className="font-hauora font-light text-[18px] leading-[26px] text-content-secondary px-[4px]">
               {b.caption}
             </p>
           )}
@@ -377,7 +377,7 @@ export function CaseBlockRenderer({ block, id }: CaseBlockRendererProps) {
             </span>
           )}
           {b.title && (
-            <h3 className="text-[18px] font-medium leading-[24px] text-content-primary font-hauora tracking-normal">
+            <h3 className="text-[18px] font-medium leading-[26px] text-content-primary font-hauora tracking-normal">
               {b.title}
             </h3>
           )}
@@ -420,7 +420,7 @@ export function CaseBlockRenderer({ block, id }: CaseBlockRendererProps) {
             </span>
           )}
           {b.title && (
-            <h3 className="text-[18px] font-medium leading-[24px] text-content-primary font-hauora tracking-normal">
+            <h3 className="text-[18px] font-medium leading-[26px] text-content-primary font-hauora tracking-normal">
               {b.title}
             </h3>
           )}
@@ -430,7 +430,7 @@ export function CaseBlockRenderer({ block, id }: CaseBlockRendererProps) {
             .map((para, idx) => (
               <p
                 key={idx}
-                className="text-[18px] font-light leading-[24px] text-content-primary font-hauora whitespace-pre-line tracking-normal"
+                className="text-[18px] font-light leading-[26px] text-content-primary font-hauora whitespace-pre-line tracking-normal"
               >
                 {para}
               </p>
@@ -452,11 +452,11 @@ export function CaseBlockRenderer({ block, id }: CaseBlockRendererProps) {
             </span>
           )}
           {b.title && (
-            <h3 className="text-[18px] font-medium leading-[24px] text-content-primary font-hauora tracking-normal">
+            <h3 className="text-[18px] font-medium leading-[26px] text-content-primary font-hauora tracking-normal">
               {b.title}
             </h3>
           )}
-          <p className="font-hauora font-light italic text-[18px] leading-[24px] text-content-primary">
+          <p className="font-hauora font-light italic text-[18px] leading-[26px] text-content-primary">
             &ldquo;{b.quote}&rdquo;
           </p>
           {(b.author || b.role) && (

@@ -116,7 +116,7 @@ export function CaseStudyView({ caseData }: CaseStudyViewProps) {
         <nav className="flex w-full items-center justify-start pt-[8px] sm:pt-[16px]">
           <Link
             href={backHref}
-            className="inline-flex items-center gap-[8px] font-hauora text-[18px] font-light leading-[24px] text-content-secondary hover:text-content-primary transition-colors duration-150"
+            className="inline-flex items-center gap-[8px] font-hauora text-[18px] font-light leading-[26px] text-content-secondary hover:text-content-primary transition-colors duration-150"
           >
             <span>←</span>
             <span>back</span>
@@ -128,11 +128,11 @@ export function CaseStudyView({ caseData }: CaseStudyViewProps) {
           id="overview"
           className="flex w-full flex-col gap-[8px] mt-[40px] sm:mt-[60px] scroll-mt-[100px]"
         >
-          <h1 className="text-[18px] font-medium leading-[24px] text-content-primary font-hauora tracking-normal">
+          <h1 className="text-[18px] font-medium leading-[26px] text-content-primary font-hauora tracking-normal">
             {caseData.title}
           </h1>
           {caseData.tagline && (
-            <p className="text-[18px] font-light leading-[24px] text-content-primary font-hauora whitespace-pre-line tracking-normal">
+            <p className="text-[18px] font-light leading-[26px] text-content-primary font-hauora whitespace-pre-line tracking-normal">
               {caseData.tagline}
             </p>
           )}
@@ -152,7 +152,7 @@ export function CaseStudyView({ caseData }: CaseStudyViewProps) {
               >
                 {/* Optional Section Heading */}
                 {section.title && (
-                  <h2 className="text-[18px] font-medium leading-[24px] text-content-primary font-hauora tracking-normal mb-[16px] sm:mb-[24px]">
+                  <h2 className="text-[18px] font-medium leading-[26px] text-content-primary font-hauora tracking-normal mb-[16px] sm:mb-[24px]">
                     {section.title}
                   </h2>
                 )}
@@ -176,7 +176,7 @@ export function CaseStudyView({ caseData }: CaseStudyViewProps) {
         <footer className="mt-[80px] sm:mt-[120px] flex w-full flex-col items-start gap-[12px] pt-[24px]">
           <Link
             href={backHref}
-            className="inline-flex items-center gap-[8px] font-hauora text-[18px] font-light leading-[24px] text-content-secondary hover:text-content-primary transition-colors duration-150"
+            className="inline-flex items-center gap-[8px] font-hauora text-[18px] font-light leading-[26px] text-content-secondary hover:text-content-primary transition-colors duration-150"
           >
             <span>←</span>
             <span>back</span>

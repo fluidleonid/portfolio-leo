@@ -184,7 +184,7 @@ export function HomePageClient({
             {aboutParagraphs.map((para, idx) => (
               <p
                 key={idx}
-                className="font-hauora text-[18px] font-light leading-[24px] text-content-primary whitespace-pre-line"
+                className="font-hauora text-[18px] font-light leading-[26px] text-content-primary whitespace-pre-line"
               >
                 {para}
               </p>

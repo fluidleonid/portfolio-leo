@@ -80,7 +80,7 @@ export const Project = React.forwardRef<HTMLDivElement, ProjectProps>(
 
         {/* 2. TITLE & DESCRIPTION BLOCK (564px, positioned under gallery) */}
         <div className="flex w-full flex-col gap-[8px]">
-          <h2 className="text-[18px] font-medium leading-[24px] text-content-primary font-hauora tracking-normal">
+          <h2 className="text-[18px] font-semibold leading-[26px] text-content-primary font-hauora tracking-normal">
             {title}
           </h2>
           <div className="flex flex-col gap-[8px]">
@@ -90,7 +90,7 @@ export const Project = React.forwardRef<HTMLDivElement, ProjectProps>(
               .map((para, idx) => (
                 <p
                   key={idx}
-                  className="text-[18px] font-light leading-[24px] text-content-secondary font-hauora whitespace-pre-line tracking-normal"
+                  className="text-[18px] font-light leading-[26px] text-content-secondary font-hauora whitespace-pre-line tracking-normal"
                 >
                   {para}
                 </p>
@@ -135,10 +135,10 @@ export const Project = React.forwardRef<HTMLDivElement, ProjectProps>(
                   key={id}
                   className="flex w-full flex-row items-start gap-[8px] select-none"
                 >
-                  <span className="shrink-0 font-hauora font-light text-[18px] leading-[24px] text-content-primary">
+                  <span className="shrink-0 font-hauora font-light text-[18px] leading-[26px] text-content-primary">
                     —
                   </span>
-                  <span className="flex-1 min-w-0 font-hauora font-light text-[18px] leading-[24px] text-content-primary break-words whitespace-normal">
+                  <span className="flex-1 min-w-0 font-hauora font-light text-[18px] leading-[26px] text-content-primary break-words whitespace-normal">
                     {label}
                   </span>
                 </div>

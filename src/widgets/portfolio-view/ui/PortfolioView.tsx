@@ -133,7 +133,7 @@ export function PortfolioView({
           {aboutParagraphs.map((para, idx) => (
             <p
               key={idx}
-              className="font-hauora text-[18px] font-light leading-[24px] text-content-primary"
+              className="font-hauora text-[18px] font-light leading-[26px] text-content-primary"
             >
               {para}
             </p>

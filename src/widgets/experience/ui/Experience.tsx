@@ -89,14 +89,14 @@ export const Experience: React.FC<ExperienceProps> = ({
 
               {/* Center Column: Company & Role identical style (Regular 18px #CCCCCC), Description (Light 18px #8C8C8C text-content-muted) */}
               <div className="flex flex-1 flex-col gap-[2px] pr-[12px] sm:pr-[16px]">
-                <span className="font-hauora text-[18px] font-normal leading-[24px] text-content-primary">
+                <span className="font-hauora text-[18px] font-normal leading-[26px] text-content-primary">
                   {item.company}
                 </span>
-                <span className="font-hauora text-[18px] font-normal leading-[24px] text-content-primary">
+                <span className="font-hauora text-[18px] font-normal leading-[26px] text-content-primary">
                   {item.role}
                 </span>
                 {item.description && (
-                  <p className="mt-[4px] font-hauora text-[18px] font-light leading-[24px] text-content-muted whitespace-pre-line">
+                  <p className="mt-[4px] font-hauora text-[18px] font-light leading-[26px] text-content-muted whitespace-pre-line">
                     {item.description}
                   </p>
                 )}

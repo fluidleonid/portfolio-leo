@@ -263,10 +263,10 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
       >
         {/* 1. TITLE BLOCK (Figma node 46:1454, 564x104px) */}
         <div className="flex w-full flex-col gap-[8px]">
-          <h1 className="text-[18px] font-medium leading-[24px] text-content-primary font-hauora tracking-normal">
+          <h1 className="text-[20px] font-semibold leading-[28px] text-content-primary font-hauora tracking-normal">
             {name}
           </h1>
-          <p className="text-[18px] font-medium leading-[24px] text-content-primary font-hauora whitespace-pre-line tracking-normal">
+          <p className="text-[20px] font-semibold leading-[28px] text-content-primary font-hauora whitespace-pre-line tracking-normal">
             {bio}
           </p>
         </div>

@@ -51,7 +51,7 @@ export const CaseLink = React.forwardRef<HTMLElement, CaseLinkProps>(
 
         {/* Case Title with Hauora Light 18 */}
         <span
-          className={`flex-1 min-w-0 font-hauora font-light text-[18px] leading-[24px] ${
+          className={`flex-1 min-w-0 font-hauora font-light text-[18px] leading-[26px] ${
             isAvailable
               ? "text-content-primary group-hover:text-content-contrast"
               : "text-content-muted"
