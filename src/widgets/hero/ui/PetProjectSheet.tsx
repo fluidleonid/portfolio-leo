@@ -207,22 +207,22 @@ export const PetProjectSheet: React.FC<PetProjectSheetProps> = ({
           {badgeLabel}
         </span>
 
-        <div className="flex items-center gap-[8px] shrink-0">
+        <div className="flex items-center gap-[16px] shrink-0">
           {externalHref && (
             <a
               href={externalHref}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex h-[34px] items-center gap-[6px] rounded-[8px] border border-border-hardware bg-surface px-[12px] font-hauora text-[14px] font-light text-content-secondary hover:text-content-primary hover:border-border-subtle transition-colors duration-150"
+              className="inline-flex items-center gap-[6px] font-hauora text-[16px] font-light leading-[24px] text-content-secondary hover:text-content-primary transition-colors duration-150"
             >
               <span>open</span>
               <svg
-                width="14"
-                height="14"
+                width="15"
+                height="15"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
-                strokeWidth="2"
+                strokeWidth="1.75"
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 aria-hidden="true"
@@ -237,15 +237,15 @@ export const PetProjectSheet: React.FC<PetProjectSheetProps> = ({
             type="button"
             onClick={handleCloseClick}
             aria-label="Close pet project sheet"
-            className="inline-flex h-[34px] w-[34px] cursor-pointer items-center justify-center rounded-[8px] border border-border-hardware bg-surface text-content-secondary hover:text-content-primary hover:border-border-subtle transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-500/40"
+            className="inline-flex cursor-pointer items-center justify-center font-hauora text-[16px] font-light leading-[24px] text-content-secondary hover:text-content-primary transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-500/40 rounded-[4px]"
           >
             <svg
-              width="16"
-              height="16"
+              width="18"
+              height="18"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
-              strokeWidth="2"
+              strokeWidth="1.75"
               strokeLinecap="round"
               strokeLinejoin="round"
               aria-hidden="true"
