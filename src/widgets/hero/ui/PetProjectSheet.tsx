@@ -148,6 +148,17 @@ export const PetProjectSheet: React.FC<PetProjectSheetProps> = ({
     dialog.addEventListener("close", handleClose);
     dialog.addEventListener("cancel", handleCancel);
 
+    // Prevent iOS Safari / Android touchmove from chaining to the background page
+    // (touches inside the unlocked <iframe> stay in the iframe's own document and still scroll freely)
+    const preventBackgroundTouchScroll = (e: TouchEvent) => {
+      if (e.cancelable) {
+        e.preventDefault();
+      }
+    };
+    dialog.addEventListener("touchmove", preventBackgroundTouchScroll, {
+      passive: false,
+    });
+
     let cleanupLightDismiss: (() => void) | undefined;
     if (
       typeof HTMLDialogElement !== "undefined" &&
@@ -185,6 +196,7 @@ export const PetProjectSheet: React.FC<PetProjectSheetProps> = ({
     return () => {
       dialog.removeEventListener("close", handleClose);
       dialog.removeEventListener("cancel", handleCancel);
+      dialog.removeEventListener("touchmove", preventBackgroundTouchScroll);
       cleanupLightDismiss?.();
     };
   }, [onClose, closeMobileModal]);
@@ -239,6 +251,9 @@ export const PetProjectSheet: React.FC<PetProjectSheetProps> = ({
     if (swipeUp > 20) {
       bodyTouchStartYRef.current = null;
       handleMobileExpand();
+    } else if (swipeUp < -44) {
+      bodyTouchStartYRef.current = null;
+      void closeMobileModal();
     }
   };
 
@@ -434,22 +449,22 @@ export const PetProjectSheet: React.FC<PetProjectSheetProps> = ({
               onTouchEnd={handleMobileBodyTouchEnd}
               onScroll={handleMobileBodyScroll}
               onWheel={handleMobileBodyWheel}
-              className={`flex flex-1 min-h-0 flex-col px-[20px] pb-[20px] transition-[gap] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
-                isMobileExpanded
-                  ? "gap-0 overflow-hidden"
-                  : "gap-[20px] overflow-y-auto"
-              }`}
+              className="flex flex-1 min-h-0 flex-col overflow-hidden px-[20px] pb-[20px] touch-none"
             >
-              {/* Title & Pitch smoothly collapse out when expanded to full-screen overlay */}
+              {/* Title & Pitch smoothly collapse out (padding lives inside so zero gap jump occurs) */}
               <div
-                className={`grid shrink-0 transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
-                  isMobileExpanded
-                    ? "grid-rows-[0fr] opacity-0 -translate-y-[8px] pointer-events-none"
-                    : "grid-rows-[1fr] opacity-100 translate-y-0"
+                className={`grid shrink-0 transition-[grid-template-rows] duration-[360ms] ease-[cubic-bezier(0.32,0.72,0,1)] ${
+                  isMobileExpanded ? "grid-rows-[0fr]" : "grid-rows-[1fr]"
                 }`}
               >
                 <div className="overflow-hidden">
-                  <header className="flex w-full flex-col gap-[8px]">
+                  <header
+                    className={`flex w-full flex-col gap-[8px] pb-[20px] transition-[opacity,transform] duration-[240ms] ease-out ${
+                      isMobileExpanded
+                        ? "opacity-0 -translate-y-[8px] pointer-events-none"
+                        : "opacity-100 translate-y-0"
+                    }`}
+                  >
                     <h2
                       id={titleId}
                       className="text-[20px] font-semibold leading-[28px] text-content-primary font-hauora tracking-normal"
@@ -465,13 +480,11 @@ export const PetProjectSheet: React.FC<PetProjectSheetProps> = ({
                 </div>
               </div>
 
-              {/* Embed: initially scroll-locked; when expanded, fits 100% inside the fullscreen overlay & unlocks scroll */}
+              {/* Embed stays flex-1 min-h-0 in BOTH states so it smoothly grows with zero layout jump */}
               <div
                 onClick={!isMobileExpanded ? handleMobileExpand : undefined}
-                className={`relative mx-auto flex w-full max-w-[380px] overflow-hidden rounded-[44px] bg-surface-deep transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
-                  isMobileExpanded
-                    ? "flex-1 min-h-0 h-full"
-                    : "aspect-[1/2] max-h-[760px] shrink-0 cursor-pointer"
+                className={`relative mx-auto flex flex-1 min-h-0 w-full max-w-[380px] overflow-hidden rounded-[44px] bg-surface-deep ${
+                  isMobileExpanded ? "" : "cursor-pointer"
                 }`}
               >
                 {renderEmbedContent(isMobileExpanded)}
