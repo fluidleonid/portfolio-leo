@@ -275,7 +275,7 @@ export const PetProjectSheet: React.FC<PetProjectSheetProps> = ({
         </header>
 
         {/* Interactive Project Embed */}
-        <div className="relative flex flex-1 min-h-[300px] w-full overflow-hidden rounded-[12px] border border-border-hardware bg-surface-deep">
+        <div className="relative flex flex-1 min-h-[300px] w-full overflow-hidden rounded-[44px] bg-surface-deep">
           {project?.embedUrl ? (
             <>
               {!iframeLoaded && (
@@ -290,7 +290,7 @@ export const PetProjectSheet: React.FC<PetProjectSheetProps> = ({
                 src={project.embedUrl}
                 title={project.title}
                 onLoad={() => setIframeLoaded(true)}
-                className="h-full w-full border-0 bg-surface-deep"
+                className="h-full w-full rounded-[44px] border-0 bg-surface-deep"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
                 allowFullScreen
               />
