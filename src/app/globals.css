@@ -100,10 +100,17 @@ dialog.pet-sheet-dialog {
   border-radius: 16px 16px 0 0;
   box-shadow: none;
 
-  transition-property: opacity, transform, display, overlay;
-  transition-duration: 0.28s;
+  transition-property: opacity, transform, height, max-height, border-radius, border-top-color, display, overlay;
+  transition-duration: 0.32s;
   transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
   transition-behavior: allow-discrete;
+}
+
+dialog.pet-sheet-dialog[data-expanded="true"] {
+  height: 100dvh;
+  max-height: 100dvh;
+  border-radius: 0;
+  border-top-color: transparent;
 }
 
 @media (prefers-reduced-motion: no-preference) {

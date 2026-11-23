@@ -44,9 +44,13 @@ export const PetProjectSheet: React.FC<PetProjectSheetProps> = ({
   onClose,
 }) => {
   const dialogRef = useRef<HTMLDialogElement | null>(null);
+  const mobileBodyRef = useRef<HTMLDivElement | null>(null);
+  const bodyTouchStartYRef = useRef<number | null>(null);
+  const handleTouchStartYRef = useRef<number | null>(null);
   const titleId = useId();
   const [iframeLoaded, setIframeLoaded] = useState(false);
   const [isDesktop, setIsDesktop] = useState<boolean>(false);
+  const [isMobileExpanded, setIsMobileExpanded] = useState<boolean>(false);
 
   // Track desktop (>= 768px) vs mobile (< 768px) breakpoint
   useEffect(() => {
@@ -58,9 +62,10 @@ export const PetProjectSheet: React.FC<PetProjectSheetProps> = ({
     return () => mq.removeEventListener("change", update);
   }, []);
 
-  // Reset iframe loading state whenever active project changes
+  // Reset iframe loading & mobile expanded state whenever active project changes
   useEffect(() => {
     setIframeLoaded(false);
+    setIsMobileExpanded(false);
   }, [project?.id]);
 
   // Allow Escape key to close the non-modal desktop split pane
@@ -127,6 +132,7 @@ export const PetProjectSheet: React.FC<PetProjectSheetProps> = ({
       const reason = dialog.returnValue;
       dialog.removeAttribute("data-closing");
       dialog.returnValue = "";
+      setIsMobileExpanded(false);
       if (reason !== "breakpoint") {
         onClose();
       }
@@ -183,21 +189,100 @@ export const PetProjectSheet: React.FC<PetProjectSheetProps> = ({
     };
   }, [onClose, closeMobileModal]);
 
+  // Mobile gesture handlers: scroll/swipe UP expands to fullscreen & unlocks embed; swipe DOWN on top bar collapses/closes
+  const handleMobileExpand = useCallback(() => {
+    setIsMobileExpanded(true);
+    if (mobileBodyRef.current) {
+      mobileBodyRef.current.scrollTop = 0;
+    }
+  }, []);
+
+  const handleTopBarTouchStart = (e: React.TouchEvent) => {
+    handleTouchStartYRef.current = e.touches[0]?.clientY ?? null;
+  };
+
+  const handleTopBarTouchMove = (e: React.TouchEvent) => {
+    const startY = handleTouchStartYRef.current;
+    const currentY = e.touches[0]?.clientY;
+    if (startY === null || currentY === undefined) return;
+    const deltaDown = currentY - startY;
+
+    if (deltaDown > 36) {
+      handleTouchStartYRef.current = null;
+      if (isMobileExpanded) {
+        setIsMobileExpanded(false);
+      } else {
+        void closeMobileModal();
+      }
+    } else if (deltaDown < -24 && !isMobileExpanded) {
+      handleTouchStartYRef.current = null;
+      handleMobileExpand();
+    }
+  };
+
+  const handleTopBarTouchEnd = () => {
+    handleTouchStartYRef.current = null;
+  };
+
+  const handleMobileBodyTouchStart = (e: React.TouchEvent) => {
+    if (isMobileExpanded) return;
+    bodyTouchStartYRef.current = e.touches[0]?.clientY ?? null;
+  };
+
+  const handleMobileBodyTouchMove = (e: React.TouchEvent) => {
+    if (isMobileExpanded) return;
+    const startY = bodyTouchStartYRef.current;
+    const currentY = e.touches[0]?.clientY;
+    if (startY === null || currentY === undefined) return;
+    const swipeUp = startY - currentY;
+
+    if (swipeUp > 20) {
+      bodyTouchStartYRef.current = null;
+      handleMobileExpand();
+    }
+  };
+
+  const handleMobileBodyTouchEnd = () => {
+    bodyTouchStartYRef.current = null;
+  };
+
+  const handleMobileBodyScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    if (!isMobileExpanded && e.currentTarget.scrollTop > 8) {
+      handleMobileExpand();
+    }
+  };
+
+  const handleMobileBodyWheel = (e: React.WheelEvent<HTMLDivElement>) => {
+    if (!isMobileExpanded && e.deltaY > 8) {
+      handleMobileExpand();
+    }
+  };
+
   const externalHref = project?.externalUrl || project?.embedUrl || "";
   const badgeLabel = project
     ? `PET • ${(project.shortName || project.title).toUpperCase()}`
     : "PET";
 
-  const renderSheetBody = (handleCloseClick: () => void, showHandle: boolean) => (
-    <>
-      {showHandle && (
-        <div className="flex w-full justify-center pt-[10px] pb-[2px] shrink-0">
+  const renderTopBar = (handleCloseClick: () => void, isMobileMode: boolean) => (
+    <div
+      className="shrink-0"
+      onTouchStart={isMobileMode ? handleTopBarTouchStart : undefined}
+      onTouchMove={isMobileMode ? handleTopBarTouchMove : undefined}
+      onTouchEnd={isMobileMode ? handleTopBarTouchEnd : undefined}
+    >
+      {isMobileMode && (
+        <button
+          type="button"
+          onClick={() => setIsMobileExpanded((prev) => !prev)}
+          aria-label={isMobileExpanded ? "Collapse sheet" : "Expand sheet to fullscreen"}
+          className="flex w-full cursor-pointer justify-center pt-[10px] pb-[2px] focus-visible:outline-none"
+        >
           <span className="h-[4px] w-[40px] rounded-full bg-border-subtle/70" />
-        </div>
+        </button>
       )}
 
       {/* Top Controls Row */}
-      <div className="flex w-full items-center justify-between gap-[12px] px-[20px] md:px-[24px] pt-[12px] md:pt-[20px] pb-[12px] shrink-0">
+      <div className="flex w-full items-center justify-between gap-[12px] px-[20px] md:px-[24px] pt-[12px] md:pt-[20px] pb-[12px]">
         <span
           className="text-[14px] font-normal leading-[24px] font-hauora uppercase tracking-normal truncate"
           style={{
@@ -256,59 +341,41 @@ export const PetProjectSheet: React.FC<PetProjectSheetProps> = ({
           </button>
         </div>
       </div>
-
-      {/* Main Sheet Content */}
-      <div className="flex flex-1 min-h-0 flex-col gap-[20px] px-[20px] md:px-[24px] pb-[20px] md:pb-[24px] overflow-y-auto">
-        {/* Title & Pitch — styled 1:1 like Case Study Header */}
-        <header className="flex w-full flex-col gap-[8px] shrink-0">
-          <h2
-            id={titleId}
-            className="text-[20px] font-semibold leading-[28px] text-content-primary font-hauora tracking-normal"
-          >
-            {project?.title || "Pet Project"}
-          </h2>
-          {project?.pitch && (
-            <p className="text-[18px] font-light leading-[26px] text-content-secondary font-hauora whitespace-pre-line tracking-normal">
-              {project.pitch}
-            </p>
-          )}
-        </header>
-
-        {/* Interactive Project Embed: max 380x760 (1:2 ratio), centered, scales proportionally on mobile */}
-        <div className="relative mx-auto flex w-full max-w-[380px] aspect-[1/2] max-h-[760px] shrink-0 overflow-hidden rounded-[44px] bg-surface-deep">
-          {project?.embedUrl ? (
-            <>
-              {!iframeLoaded && (
-                <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center bg-surface-deep">
-                  <span className="font-hauora text-[14px] font-light text-content-tertiary animate-pulse">
-                    Loading embed...
-                  </span>
-                </div>
-              )}
-              <iframe
-                key={project.id}
-                src={project.embedUrl}
-                title={project.title}
-                onLoad={() => setIframeLoaded(true)}
-                className="h-full w-full rounded-[44px] border-0 bg-surface-deep"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
-                allowFullScreen
-              />
-            </>
-          ) : (
-            <div className="flex h-full w-full flex-col items-center justify-center gap-[8px] p-[24px] text-center">
-              <span className="font-hauora text-[16px] font-medium text-content-primary">
-                Embed URL not configured yet
-              </span>
-              <span className="font-hauora text-[14px] font-light text-content-secondary max-w-[320px]">
-                Add an Embed URL for this project in Sanity Studio under Pet Projects.
-              </span>
-            </div>
-          )}
-        </div>
-      </div>
-    </>
+    </div>
   );
+
+  const renderEmbedContent = (isEmbedInteractive: boolean) =>
+    project?.embedUrl ? (
+      <>
+        {!iframeLoaded && (
+          <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center bg-surface-deep">
+            <span className="font-hauora text-[14px] font-light text-content-tertiary animate-pulse">
+              Loading embed...
+            </span>
+          </div>
+        )}
+        <iframe
+          key={project.id}
+          src={project.embedUrl}
+          title={project.title}
+          onLoad={() => setIframeLoaded(true)}
+          className={`h-full w-full rounded-[44px] border-0 bg-surface-deep ${
+            isEmbedInteractive ? "pointer-events-auto" : "pointer-events-none"
+          }`}
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+          allowFullScreen
+        />
+      </>
+    ) : (
+      <div className="flex h-full w-full flex-col items-center justify-center gap-[8px] p-[24px] text-center">
+        <span className="font-hauora text-[16px] font-medium text-content-primary">
+          Embed URL not configured yet
+        </span>
+        <span className="font-hauora text-[14px] font-light text-content-secondary max-w-[320px]">
+          Add an Embed URL for this project in Sanity Studio under Pet Projects.
+        </span>
+      </div>
+    );
 
   return (
     <>
@@ -322,19 +389,96 @@ export const PetProjectSheet: React.FC<PetProjectSheetProps> = ({
             : "translate-x-full pointer-events-none"
         }`}
       >
-        {isDesktop && project ? renderSheetBody(onClose, false) : null}
+        {isDesktop && project ? (
+          <>
+            {renderTopBar(onClose, false)}
+            <div className="flex flex-1 min-h-0 flex-col gap-[20px] px-[24px] pb-[24px] overflow-y-auto">
+              <header className="flex w-full flex-col gap-[8px] shrink-0">
+                <h2
+                  id={titleId}
+                  className="text-[20px] font-semibold leading-[28px] text-content-primary font-hauora tracking-normal"
+                >
+                  {project.title}
+                </h2>
+                {project.pitch && (
+                  <p className="text-[18px] font-light leading-[26px] text-content-secondary font-hauora whitespace-pre-line tracking-normal">
+                    {project.pitch}
+                  </p>
+                )}
+              </header>
+
+              <div className="relative mx-auto flex w-full max-w-[380px] aspect-[1/2] max-h-[760px] shrink-0 overflow-hidden rounded-[44px] bg-surface-deep">
+                {renderEmbedContent(true)}
+              </div>
+            </div>
+          </>
+        ) : null}
       </aside>
 
-      {/* Mobile (< 768px): Native modal Bottom Sheet */}
+      {/* Mobile (< 768px): Native modal Bottom Sheet that smoothly expands to fullscreen overlay on scroll/swipe */}
       <dialog
         ref={dialogRef}
         aria-labelledby={titleId}
+        data-expanded={isMobileExpanded ? "true" : "false"}
         className="pet-sheet-dialog"
         {...({ closedby: "any" } as Record<string, string>)}
       >
-        {!isDesktop && project
-          ? renderSheetBody(() => void closeMobileModal(), true)
-          : null}
+        {!isDesktop && project ? (
+          <>
+            {renderTopBar(() => void closeMobileModal(), true)}
+
+            <div
+              ref={mobileBodyRef}
+              onTouchStart={handleMobileBodyTouchStart}
+              onTouchMove={handleMobileBodyTouchMove}
+              onTouchEnd={handleMobileBodyTouchEnd}
+              onScroll={handleMobileBodyScroll}
+              onWheel={handleMobileBodyWheel}
+              className={`flex flex-1 min-h-0 flex-col px-[20px] pb-[20px] transition-[gap] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+                isMobileExpanded
+                  ? "gap-0 overflow-hidden"
+                  : "gap-[20px] overflow-y-auto"
+              }`}
+            >
+              {/* Title & Pitch smoothly collapse out when expanded to full-screen overlay */}
+              <div
+                className={`grid shrink-0 transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+                  isMobileExpanded
+                    ? "grid-rows-[0fr] opacity-0 -translate-y-[8px] pointer-events-none"
+                    : "grid-rows-[1fr] opacity-100 translate-y-0"
+                }`}
+              >
+                <div className="overflow-hidden">
+                  <header className="flex w-full flex-col gap-[8px]">
+                    <h2
+                      id={titleId}
+                      className="text-[20px] font-semibold leading-[28px] text-content-primary font-hauora tracking-normal"
+                    >
+                      {project.title}
+                    </h2>
+                    {project.pitch && (
+                      <p className="text-[18px] font-light leading-[26px] text-content-secondary font-hauora whitespace-pre-line tracking-normal">
+                        {project.pitch}
+                      </p>
+                    )}
+                  </header>
+                </div>
+              </div>
+
+              {/* Embed: initially scroll-locked; when expanded, fits 100% inside the fullscreen overlay & unlocks scroll */}
+              <div
+                onClick={!isMobileExpanded ? handleMobileExpand : undefined}
+                className={`relative mx-auto flex w-full max-w-[380px] overflow-hidden rounded-[44px] bg-surface-deep transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+                  isMobileExpanded
+                    ? "flex-1 min-h-0 h-full"
+                    : "aspect-[1/2] max-h-[760px] shrink-0 cursor-pointer"
+                }`}
+              >
+                {renderEmbedContent(isMobileExpanded)}
+              </div>
+            </div>
+          </>
+        ) : null}
       </dialog>
     </>
   );
