@@ -77,6 +77,7 @@ export default async function Home() {
         "faviconUrl": favicon.asset->url,
         "ogImageUrl": ogImage.asset->url,
         aboutParagraphs,
+        petLabelInterval,
         "ledImages": ledImages[]{
           "url": coalesce(asset->url, url, @)
         }.url

@@ -17,6 +17,7 @@ export interface SiteSettingsData {
   faviconUrl?: string;
   ogImageUrl?: string;
   aboutParagraphs?: string[];
+  petLabelInterval?: number;
 }
 
 export interface HomePageClientProps {
@@ -144,6 +145,7 @@ export function HomePageClient({
           bio={siteSettings?.heroBio}
           ledImages={siteSettings?.ledImages?.filter(Boolean)}
           petProjects={initialPetProjects}
+          petLabelInterval={siteSettings?.petLabelInterval}
           activePetProject={activePetProject}
           onPetProjectChange={setActivePetProject}
           defaultNav="index"

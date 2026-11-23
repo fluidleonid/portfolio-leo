@@ -29,6 +29,8 @@ export interface HeroProps extends Omit<React.HTMLAttributes<HTMLDivElement>, "o
   ledImages?: string[];
   /** Pet projects managed in Sanity for the PET section */
   petProjects?: PetProjectData[];
+  /** Interval in seconds for rotating the 'PET • PROJECT NAME' label (default: 2) */
+  petLabelInterval?: number;
   /** Controlled active pet project (when split-screen sheet is managed by parent) */
   activePetProject?: PetProjectData | null;
   /** Callback when user clicks a PET button to open/toggle/switch a pet project */
@@ -54,6 +56,7 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
       bio = "Product Designer · Frontend-fluent\n4+ years at B2B(2C) across FinTech,\nProductivity, Entertainment & AI products",
       ledImages,
       petProjects,
+      petLabelInterval = 2,
       activePetProject: controlledActivePet,
       onPetProjectChange,
       defaultNav = "index",
@@ -121,7 +124,7 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
       useState<string>(targetPetName);
     const hasMountedPetRef = useRef(false);
 
-    // Rotate active pet project label every 2 seconds (pauses on hover or open sheet)
+    // Rotate active pet project label on configured interval (pauses on hover or open sheet)
     useEffect(() => {
       if (
         resolvedPetProjects.length <= 1 ||
@@ -130,11 +133,17 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
       ) {
         return;
       }
+      const intervalMs = Math.max(0.5, Number(petLabelInterval) || 2) * 1000;
       const intervalId = window.setInterval(() => {
         setPetTickerIndex((prev) => (prev + 1) % resolvedPetProjects.length);
-      }, 2000);
+      }, intervalMs);
       return () => window.clearInterval(intervalId);
-    }, [resolvedPetProjects.length, hoveredPetIndex, activePetProject]);
+    }, [
+      resolvedPetProjects.length,
+      hoveredPetIndex,
+      activePetProject,
+      petLabelInterval,
+    ]);
 
     // Code-cracking / scramble-decode animation whenever targetPetName changes
     useEffect(() => {

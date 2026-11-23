@@ -115,5 +115,14 @@ export const siteSettingsType = defineType({
       type: "array",
       of: [defineArrayMember({ type: "text", rows: 3 })],
     }),
+    defineField({
+      name: "petLabelInterval",
+      title: "PET Label Switch Interval (seconds)",
+      type: "number",
+      description:
+        "How often the 'PET • PROJECT NAME' label switches to the next pet project (in seconds, default: 2).",
+      initialValue: 2,
+      validation: (Rule) => Rule.min(0.5).max(60),
+    }),
   ],
 });
