@@ -83,20 +83,22 @@ canvas,
   - Includes :where(:not([data-closing])) hook for Firefox/Safari top-layer exit fallback
 */
 dialog.pet-sheet-dialog {
+  position: fixed;
   padding: 0;
   border: 0;
   color: var(--color-content-primary);
   background-color: var(--color-canvas);
   opacity: 0;
   /* Mobile default: bottom sheet */
-  margin: auto 0 0 0;
+  inset: auto 0 0 0;
+  margin: 0;
   width: 100vw;
   max-width: 100vw;
   height: 88dvh;
   max-height: 88dvh;
   border-top: 1px solid var(--color-border-hardware);
   border-radius: 16px 16px 0 0;
-  box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.55);
+  box-shadow: none;
 
   transition-property: opacity, transform, display, overlay;
   transition-duration: 0.28s;
@@ -112,16 +114,18 @@ dialog.pet-sheet-dialog {
 
 @media (min-width: 640px) {
   dialog.pet-sheet-dialog {
-    /* Desktop: right side sheet */
-    margin: 0 0 0 auto;
-    width: min(680px, 92vw);
-    max-width: min(680px, 92vw);
+    /* Desktop: full-height right split-screen sheet in main canvas color with hardware left border */
+    inset: 0 0 0 auto;
+    margin: 0;
+    width: 50vw;
+    min-width: min(480px, 92vw);
+    max-width: 50vw;
     height: 100dvh;
     max-height: 100dvh;
     border-top: 0;
     border-left: 1px solid var(--color-border-hardware);
-    border-radius: 16px 0 0 16px;
-    box-shadow: -12px 0 40px rgba(0, 0, 0, 0.55);
+    border-radius: 0;
+    box-shadow: none;
   }
 
   @media (prefers-reduced-motion: no-preference) {
@@ -142,10 +146,9 @@ dialog.pet-sheet-dialog:modal {
 
 dialog.pet-sheet-dialog::backdrop {
   background-color: rgba(0, 0, 0, 0);
-  backdrop-filter: blur(0px);
   overflow: hidden;
   overscroll-behavior: contain;
-  transition-property: background-color, backdrop-filter, display, overlay;
+  transition-property: background-color, display, overlay;
   transition-duration: 0.28s;
   transition-timing-function: ease-out;
   transition-behavior: allow-discrete;
@@ -173,12 +176,10 @@ dialog.pet-sheet-dialog[open]:where(:not([data-closing])) {
   }
 
   &::backdrop {
-    background-color: rgba(0, 0, 0, 0.62);
-    backdrop-filter: blur(4px);
+    background-color: rgba(0, 0, 0, 0.4);
 
     @starting-style {
       background-color: rgba(0, 0, 0, 0);
-      backdrop-filter: blur(0px);
     }
   }
 }
