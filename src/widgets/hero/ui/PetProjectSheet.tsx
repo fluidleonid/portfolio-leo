@@ -274,8 +274,8 @@ export const PetProjectSheet: React.FC<PetProjectSheetProps> = ({
           )}
         </header>
 
-        {/* Interactive Project Embed */}
-        <div className="relative flex flex-1 min-h-[300px] w-full overflow-hidden rounded-[44px] bg-surface-deep">
+        {/* Interactive Project Embed: max 380x760 (1:2 ratio), centered, scales proportionally on mobile */}
+        <div className="relative mx-auto flex w-full max-w-[380px] aspect-[1/2] max-h-[760px] shrink-0 overflow-hidden rounded-[44px] bg-surface-deep">
           {project?.embedUrl ? (
             <>
               {!iframeLoaded && (
