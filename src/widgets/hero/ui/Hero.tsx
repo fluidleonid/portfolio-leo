@@ -29,6 +29,10 @@ export interface HeroProps extends Omit<React.HTMLAttributes<HTMLDivElement>, "o
   ledImages?: string[];
   /** Pet projects managed in Sanity for the PET section */
   petProjects?: PetProjectData[];
+  /** Controlled active pet project (when split-screen sheet is managed by parent) */
+  activePetProject?: PetProjectData | null;
+  /** Callback when user clicks a PET button to open/toggle/switch a pet project */
+  onPetProjectChange?: (pet: PetProjectData | null) => void;
   /** Initial navigation selection (default "index") */
   defaultNav?: NavItem;
   /** Active navigation selection (controlled from parent) */
@@ -50,6 +54,8 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
       bio = "Product Designer · Frontend-fluent\n4+ years at B2B(2C) across FinTech,\nProductivity, Entertainment & AI products",
       ledImages,
       petProjects,
+      activePetProject: controlledActivePet,
+      onPetProjectChange,
       defaultNav = "index",
       activeNav: controlledActiveNav,
       onNavChange,
@@ -80,8 +86,22 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
 
     const [petTickerIndex, setPetTickerIndex] = useState<number>(0);
     const [hoveredPetIndex, setHoveredPetIndex] = useState<number | null>(null);
-    const [activePetProject, setActivePetProject] =
+    const [uncontrolledActivePet, setUncontrolledActivePet] =
       useState<PetProjectData | null>(null);
+
+    const isPetControlled = onPetProjectChange !== undefined;
+    const activePetProject = isPetControlled
+      ? controlledActivePet ?? null
+      : uncontrolledActivePet;
+
+    const handlePetSelect = (pet: PetProjectData) => {
+      const next = activePetProject?.id === pet.id ? null : pet;
+      if (isPetControlled) {
+        onPetProjectChange(next);
+      } else {
+        setUncontrolledActivePet(next);
+      }
+    };
 
     const displayedPet =
       activePetProject ??
@@ -578,17 +598,19 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
                 onMouseLeave={() => setHoveredPetIndex(null)}
                 onFocus={() => setHoveredPetIndex(idx)}
                 onBlur={() => setHoveredPetIndex(null)}
-                onClick={() => setActivePetProject(pet)}
+                onClick={() => handlePetSelect(pet)}
               />
             ))}
           </Section>
         </div>
 
-        {/* Responsive Pet Project Embed Sheet (Right Sheet on Desktop, Bottom Sheet on Mobile) */}
-        <PetProjectSheet
-          project={activePetProject}
-          onClose={() => setActivePetProject(null)}
-        />
+        {/* Fallback standalone sheet when Hero is rendered uncontrolled outside HomePageClient */}
+        {!isPetControlled && (
+          <PetProjectSheet
+            project={activePetProject}
+            onClose={() => setUncontrolledActivePet(null)}
+          />
+        )}
 
         {/* Soft Toast Notification: 56px height, 12px radius, bg-surface background, no border, font-hauora */}
         <div

@@ -46,8 +46,36 @@ export const PetProjectSheet: React.FC<PetProjectSheetProps> = ({
   const dialogRef = useRef<HTMLDialogElement | null>(null);
   const titleId = useId();
   const [iframeLoaded, setIframeLoaded] = useState(false);
+  const [isDesktop, setIsDesktop] = useState<boolean>(false);
 
-  const closeTopLayer = useCallback(async () => {
+  // Track desktop (>= 768px) vs mobile (< 768px) breakpoint
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mq = window.matchMedia("(min-width: 768px)");
+    const update = () => setIsDesktop(mq.matches);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, []);
+
+  // Reset iframe loading state whenever active project changes
+  useEffect(() => {
+    setIframeLoaded(false);
+  }, [project?.id]);
+
+  // Allow Escape key to close the non-modal desktop split pane
+  useEffect(() => {
+    if (!isDesktop || !project) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        onClose();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isDesktop, project, onClose]);
+
+  const closeMobileModal = useCallback(async () => {
     const dialog = dialogRef.current;
     if (!dialog || !dialog.open) return;
 
@@ -69,44 +97,51 @@ export const PetProjectSheet: React.FC<PetProjectSheetProps> = ({
     }
   }, []);
 
-  // Open or close the native <dialog> whenever `project` changes
+  // Open/close native modal <dialog> ONLY on mobile (< 768px)
   useEffect(() => {
     const dialog = dialogRef.current;
     if (!dialog) return;
 
-    if (project) {
-      setIframeLoaded(false);
+    if (!isDesktop && project) {
       dialog.removeAttribute("data-closing");
       if (!dialog.open) {
         dialog.showModal();
       }
     } else if (dialog.open) {
-      void closeTopLayer();
+      if (isDesktop) {
+        // Switching to desktop split pane: close modal immediately without firing onClose
+        dialog.removeAttribute("data-closing");
+        dialog.close("breakpoint");
+      } else {
+        void closeMobileModal();
+      }
     }
-  }, [project, closeTopLayer]);
+  }, [project, isDesktop, closeMobileModal]);
 
-  // Attach native close, cancel (for exit animation fallback), and light-dismiss fallback (Safari)
+  // Attach native close, cancel (exit fallback), and light-dismiss fallback (Safari) for mobile <dialog>
   useEffect(() => {
     const dialog = dialogRef.current;
     if (!dialog) return;
 
     const handleClose = () => {
+      const reason = dialog.returnValue;
       dialog.removeAttribute("data-closing");
       dialog.returnValue = "";
-      onClose();
+      if (reason !== "breakpoint") {
+        onClose();
+      }
     };
 
     const handleCancel = (event: Event) => {
       if (!supportsTopLayerExit()) {
         event.preventDefault();
-        void closeTopLayer();
+        void closeMobileModal();
       }
     };
 
     dialog.addEventListener("close", handleClose);
     dialog.addEventListener("cancel", handleCancel);
 
-    // Fallback for browsers without native <dialog closedby="any"> support (e.g. Safari)
     let cleanupLightDismiss: (() => void) | undefined;
     if (
       typeof HTMLDialogElement !== "undefined" &&
@@ -128,7 +163,7 @@ export const PetProjectSheet: React.FC<PetProjectSheetProps> = ({
       };
       const handlePointerUp = (e: PointerEvent) => {
         if (pressedOutside && isOutside(e)) {
-          void closeTopLayer();
+          void closeMobileModal();
         }
         pressedOutside = false;
       };
@@ -146,30 +181,28 @@ export const PetProjectSheet: React.FC<PetProjectSheetProps> = ({
       dialog.removeEventListener("cancel", handleCancel);
       cleanupLightDismiss?.();
     };
-  }, [onClose, closeTopLayer]);
+  }, [onClose, closeMobileModal]);
 
   const externalHref = project?.externalUrl || project?.embedUrl || "";
   const badgeLabel = project
     ? `PET • ${(project.shortName || project.title).toUpperCase()}`
     : "PET";
 
-  return (
-    <dialog
-      ref={dialogRef}
-      aria-labelledby={titleId}
-      className="pet-sheet-dialog"
-      {...({ closedby: "any" } as Record<string, string>)}
-    >
-      {/* Mobile Bottom Sheet Handle */}
-      <div className="flex sm:hidden w-full justify-center pt-[10px] pb-[2px] shrink-0">
-        <span className="h-[4px] w-[40px] rounded-full bg-border-subtle/70" />
-      </div>
+  const renderSheetBody = (handleCloseClick: () => void, showHandle: boolean) => (
+    <>
+      {showHandle && (
+        <div className="flex w-full justify-center pt-[10px] pb-[2px] shrink-0">
+          <span className="h-[4px] w-[40px] rounded-full bg-border-subtle/70" />
+        </div>
+      )}
 
       {/* Top Controls Row */}
-      <div className="flex w-full items-center justify-between gap-[12px] px-[20px] sm:px-[28px] pt-[12px] sm:pt-[24px] pb-[12px] shrink-0">
+      <div className="flex w-full items-center justify-between gap-[12px] px-[20px] md:px-[24px] pt-[12px] md:pt-[20px] pb-[12px] shrink-0">
         <span
           className="text-[14px] font-normal leading-[24px] font-hauora uppercase tracking-normal truncate"
-          style={{ color: "var(--color-content-badge, rgba(204, 204, 204, 0.16))" }}
+          style={{
+            color: "var(--color-content-badge, rgba(204, 204, 204, 0.16))",
+          }}
         >
           {badgeLabel}
         </span>
@@ -202,7 +235,7 @@ export const PetProjectSheet: React.FC<PetProjectSheetProps> = ({
 
           <button
             type="button"
-            onClick={() => void closeTopLayer()}
+            onClick={handleCloseClick}
             aria-label="Close pet project sheet"
             className="inline-flex h-[34px] w-[34px] cursor-pointer items-center justify-center rounded-[8px] border border-border-hardware bg-surface text-content-secondary hover:text-content-primary hover:border-border-subtle transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-500/40"
           >
@@ -225,7 +258,7 @@ export const PetProjectSheet: React.FC<PetProjectSheetProps> = ({
       </div>
 
       {/* Main Sheet Content */}
-      <div className="flex flex-1 min-h-0 flex-col gap-[20px] sm:gap-[24px] px-[20px] sm:px-[28px] pb-[20px] sm:pb-[28px] overflow-y-auto">
+      <div className="flex flex-1 min-h-0 flex-col gap-[20px] px-[20px] md:px-[24px] pb-[20px] md:pb-[24px] overflow-y-auto">
         {/* Title & Pitch — styled 1:1 like Case Study Header */}
         <header className="flex w-full flex-col gap-[8px] shrink-0">
           <h2
@@ -274,6 +307,35 @@ export const PetProjectSheet: React.FC<PetProjectSheetProps> = ({
           )}
         </div>
       </div>
-    </dialog>
+    </>
+  );
+
+  return (
+    <>
+      {/* Desktop (>= 768px): Non-modal 480px right split-screen panel — main page stays 100% interactive */}
+      <aside
+        aria-label={project ? `Pet project: ${project.title}` : "Pet project panel"}
+        aria-hidden={!isDesktop || !project}
+        className={`hidden md:flex fixed top-0 right-0 bottom-0 z-40 h-[100dvh] w-[480px] flex-col bg-canvas border-l border-border-hardware transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+          isDesktop && project
+            ? "translate-x-0 pointer-events-auto"
+            : "translate-x-full pointer-events-none"
+        }`}
+      >
+        {isDesktop && project ? renderSheetBody(onClose, false) : null}
+      </aside>
+
+      {/* Mobile (< 768px): Native modal Bottom Sheet */}
+      <dialog
+        ref={dialogRef}
+        aria-labelledby={titleId}
+        className="pet-sheet-dialog"
+        {...({ closedby: "any" } as Record<string, string>)}
+      >
+        {!isDesktop && project
+          ? renderSheetBody(() => void closeMobileModal(), true)
+          : null}
+      </dialog>
+    </>
   );
 };

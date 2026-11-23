@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Hero } from "@/widgets/hero";
+import { Hero, PetProjectSheet } from "@/widgets/hero";
 import { Project } from "@/widgets/project";
 import { TopBar } from "@/widgets/top-bar";
 import { Experience } from "@/widgets/experience";
@@ -33,6 +33,8 @@ export function HomePageClient({
   const [activeStation, setActiveStation] = useState<string>("index");
   const [theme, setTheme] = useState<"monochrome" | "amber">("amber");
   const [projects] = useState<ProjectData[]>(initialProjects);
+  const [activePetProject, setActivePetProject] =
+    useState<PetProjectData | null>(null);
   const isInitialScrollDone = useRef(false);
 
   // Helper to safely synchronize hash in browser address bar without jarring navigation
@@ -116,25 +118,35 @@ export function HomePageClient({
     syncAddressBarHash(st);
   };
 
-  return (
-    <main className="flex min-h-screen w-full flex-col items-center justify-start bg-canvas px-[16px] sm:px-6 py-12 sm:py-16">
-      {/* 
-        Full-width vintage stereo radio tuner TopBar (Reference: Solid State AM/FM Stereo Tuner Scale)
-        Sticks flush to the top of the viewport with no outer border
-      */}
-      <TopBar
-        projects={projects}
-        activeStation={activeStation}
-        onStationChange={handleStationClick}
-      />
+  const isPetOpen = activePetProject !== null;
 
-      {/* 1:1 Complete Hero Section from Figma (Values 100% sourced from Sanity) */}
-      <Hero
-        name={siteSettings?.heroName}
-        bio={siteSettings?.heroBio}
-        ledImages={siteSettings?.ledImages?.filter(Boolean)}
-        petProjects={initialPetProjects}
-        defaultNav="index"
+  return (
+    <>
+      <main
+        className={`flex min-h-screen w-full flex-col items-center justify-start bg-canvas px-[16px] sm:px-6 py-12 sm:py-16 transition-[padding] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+          isPetOpen ? "md:pr-[480px]" : ""
+        }`}
+      >
+        {/* 
+          Full-width vintage stereo radio tuner TopBar (Reference: Solid State AM/FM Stereo Tuner Scale)
+          Sticks flush to the top of the viewport with no outer border
+        */}
+        <TopBar
+          projects={projects}
+          activeStation={activeStation}
+          onStationChange={handleStationClick}
+          className={isPetOpen ? "md:w-[calc(100%-480px)] md:right-[480px]" : ""}
+        />
+
+        {/* 1:1 Complete Hero Section from Figma (Values 100% sourced from Sanity) */}
+        <Hero
+          name={siteSettings?.heroName}
+          bio={siteSettings?.heroBio}
+          ledImages={siteSettings?.ledImages?.filter(Boolean)}
+          petProjects={initialPetProjects}
+          activePetProject={activePetProject}
+          onPetProjectChange={setActivePetProject}
+          defaultNav="index"
         activeNav={
           activeStation === "career"
             ? "career"
@@ -196,6 +208,13 @@ export function HomePageClient({
           </div>
         </section>
       )}
-    </main>
+      </main>
+
+      {/* Desktop 480px Right Split-Screen Panel / Mobile Modal Bottom Sheet */}
+      <PetProjectSheet
+        project={activePetProject}
+        onClose={() => setActivePetProject(null)}
+      />
+    </>
   );
 }
