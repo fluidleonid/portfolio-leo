@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import {
   Button,
   ButtonLamp,
@@ -10,8 +10,15 @@ import {
   LedMatrix,
 } from "@/shared/ui";
 import { tokens } from "@/shared/config";
+import {
+  type PetProjectData,
+  DEFAULT_PET_PROJECTS,
+} from "@/entities/pet-project";
+import { PetProjectSheet } from "./PetProjectSheet";
 
 export type NavItem = "works" | "index" | "career" | "about" | "experience";
+
+const SCRAMBLE_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789#$%&*+/";
 
 export interface HeroProps extends Omit<React.HTMLAttributes<HTMLDivElement>, "onNavChange"> {
   /** Name displayed in the hero title block (default: "Leonid Dmitriev") */
@@ -20,6 +27,8 @@ export interface HeroProps extends Omit<React.HTMLAttributes<HTMLDivElement>, "o
   bio?: string;
   /** Images (WebP/PNG/CDN) for the LED matrix slideshow */
   ledImages?: string[];
+  /** Pet projects managed in Sanity for the PET section */
+  petProjects?: PetProjectData[];
   /** Initial navigation selection (default "index") */
   defaultNav?: NavItem;
   /** Active navigation selection (controlled from parent) */
@@ -40,6 +49,7 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
       name = "Leonid Dmitriev",
       bio = "Product Designer · Frontend-fluent\n4+ years at B2B(2C) across FinTech,\nProductivity, Entertainment & AI products",
       ledImages,
+      petProjects,
       defaultNav = "index",
       activeNav: controlledActiveNav,
       onNavChange,
@@ -58,6 +68,99 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
     const scrollTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
     const [navWidth, setNavWidth] = useState<number>(406);
     const [navHeight, setNavHeight] = useState<number>(124);
+
+    // PET Projects state & 2-second code-scramble ticker
+    const resolvedPetProjects = useMemo(() => {
+      const list =
+        petProjects && petProjects.length > 0
+          ? petProjects.filter((p) => p.isActive !== false)
+          : DEFAULT_PET_PROJECTS;
+      return list.length > 0 ? list : DEFAULT_PET_PROJECTS;
+    }, [petProjects]);
+
+    const [petTickerIndex, setPetTickerIndex] = useState<number>(0);
+    const [hoveredPetIndex, setHoveredPetIndex] = useState<number | null>(null);
+    const [activePetProject, setActivePetProject] =
+      useState<PetProjectData | null>(null);
+
+    const displayedPet =
+      activePetProject ??
+      resolvedPetProjects[
+        (hoveredPetIndex !== null ? hoveredPetIndex : petTickerIndex) %
+          resolvedPetProjects.length
+      ];
+    const targetPetName = (
+      displayedPet?.shortName ||
+      displayedPet?.title ||
+      "PROJECT"
+    )
+      .trim()
+      .toUpperCase();
+
+    const [scrambledPetName, setScrambledPetName] =
+      useState<string>(targetPetName);
+    const hasMountedPetRef = useRef(false);
+
+    // Rotate active pet project label every 2 seconds (pauses on hover or open sheet)
+    useEffect(() => {
+      if (
+        resolvedPetProjects.length <= 1 ||
+        hoveredPetIndex !== null ||
+        activePetProject !== null
+      ) {
+        return;
+      }
+      const intervalId = window.setInterval(() => {
+        setPetTickerIndex((prev) => (prev + 1) % resolvedPetProjects.length);
+      }, 2000);
+      return () => window.clearInterval(intervalId);
+    }, [resolvedPetProjects.length, hoveredPetIndex, activePetProject]);
+
+    // Code-cracking / scramble-decode animation whenever targetPetName changes
+    useEffect(() => {
+      if (!hasMountedPetRef.current) {
+        hasMountedPetRef.current = true;
+        setScrambledPetName(targetPetName);
+        return;
+      }
+
+      if (
+        typeof window !== "undefined" &&
+        window.matchMedia("(prefers-reduced-motion: reduce)").matches
+      ) {
+        setScrambledPetName(targetPetName);
+        return;
+      }
+
+      let frame = 0;
+      const totalFrames = Math.max(12, targetPetName.length * 2 + 4);
+      const timerId = window.setInterval(() => {
+        frame += 1;
+        const lockedCount = Math.floor(
+          (frame / totalFrames) * targetPetName.length
+        );
+
+        const nextText = targetPetName
+          .split("")
+          .map((ch, idx) => {
+            if (ch === " ") return " ";
+            if (idx < lockedCount) return ch;
+            return SCRAMBLE_CHARS[
+              Math.floor(Math.random() * SCRAMBLE_CHARS.length)
+            ];
+          })
+          .join("");
+
+        setScrambledPetName(nextText);
+
+        if (frame >= totalFrames) {
+          window.clearInterval(timerId);
+          setScrambledPetName(targetPetName);
+        }
+      }, 32);
+
+      return () => window.clearInterval(timerId);
+    }, [targetPetName]);
 
     // Responsive dimension measurement for NAV section on resize
     React.useEffect(() => {
@@ -457,14 +560,35 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
             />
           </Section>
 
-          {/* PET Section with 3 ButtonLamps (Buttons stay full 44px size) */}
-          <Section label="PET" className="flex h-[94px] sm:h-[124px] flex-1 sm:flex-initial sm:w-[242px] min-w-0 flex-row items-center justify-center gap-[8px] sm:gap-[16px] p-[16px] sm:p-[20px]"
+          {/* PET Section with dynamic ButtonLamps & 2-second scrambled project name */}
+          <Section
+            label={`PET • ${scrambledPetName}`}
+            labelClassName="max-w-[calc(100%-24px)] sm:max-w-[calc(100%-40px)]"
+            textClassName="truncate whitespace-nowrap"
+            className="flex h-[94px] sm:h-[124px] flex-1 sm:flex-initial sm:w-[242px] min-w-0 flex-row items-center justify-center gap-[8px] sm:gap-[16px] p-[16px] sm:p-[20px]"
           >
-            <ButtonLamp label="1" size="responsive" aria-label="Pet Project 1" />
-            <ButtonLamp label="2" size="responsive" aria-label="Pet Project 2" />
-            <ButtonLamp label="3" size="responsive" aria-label="Pet Project 3" />
+            {resolvedPetProjects.slice(0, 3).map((pet, idx) => (
+              <ButtonLamp
+                key={pet.id || idx}
+                label={pet.buttonLabel || String(pet.order ?? idx + 1)}
+                size="responsive"
+                active={activePetProject?.id === pet.id}
+                aria-label={`Open pet project: ${pet.title}`}
+                onMouseEnter={() => setHoveredPetIndex(idx)}
+                onMouseLeave={() => setHoveredPetIndex(null)}
+                onFocus={() => setHoveredPetIndex(idx)}
+                onBlur={() => setHoveredPetIndex(null)}
+                onClick={() => setActivePetProject(pet)}
+              />
+            ))}
           </Section>
         </div>
+
+        {/* Responsive Pet Project Embed Sheet (Right Sheet on Desktop, Bottom Sheet on Mobile) */}
+        <PetProjectSheet
+          project={activePetProject}
+          onClose={() => setActivePetProject(null)}
+        />
 
         {/* Soft Toast Notification: 56px height, 12px radius, bg-surface background, no border, font-hauora */}
         <div

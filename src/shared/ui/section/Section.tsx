@@ -2,7 +2,7 @@ import React from "react";
 
 export interface SectionProps extends React.HTMLAttributes<HTMLDivElement> {
   /** Optional hardware notched label (e.g. "NAV", "CV", "COMM", "KEY", "CASE") */
-  label?: string;
+  label?: React.ReactNode;
   /** Direction of internal flex items: "row" (default) or "column" */
   direction?: "row" | "column";
   /** Optional class name for the notched label wrapper */

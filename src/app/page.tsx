@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { client } from "@/sanity/lib/client";
 import { HomePageClient, type SiteSettingsData } from "./HomePageClient";
 import type { ProjectData } from "@/entities/project";
+import type { PetProjectData } from "@/entities/pet-project";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -40,10 +41,11 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function Home() {
   let projects: ProjectData[] = [];
+  let petProjects: PetProjectData[] = [];
   let siteSettings: SiteSettingsData | null = null;
 
   try {
-    const [sanityProjects, sanitySettings] = await Promise.all([
+    const [sanityProjects, sanitySettings, sanityPetProjects] = await Promise.all([
       client.fetch(`*[_type == "project"] | order(order asc) {
         _id,
         title,
@@ -78,6 +80,17 @@ export default async function Home() {
         "ledImages": ledImages[]{
           "url": coalesce(asset->url, url, @)
         }.url
+      }`),
+      client.fetch(`*[_type == "petProject" && isActive != false] | order(order asc, _createdAt asc) {
+        _id,
+        order,
+        buttonLabel,
+        shortName,
+        title,
+        pitch,
+        embedUrl,
+        externalUrl,
+        isActive
       }`),
     ]);
 
@@ -133,6 +146,20 @@ export default async function Home() {
     if (sanitySettings) {
       siteSettings = sanitySettings;
     }
+
+    if (Array.isArray(sanityPetProjects)) {
+      petProjects = sanityPetProjects.map((pet: any, idx: number) => ({
+        id: pet._id,
+        order: pet.order ?? idx + 1,
+        buttonLabel: pet.buttonLabel?.trim() || String(pet.order ?? idx + 1),
+        shortName: pet.shortName?.trim() || undefined,
+        title: pet.title || `Pet Project ${idx + 1}`,
+        pitch: pet.pitch || undefined,
+        embedUrl: pet.embedUrl || undefined,
+        externalUrl: pet.externalUrl || undefined,
+        isActive: pet.isActive !== false,
+      }));
+    }
   } catch (err) {
     console.error("[Sanity Server Fetch Error]:", err);
   }
@@ -140,6 +167,7 @@ export default async function Home() {
   return (
     <HomePageClient
       initialProjects={projects}
+      initialPetProjects={petProjects}
       siteSettings={siteSettings}
     />
   );

@@ -6,6 +6,7 @@ import { Project } from "@/widgets/project";
 import { TopBar } from "@/widgets/top-bar";
 import { Experience } from "@/widgets/experience";
 import type { ProjectData } from "@/entities/project";
+import type { PetProjectData } from "@/entities/pet-project";
 
 export interface SiteSettingsData {
   heroName?: string;
@@ -20,11 +21,13 @@ export interface SiteSettingsData {
 
 export interface HomePageClientProps {
   initialProjects: ProjectData[];
+  initialPetProjects?: PetProjectData[];
   siteSettings: SiteSettingsData | null;
 }
 
 export function HomePageClient({
   initialProjects,
+  initialPetProjects,
   siteSettings,
 }: HomePageClientProps) {
   const [activeStation, setActiveStation] = useState<string>("index");
@@ -130,6 +133,7 @@ export function HomePageClient({
         name={siteSettings?.heroName}
         bio={siteSettings?.heroBio}
         ledImages={siteSettings?.ledImages?.filter(Boolean)}
+        petProjects={initialPetProjects}
         defaultNav="index"
         activeNav={
           activeStation === "career"
