@@ -594,9 +594,9 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
               label="@"
               size="responsive"
               aria-label="Copy Email Address"
-              onClick={() => {
+              onClick={(e) => {
                 track("contact_click", { channel: "email_copy" });
-                handleCopyEmail();
+                handleCopyEmail(e);
               }}
               className="cursor-pointer shrink-0"
             />
