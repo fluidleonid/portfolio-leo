@@ -1,7 +1,35 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { tokens } from "@/shared/config/tokens";
+
+const GALLERY_HINT_STORAGE_KEY = "leo_portfolio_gallery_hint_seen_v1";
+let galleryHintSeenInMemory = false;
+
+function hasSeenGalleryHint(): boolean {
+  if (galleryHintSeenInMemory) return true;
+  if (typeof window === "undefined") return false;
+  try {
+    if (window.localStorage.getItem(GALLERY_HINT_STORAGE_KEY) === "1") {
+      galleryHintSeenInMemory = true;
+      return true;
+    }
+  } catch {
+    // Ignore storage read errors (e.g. private mode / sandboxed iframe)
+  }
+  return false;
+}
+
+function markGalleryHintSeen(): void {
+  galleryHintSeenInMemory = true;
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(GALLERY_HINT_STORAGE_KEY, "1");
+  } catch {
+    // Ignore storage write errors
+  }
+}
 
 export interface GalleryImageItem {
   url: string;
@@ -27,6 +55,8 @@ export interface GalleryProps extends React.HTMLAttributes<HTMLDivElement> {
   cornerRadius?: number;
   /** Wrapper background color token (default tokens.colors.surface) */
   wrapperBg?: string;
+  /** Play a one-time choreographed scroll + progress-bar peek hint when scrolled into view */
+  hintOnView?: boolean;
   /** Custom children to render inside the wrapper */
   children?: React.ReactNode;
 }
@@ -57,6 +87,7 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
       gap = tokens.geometry.galleryGap,
       cornerRadius = 0,
       wrapperBg = tokens.colors.surface,
+      hintOnView = false,
       className = "",
       children,
       style,
@@ -103,6 +134,383 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
 
     // Ref to track latest hover/scrub position without state lag on pointerup
     const currentHoverPosRef = useRef<{ x: number; index: number } | null>(null);
+
+    // One-time interactive spotlight onboarding hint (scroll freeze + dark backdrop + bottom caption + keynote tap/drag)
+    const [hintState, setHintState] = useState<{
+      x: number;
+      index: number;
+      opacity: number;
+      rippleProgress: number;
+      dragPulse: number;
+      dragRippleProgress: number;
+      isPressed: boolean;
+    } | null>(null);
+    const [isSpotlightActive, setIsSpotlightActive] = useState(false);
+    const [isGalleryElevated, setIsGalleryElevated] = useState(false);
+    const [showHintText, setShowHintText] = useState(false);
+    const [isTouchDevice, setIsTouchDevice] = useState(false);
+    const [spotlightBannerTop, setSpotlightBannerTop] = useState<number>(24);
+    const [portalMounted, setPortalMounted] = useState(false);
+    const hasPlayedHintRef = useRef(false);
+    const hintRafRef = useRef<number | null>(null);
+    const scrollCenterRafRef = useRef<number | null>(null);
+    const hintTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const textTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const textHideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const elevateTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const hintGraceUntilRef = useRef<number>(0);
+    const lockedScrollYRef = useRef<number | null>(null);
+
+    useEffect(() => {
+      setPortalMounted(true);
+      if (typeof window !== "undefined") {
+        const touch =
+          window.matchMedia("(pointer: coarse)").matches ||
+          "ontouchstart" in window ||
+          navigator.maxTouchPoints > 0;
+        setIsTouchDevice(touch);
+      }
+    }, []);
+
+    const scheduleGalleryLower = useCallback(() => {
+      if (elevateTimeoutRef.current !== null) {
+        clearTimeout(elevateTimeoutRef.current);
+      }
+      elevateTimeoutRef.current = setTimeout(() => {
+        setIsGalleryElevated(false);
+        elevateTimeoutRef.current = null;
+      }, 900);
+    }, []);
+
+    const exitOnboarding = useCallback((force = true) => {
+      if (!force && performance.now() < hintGraceUntilRef.current) {
+        return;
+      }
+      if (hintTimeoutRef.current !== null) {
+        clearTimeout(hintTimeoutRef.current);
+        hintTimeoutRef.current = null;
+      }
+      if (textTimeoutRef.current !== null) {
+        clearTimeout(textTimeoutRef.current);
+        textTimeoutRef.current = null;
+      }
+      if (textHideTimeoutRef.current !== null) {
+        clearTimeout(textHideTimeoutRef.current);
+        textHideTimeoutRef.current = null;
+      }
+      if (scrollCenterRafRef.current !== null) {
+        cancelAnimationFrame(scrollCenterRafRef.current);
+        scrollCenterRafRef.current = null;
+      }
+      if (hintRafRef.current !== null) {
+        cancelAnimationFrame(hintRafRef.current);
+        hintRafRef.current = null;
+      }
+      lockedScrollYRef.current = null;
+      setHintState(null);
+      setShowHintText(false);
+      setIsSpotlightActive(false);
+      scheduleGalleryLower();
+    }, [scheduleGalleryLower]);
+
+    // Hard-freeze vertical page scroll while spotlight onboarding is active
+    useEffect(() => {
+      if (!isSpotlightActive) return;
+
+      const prevHtmlOverflow = document.documentElement.style.overflow;
+      const prevBodyOverflow = document.body.style.overflow;
+      const prevBodyTouchAction = document.body.style.touchAction;
+
+      document.documentElement.style.overflow = "hidden";
+      document.body.style.overflow = "hidden";
+      document.body.style.touchAction = "none";
+
+      const updateBannerPosition = () => {
+        if (!containerRef.current) return;
+        const rect = containerRef.current.getBoundingClientRect();
+        const desiredTop = Math.round(rect.bottom + 24);
+        setSpotlightBannerTop(
+          Math.min(window.innerHeight - 48, Math.max(16, desiredTop))
+        );
+      };
+
+      updateBannerPosition();
+      const posInterval = window.setInterval(updateBannerPosition, 50);
+
+      const preventScroll = (e: Event) => {
+        if (e.cancelable) {
+          e.preventDefault();
+        }
+      };
+
+      const clampScroll = () => {
+        if (lockedScrollYRef.current !== null) {
+          window.scrollTo(0, lockedScrollYRef.current);
+        }
+      };
+
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === "Escape") {
+          exitOnboarding();
+        }
+      };
+
+      window.addEventListener("wheel", preventScroll, { passive: false });
+      window.addEventListener("touchmove", preventScroll, { passive: false });
+      window.addEventListener("scroll", clampScroll, { passive: true });
+      window.addEventListener("keydown", handleKeyDown);
+
+      return () => {
+        window.clearInterval(posInterval);
+        document.documentElement.style.overflow = prevHtmlOverflow;
+        document.body.style.overflow = prevBodyOverflow;
+        document.body.style.touchAction = prevBodyTouchAction;
+        window.removeEventListener("wheel", preventScroll);
+        window.removeEventListener("touchmove", preventScroll);
+        window.removeEventListener("scroll", clampScroll);
+        window.removeEventListener("keydown", handleKeyDown);
+      };
+    }, [isSpotlightActive, exitOnboarding]);
+
+    // Trigger 1-time staged onboarding (persisted in localStorage so it never replays on reload or return from case)
+    useEffect(() => {
+      if (!hintOnView || normalizedImages.length <= 1 || hasSeenGalleryHint()) {
+        hasPlayedHintRef.current = true;
+        return;
+      }
+      const el = containerRef.current;
+      if (!el) return;
+
+      const easeInOutCubic = (t: number) =>
+        t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+      const easeOutCubic = (t: number) =>
+        1 - Math.pow(1 - Math.max(0, Math.min(1, t)), 3);
+
+      const triggerSpotlight = () => {
+        if (hasPlayedHintRef.current || hasSeenGalleryHint()) return;
+        hasPlayedHintRef.current = true;
+        markGalleryHintSeen();
+
+        if (
+          typeof window !== "undefined" &&
+          window.matchMedia("(prefers-reduced-motion: reduce)").matches
+        ) {
+          return;
+        }
+
+        // 1. Capture current scrollY & smoothly glide to centered Y over 380ms (zero harsh 0ms teleport!)
+        const startScrollY = window.scrollY;
+        const rect = el.getBoundingClientRect();
+        const targetScrollY = Math.max(
+          0,
+          Math.round(startScrollY + rect.top - (window.innerHeight - rect.height) / 2)
+        );
+        lockedScrollYRef.current = startScrollY;
+
+        // Pre-calculate final bottom position so caption never jumps vertically
+        const finalGalleryBottom = (window.innerHeight + rect.height) / 2;
+        setSpotlightBannerTop(
+          Math.min(window.innerHeight - 48, Math.max(16, Math.round(finalGalleryBottom + 24)))
+        );
+
+        // Step 1: Smoothly fade in dark backdrop overlay under gallery
+        if (elevateTimeoutRef.current !== null) {
+          clearTimeout(elevateTimeoutRef.current);
+          elevateTimeoutRef.current = null;
+        }
+        hintGraceUntilRef.current = performance.now() + 600;
+        setIsGalleryElevated(true);
+        setIsSpotlightActive(true);
+
+        const centerStart = performance.now();
+        const CENTER_DURATION = 380;
+        const animateCenter = (now: number) => {
+          const t = Math.min(1, (now - centerStart) / CENTER_DURATION);
+          const nextY = Math.round(
+            startScrollY + (targetScrollY - startScrollY) * easeOutCubic(t)
+          );
+          lockedScrollYRef.current = nextY;
+          window.scrollTo(0, nextY);
+          if (t < 1) {
+            scrollCenterRafRef.current = requestAnimationFrame(animateCenter);
+          } else {
+            scrollCenterRafRef.current = null;
+          }
+        };
+        scrollCenterRafRef.current = requestAnimationFrame(animateCenter);
+
+        // Step 2 (at 380ms): Smoothly fade in hint text (no scramble), hold for 1.5s max, then fade out
+        textTimeoutRef.current = setTimeout(() => {
+          setShowHintText(true);
+          textHideTimeoutRef.current = setTimeout(() => {
+            setShowHintText(false);
+          }, 1500);
+        }, 380);
+
+        // Step 3 (at 820ms): Play keynote tap & drag animation
+        hintTimeoutRef.current = setTimeout(() => {
+          const scrollEl = scrollContainerRef.current;
+          const trackEl = trackRef.current;
+          if (!scrollEl || !trackEl) {
+            exitOnboarding();
+            return;
+          }
+
+          const maxScroll = scrollEl.scrollWidth - scrollEl.clientWidth;
+          if (maxScroll <= 16) {
+            exitOnboarding();
+            return;
+          }
+
+          const peekScroll = Math.min(
+            maxScroll,
+            Math.max(130, Math.min(250, scrollEl.clientWidth * 0.32))
+          );
+          const trackW = trackEl.clientWidth || 564;
+          const count = normalizedImages.length;
+          const startX = (0.5 / count) * trackW;
+          const targetX = (1.5 / count) * trackW;
+
+          const PHASE_TAP = 820;
+          const PHASE_DRAG = 1650;
+          const PHASE_HOLD = 850;
+          const PHASE_RETURN = 1280;
+          const PHASE_FADE_OUT = 850;
+          const T1 = PHASE_TAP;
+          const T2 = T1 + PHASE_DRAG;
+          const T3 = T2 + PHASE_HOLD;
+          const T4 = T3 + PHASE_RETURN;
+          const TOTAL = T4 + PHASE_FADE_OUT;
+
+          const startTime = performance.now();
+          let startedExitFade = false;
+
+          const tick = (now: number) => {
+            const elapsed = now - startTime;
+
+            if (elapsed < T1) {
+              const t = elapsed / PHASE_TAP;
+              const fadeIn = easeOutCubic(Math.min(1, t / 0.54));
+              const ripple = t > 0.22 ? Math.min(1, (t - 0.22) / 0.78) : 0;
+              scrollEl.scrollLeft = 0;
+              setHintState({
+                x: startX,
+                index: 0,
+                opacity: fadeIn,
+                rippleProgress: ripple,
+                dragPulse: 0,
+                dragRippleProgress: 0,
+                isPressed: t >= 0.28,
+              });
+              hintRafRef.current = requestAnimationFrame(tick);
+            } else if (elapsed < T2) {
+              const dragElapsed = elapsed - T1;
+              const t = dragElapsed / PHASE_DRAG;
+              const e = easeInOutCubic(t);
+              const dragPulse = 0.5 - 0.5 * Math.cos((dragElapsed / 1100) * Math.PI * 2);
+              const dragRippleProgress = (dragElapsed % 1250) / 1250;
+              scrollEl.scrollLeft = peekScroll * e;
+              setHintState({
+                x: startX + (targetX - startX) * e,
+                index: t > 0.45 ? 1 : 0,
+                opacity: 1,
+                rippleProgress: 0,
+                dragPulse,
+                dragRippleProgress,
+                isPressed: true,
+              });
+              hintRafRef.current = requestAnimationFrame(tick);
+            } else if (elapsed < T3) {
+              const dragElapsed = elapsed - T1;
+              const dragPulse = 0.5 - 0.5 * Math.cos((dragElapsed / 1100) * Math.PI * 2);
+              const dragRippleProgress = (dragElapsed % 1250) / 1250;
+              scrollEl.scrollLeft = peekScroll;
+              setHintState({
+                x: targetX,
+                index: 1,
+                opacity: 1,
+                rippleProgress: 0,
+                dragPulse,
+                dragRippleProgress,
+                isPressed: true,
+              });
+              hintRafRef.current = requestAnimationFrame(tick);
+            } else if (elapsed < T4) {
+              const dragElapsed = elapsed - T1;
+              const t = (elapsed - T3) / PHASE_RETURN;
+              const e = easeInOutCubic(t);
+              const dragPulse = 0.5 - 0.5 * Math.cos((dragElapsed / 1100) * Math.PI * 2);
+              const dragRippleProgress = (dragElapsed % 1250) / 1250;
+              scrollEl.scrollLeft = peekScroll * (1 - e);
+              setHintState({
+                x: targetX + (startX - targetX) * e,
+                index: t > 0.55 ? 0 : 1,
+                opacity: 1,
+                rippleProgress: 0,
+                dragPulse,
+                dragRippleProgress,
+                isPressed: true,
+              });
+              hintRafRef.current = requestAnimationFrame(tick);
+            } else if (elapsed < TOTAL) {
+              // Step 4: Velvety 850ms synchronized fade-out — gallery stays z-60 above overlay until overlay finishes fading
+              if (!startedExitFade) {
+                startedExitFade = true;
+                setShowHintText(false);
+                setIsSpotlightActive(false);
+                scheduleGalleryLower();
+                lockedScrollYRef.current = null;
+              }
+              const t = (elapsed - T4) / PHASE_FADE_OUT;
+              const fadeOut = 1 - easeInOutCubic(t);
+              scrollEl.scrollLeft = 0;
+              setHintState({
+                x: startX,
+                index: 0,
+                opacity: fadeOut,
+                rippleProgress: 0,
+                dragPulse: 0,
+                dragRippleProgress: 0,
+                isPressed: true,
+              });
+              hintRafRef.current = requestAnimationFrame(tick);
+            } else {
+              scrollEl.scrollLeft = 0;
+              lockedScrollYRef.current = null;
+              setActiveIndex(0);
+              setHintState(null);
+              setShowHintText(false);
+              setIsSpotlightActive(false);
+              hintRafRef.current = null;
+            }
+          };
+
+          hintRafRef.current = requestAnimationFrame(tick);
+        }, 820);
+      };
+
+      const checkPositionOnScroll = () => {
+        if (hasPlayedHintRef.current) return;
+        const rect = el.getBoundingClientRect();
+        const vh = window.innerHeight;
+        const galleryCenter = rect.top + rect.height / 2;
+        if (galleryCenter <= vh * 0.62 && galleryCenter >= vh * 0.2) {
+          triggerSpotlight();
+        }
+      };
+
+      window.addEventListener("scroll", checkPositionOnScroll, { passive: true });
+      checkPositionOnScroll();
+
+      return () => {
+        window.removeEventListener("scroll", checkPositionOnScroll);
+        if (elevateTimeoutRef.current !== null) {
+          clearTimeout(elevateTimeoutRef.current);
+          elevateTimeoutRef.current = null;
+        }
+        exitOnboarding();
+      };
+    }, [hintOnView, normalizedImages.length, exitOnboarding, scheduleGalleryLower]);
 
     // Calculate breakout dimensions so wrapper bleeds cleanly across full viewport width
     useEffect(() => {
@@ -210,6 +618,14 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
 
       cancelMomentum();
 
+      if (hintOnView) {
+        hasPlayedHintRef.current = true;
+        markGalleryHintSeen();
+      }
+      if (isSpotlightActive) {
+        if (performance.now() < hintGraceUntilRef.current) return;
+        exitOnboarding(true);
+      }
       setIsPointerDown(true);
       setIsDragging(false);
 
@@ -320,8 +736,15 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
       [normalizedImages.length]
     );
 
-    // Pointer Down on progress bar: starts touch dragging / scrubbing
+    // Pointer Down on progress bar: starts touch dragging / scrubbing (dismisses hint immediately)
     const handleTrackPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+      if (hintOnView) {
+        hasPlayedHintRef.current = true;
+        markGalleryHintSeen();
+      }
+      if (isSpotlightActive) {
+        exitOnboarding(true);
+      }
       const pos = calculateScrubPos(e.clientX);
       if (!pos) return;
 
@@ -337,8 +760,16 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
       }
     };
 
-    // Pointer Move on progress bar: tracks touch drag and desktop hover
+    // Pointer Move on progress bar: tracks touch drag and desktop hover (dismisses hint after brief grace)
     const handleTrackPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+      if (hintOnView) {
+        hasPlayedHintRef.current = true;
+        markGalleryHintSeen();
+      }
+      if (isSpotlightActive) {
+        if (performance.now() < hintGraceUntilRef.current) return;
+        exitOnboarding(true);
+      }
       const pos = calculateScrubPos(e.clientX);
       if (!pos) return;
 
@@ -409,23 +840,69 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
         ? `-${leftOffset}px`
         : "calc(-1 * ((100vw - 564px) / 2))";
 
+    // Combine active user hover/scrub with one-time onboarding hint overlay
+    const activeOverlayPos =
+      isHoveringTrack && hoverPos ? hoverPos : hintState;
+    const overlayOpacity =
+      isHoveringTrack && hoverPos ? 1 : (hintState?.opacity ?? 0);
+
     // Tooltip position calculation with edge clamping (max-w: 240px)
     const trackWidth = trackRef.current ? trackRef.current.clientWidth : 564;
     const tooltipHalfWidth = Math.min(125, Math.max(40, trackWidth / 2 - 8));
-    const clampedTooltipX = hoverPos
+    const clampedTooltipX = activeOverlayPos
       ? Math.max(
           tooltipHalfWidth,
-          Math.min(trackWidth - tooltipHalfWidth, hoverPos.x)
+          Math.min(trackWidth - tooltipHalfWidth, activeOverlayPos.x)
         )
       : 0;
 
     const hoveredItem =
-      hoverPos !== null ? normalizedImages[hoverPos.index] : null;
+      activeOverlayPos !== null
+        ? normalizedImages[activeOverlayPos.index]
+        : null;
+
+    const spotlightPortal =
+      portalMounted && hintOnView
+        ? createPortal(
+            <>
+              {/* Dark Spotlight Overlay UNDER the elevated gallery (z-55 < gallery z-60) */}
+              <div
+                aria-hidden="true"
+                className={`fixed inset-0 z-[55] bg-black/75 backdrop-blur-[2px] transition-opacity duration-[850ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${
+                  isSpotlightActive
+                    ? "opacity-100 pointer-events-auto"
+                    : "opacity-0 pointer-events-none"
+                }`}
+              />
+
+              {/* Clean Bottom Text Hint BELOW the gallery — device-adapted, fades smoothly for 1.5s max */}
+              <div
+                role="status"
+                aria-live="polite"
+                style={{ top: `${spotlightBannerTop}px` }}
+                className={`fixed left-1/2 -translate-x-1/2 z-[62] w-full max-w-[calc(100vw-32px)] text-center select-none pointer-events-none transition-opacity duration-[500ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${
+                  showHintText ? "opacity-100" : "opacity-0"
+                }`}
+              >
+                <span className="font-hauora text-[18px] sm:text-[20px] font-medium leading-[26px] text-content-primary tracking-normal">
+                  {isTouchDevice
+                    ? "Swipe or scrub the bar"
+                    : "Drag or scrub the bar"}
+                </span>
+              </div>
+            </>,
+            document.body
+          )
+        : null;
 
     return (
+      <>
+      {spotlightPortal}
       <div
         ref={setRefs}
         className={`relative flex flex-col select-none overflow-hidden ${
+          isGalleryElevated ? "z-[60]" : ""
+        } ${
           isMobile
             ? "w-[calc(100%+32px)] -ml-[16px] -mr-[16px] max-w-[100vw]"
             : bleed
@@ -539,6 +1016,8 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
                 const isActive =
                   isScrubbing && hoverPos
                     ? hoverPos.index === idx
+                    : hintState
+                    ? hintState.index === idx
                     : activeIndex === idx;
                 return (
                   <div
@@ -556,24 +1035,86 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
                 );
               })}
 
-              {/* Hover Dot: Round circle appearing at exact cursor X on the segment line */}
-              {isHoveringTrack && hoverPos && (
+              {/* Hover / Hint Dot + Keynote Tap Ripple & Held Touch Halo (single concentric anchor, z-50 above everything) */}
+              {activeOverlayPos && (
                 <div
-                  className="pointer-events-none absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-[8px] h-[8px] rounded-full bg-content-primary shadow-[0_0_8px_rgba(204,204,204,0.5)] z-20"
-                  style={{ left: `${hoverPos.x}px` }}
-                />
+                  className="pointer-events-none absolute z-50 h-0 w-0"
+                  style={{ left: `${activeOverlayPos.x}px`, top: "50%" }}
+                >
+                  {/* Keynote Tap/Click Expanding Ripple Ring (initial strong tap pulse) */}
+                  {hintState &&
+                    hintState.rippleProgress > 0 &&
+                    hintState.rippleProgress < 1 && (
+                      <div
+                        className="absolute left-0 top-0 h-[18px] w-[18px] rounded-full border-[1.5px] border-white/85"
+                        style={{
+                          transform: `translate(-50%, -50%) scale(${0.65 + hintState.rippleProgress * 2.2})`,
+                          opacity: (1 - hintState.rippleProgress) * 0.85,
+                        }}
+                      />
+                    )}
+
+                  {/* Subtle Continuous Drag Pulse Ring (softer echo of initial pulse while dragging/holding/returning) */}
+                  {hintState &&
+                    hintState.dragRippleProgress > 0 &&
+                    hintState.dragRippleProgress < 1 && (
+                      <div
+                        className="absolute left-0 top-0 h-[20px] w-[20px] rounded-full border border-white/45"
+                        style={{
+                          transform: `translate(-50%, -50%) scale(${0.95 + hintState.dragRippleProgress * 0.95})`,
+                          opacity:
+                            Math.sin(hintState.dragRippleProgress * Math.PI) *
+                            (1 - hintState.dragRippleProgress * 0.4) *
+                            0.38 *
+                            overlayOpacity,
+                        }}
+                      />
+                    )}
+
+                  {/* Held Virtual Pointer Halo — subtly breathes during drag and melts out smoothly */}
+                  {hintState && (
+                    <div
+                      className="absolute left-0 top-0 h-[26px] w-[26px] rounded-full bg-white/15 border border-white/40 shadow-[0_0_14px_rgba(255,255,255,0.2)]"
+                      style={{
+                        transform: `translate(-50%, -50%) scale(${
+                          hintState.isPressed
+                            ? (0.86 + overlayOpacity * 0.14) * (1 + hintState.dragPulse * 0.12)
+                            : 0.65
+                        })`,
+                        opacity: hintState.isPressed
+                          ? overlayOpacity * (0.58 + hintState.dragPulse * 0.14)
+                          : 0,
+                      }}
+                    />
+                  )}
+
+                  {/* Core Glowing Scrubber Dot — 70% opacity during hint so it feels soft and refined */}
+                  <div
+                    className="absolute left-0 top-0 h-[8px] w-[8px] rounded-full bg-content-primary shadow-[0_0_10px_rgba(255,255,255,0.5)]"
+                    style={{
+                      transform: `translate(-50%, -50%) scale(${
+                        hintState?.isPressed ? 1.15 + (hintState.dragPulse ?? 0) * 0.08 : 1
+                      })`,
+                      opacity: hintState ? overlayOpacity * 0.7 : overlayOpacity,
+                    }}
+                  />
+                </div>
               )}
 
-              {/* Hover Tooltip: Thumbnail preview preserving aspect ratio (max-w: 240px, max-h: 280px) + 10px Hauora Alt Text */}
-              {isHoveringTrack && hoverPos && hoveredItem && (
+              {/* Hover / Hint Tooltip: Thumbnail preview with gentle breathe-in/out scale */}
+              {activeOverlayPos && hoveredItem && (
                 <div
-                  className="pointer-events-none absolute z-40 -translate-x-1/2 bottom-[26px] flex flex-col items-center overflow-hidden rounded-[4px] border border-border-hardware bg-[#1a1a1a]/95 backdrop-blur-md p-[3px] shadow-2xl transition-opacity duration-150 animate-in fade-in"
-                  style={{ left: `${clampedTooltipX}px` }}
+                  className="pointer-events-none absolute z-40 bottom-[26px] flex flex-col items-center overflow-hidden rounded-[4px] border border-border-hardware bg-[#1a1a1a]/95 backdrop-blur-md p-[3px] shadow-2xl origin-bottom"
+                  style={{
+                    left: `${clampedTooltipX}px`,
+                    opacity: overlayOpacity,
+                    transform: `translateX(-50%) translateY(${(1 - overlayOpacity) * 6}px) scale(${0.94 + overlayOpacity * 0.06})`,
+                  }}
                 >
                   <div className="relative flex items-center justify-center overflow-hidden rounded-[2px] bg-[#121212] max-w-[240px] max-h-[280px]">
                     <img
                       src={hoveredItem.url}
-                      alt={hoveredItem.alt || `Preview ${hoverPos.index + 1}`}
+                      alt={hoveredItem.alt || `Preview ${activeOverlayPos.index + 1}`}
                       className="max-w-[240px] max-h-[280px] w-auto h-auto object-contain block select-none"
                     />
 
@@ -582,7 +1123,7 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
                       <span className="block font-hauora text-[10px] font-normal leading-[13px] text-content-primary tracking-normal text-center truncate max-w-[228px]">
                         {hoveredItem.alt && hoveredItem.alt.trim()
                           ? hoveredItem.alt
-                          : `Photo ${hoverPos.index + 1}`}
+                          : `Photo ${activeOverlayPos.index + 1}`}
                       </span>
                     </div>
                   </div>
@@ -592,9 +1133,10 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
           </div>
         </div>
       )}
-    </div>
-  );
-}
+      </div>
+      </>
+    );
+  }
 );
 
 Gallery.displayName = "Gallery";

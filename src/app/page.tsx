@@ -170,6 +170,7 @@ export default async function Home() {
       initialProjects={projects}
       initialPetProjects={petProjects}
       siteSettings={siteSettings}
+      galleryHintOnView={true}
     />
   );
 }
