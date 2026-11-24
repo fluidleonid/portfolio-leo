@@ -4,6 +4,33 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { createPortal } from "react-dom";
 import { tokens } from "@/shared/config/tokens";
 
+const GALLERY_HINT_STORAGE_KEY = "leo_portfolio_gallery_hint_seen_v1";
+let galleryHintSeenInMemory = false;
+
+function hasSeenGalleryHint(): boolean {
+  if (galleryHintSeenInMemory) return true;
+  if (typeof window === "undefined") return false;
+  try {
+    if (window.localStorage.getItem(GALLERY_HINT_STORAGE_KEY) === "1") {
+      galleryHintSeenInMemory = true;
+      return true;
+    }
+  } catch {
+    // Ignore storage read errors (e.g. private mode / sandboxed iframe)
+  }
+  return false;
+}
+
+function markGalleryHintSeen(): void {
+  galleryHintSeenInMemory = true;
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(GALLERY_HINT_STORAGE_KEY, "1");
+  } catch {
+    // Ignore storage write errors
+  }
+}
+
 export interface GalleryImageItem {
   url: string;
   alt?: string;
@@ -245,9 +272,12 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
       };
     }, [isSpotlightActive, exitOnboarding]);
 
-    // Trigger 1-time staged onboarding: 1) Smooth overlay fade + gentle center -> 2) Code-scramble text -> 3) Tap/drag animation
+    // Trigger 1-time staged onboarding (persisted in localStorage so it never replays on reload or return from case)
     useEffect(() => {
-      if (!hintOnView || normalizedImages.length <= 1) return;
+      if (!hintOnView || normalizedImages.length <= 1 || hasSeenGalleryHint()) {
+        hasPlayedHintRef.current = true;
+        return;
+      }
       const el = containerRef.current;
       if (!el) return;
 
@@ -257,8 +287,9 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
         1 - Math.pow(1 - Math.max(0, Math.min(1, t)), 3);
 
       const triggerSpotlight = () => {
-        if (hasPlayedHintRef.current) return;
+        if (hasPlayedHintRef.current || hasSeenGalleryHint()) return;
         hasPlayedHintRef.current = true;
+        markGalleryHintSeen();
 
         if (
           typeof window !== "undefined" &&
@@ -587,6 +618,10 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
 
       cancelMomentum();
 
+      if (hintOnView) {
+        hasPlayedHintRef.current = true;
+        markGalleryHintSeen();
+      }
       if (isSpotlightActive) {
         if (performance.now() < hintGraceUntilRef.current) return;
         exitOnboarding(true);
@@ -703,6 +738,10 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
 
     // Pointer Down on progress bar: starts touch dragging / scrubbing (dismisses hint immediately)
     const handleTrackPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+      if (hintOnView) {
+        hasPlayedHintRef.current = true;
+        markGalleryHintSeen();
+      }
       if (isSpotlightActive) {
         exitOnboarding(true);
       }
@@ -723,6 +762,10 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
 
     // Pointer Move on progress bar: tracks touch drag and desktop hover (dismisses hint after brief grace)
     const handleTrackPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+      if (hintOnView) {
+        hasPlayedHintRef.current = true;
+        markGalleryHintSeen();
+      }
       if (isSpotlightActive) {
         if (performance.now() < hintGraceUntilRef.current) return;
         exitOnboarding(true);
