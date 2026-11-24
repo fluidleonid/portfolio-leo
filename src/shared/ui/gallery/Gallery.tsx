@@ -123,6 +123,7 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
     const hintRafRef = useRef<number | null>(null);
     const hintTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const hintGraceUntilRef = useRef<number>(0);
+    const lockedScrollYRef = useRef<number | null>(null);
 
     useEffect(() => {
       setPortalMounted(true);
@@ -140,18 +141,31 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
         cancelAnimationFrame(hintRafRef.current);
         hintRafRef.current = null;
       }
+      lockedScrollYRef.current = null;
       setHintState(null);
       setIsSpotlightActive(false);
     }, []);
 
-    // Freeze vertical page scroll while the 1-time spotlight tour is playing
+    // Hard-freeze vertical page scroll (including iOS/Android inertial flick momentum) while spotlight tour is active
     useEffect(() => {
       if (!isSpotlightActive) return;
+
+      const prevHtmlOverflow = document.documentElement.style.overflow;
+      const prevBodyOverflow = document.body.style.overflow;
+      const prevBodyTouchAction = document.body.style.touchAction;
+
+      document.documentElement.style.overflow = "hidden";
+      document.body.style.overflow = "hidden";
+      document.body.style.touchAction = "none";
 
       const updateBannerPosition = () => {
         if (!containerRef.current) return;
         const rect = containerRef.current.getBoundingClientRect();
-        setSpotlightBannerTop(Math.max(16, Math.round(rect.top - 52)));
+        // Position hint cleanly BELOW the gallery (clamped inside viewport bottom)
+        const desiredTop = Math.round(rect.bottom + 20);
+        setSpotlightBannerTop(
+          Math.min(window.innerHeight - 48, Math.max(16, desiredTop))
+        );
       };
 
       updateBannerPosition();
@@ -163,6 +177,13 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
         }
       };
 
+      // Kill any residual inertial scroll momentum by holding lockedScrollYRef
+      const clampScroll = () => {
+        if (lockedScrollYRef.current !== null) {
+          window.scrollTo(0, lockedScrollYRef.current);
+        }
+      };
+
       const handleKeyDown = (e: KeyboardEvent) => {
         if (e.key === "Escape") {
           cancelHint(true);
@@ -171,152 +192,171 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
 
       window.addEventListener("wheel", preventScroll, { passive: false });
       window.addEventListener("touchmove", preventScroll, { passive: false });
+      window.addEventListener("scroll", clampScroll, { passive: true });
       window.addEventListener("keydown", handleKeyDown);
 
       return () => {
         window.clearInterval(posInterval);
+        document.documentElement.style.overflow = prevHtmlOverflow;
+        document.body.style.overflow = prevBodyOverflow;
+        document.body.style.touchAction = prevBodyTouchAction;
         window.removeEventListener("wheel", preventScroll);
         window.removeEventListener("touchmove", preventScroll);
+        window.removeEventListener("scroll", clampScroll);
         window.removeEventListener("keydown", handleKeyDown);
       };
     }, [isSpotlightActive, cancelHint]);
 
-    // Trigger 1-time spotlight freeze + choreographed scroll/scrubber peek when gallery is well inside viewport
+    // Trigger 1-time spotlight freeze + choreographed keynote tap/drag when gallery reaches center (catches brisk flicks too!)
     useEffect(() => {
       if (!hintOnView || normalizedImages.length <= 1) return;
       const el = containerRef.current;
-      if (!el || typeof IntersectionObserver === "undefined") return;
+      if (!el) return;
 
       const easeInOutCubic = (t: number) =>
         t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 
-      const observer = new IntersectionObserver(
-        (entries) => {
-          const entry = entries[0];
-          if (!entry?.isIntersecting || hasPlayedHintRef.current) return;
+      const triggerSpotlight = () => {
+        if (hasPlayedHintRef.current) return;
+        hasPlayedHintRef.current = true;
 
-          hasPlayedHintRef.current = true;
-          observer.disconnect();
+        if (
+          typeof window !== "undefined" &&
+          window.matchMedia("(prefers-reduced-motion: reduce)").matches
+        ) {
+          return;
+        }
 
-          if (
-            typeof window !== "undefined" &&
-            window.matchMedia("(prefers-reduced-motion: reduce)").matches
-          ) {
+        // Compute exact centered scrollY and snap immediately to kill brisk swipe momentum
+        const rect = el.getBoundingClientRect();
+        const targetScrollY = Math.max(
+          0,
+          Math.round(window.scrollY + rect.top - (window.innerHeight - rect.height) / 2)
+        );
+        lockedScrollYRef.current = targetScrollY;
+        window.scrollTo(0, targetScrollY);
+
+        hintGraceUntilRef.current = performance.now() + 950;
+        setIsSpotlightActive(true);
+
+        hintTimeoutRef.current = setTimeout(() => {
+          const scrollEl = scrollContainerRef.current;
+          const trackEl = trackRef.current;
+          if (!scrollEl || !trackEl) {
+            lockedScrollYRef.current = null;
+            setIsSpotlightActive(false);
             return;
           }
 
-          // Smoothly center the gallery in the viewport, then freeze scroll & spotlight it
-          el.scrollIntoView({ behavior: "smooth", block: "center" });
-          hintGraceUntilRef.current = performance.now() + 900;
-          setIsSpotlightActive(true);
+          const maxScroll = scrollEl.scrollWidth - scrollEl.clientWidth;
+          if (maxScroll <= 16) {
+            lockedScrollYRef.current = null;
+            setIsSpotlightActive(false);
+            return;
+          }
 
-          hintTimeoutRef.current = setTimeout(() => {
-            const scrollEl = scrollContainerRef.current;
-            const trackEl = trackRef.current;
-            if (!scrollEl || !trackEl) {
+          const peekScroll = Math.min(
+            maxScroll,
+            Math.max(130, Math.min(250, scrollEl.clientWidth * 0.32))
+          );
+          const trackW = trackEl.clientWidth || 564;
+          const count = normalizedImages.length;
+          const startX = (0.5 / count) * trackW;
+          const targetX = (1.5 / count) * trackW;
+
+          // Deliberate keynote-paced choreography (~4.5s total)
+          const PHASE_TAP = 720;
+          const PHASE_DRAG = 1650;
+          const PHASE_HOLD = 850;
+          const PHASE_RETURN = 1280;
+          const T1 = PHASE_TAP;
+          const T2 = T1 + PHASE_DRAG;
+          const T3 = T2 + PHASE_HOLD;
+          const TOTAL = T3 + PHASE_RETURN;
+
+          const startTime = performance.now();
+
+          const tick = (now: number) => {
+            const elapsed = now - startTime;
+
+            if (elapsed < T1) {
+              const t = elapsed / PHASE_TAP;
+              const ripple = t > 0.15 ? Math.min(1, (t - 0.15) / 0.85) : 0;
+              scrollEl.scrollLeft = 0;
+              setHintState({
+                x: startX,
+                index: 0,
+                opacity: Math.min(1, t / 0.25),
+                rippleProgress: ripple,
+                isPressed: t >= 0.2,
+              });
+              hintRafRef.current = requestAnimationFrame(tick);
+            } else if (elapsed < T2) {
+              const t = (elapsed - T1) / PHASE_DRAG;
+              const e = easeInOutCubic(t);
+              scrollEl.scrollLeft = peekScroll * e;
+              setHintState({
+                x: startX + (targetX - startX) * e,
+                index: t > 0.45 ? 1 : 0,
+                opacity: 1,
+                rippleProgress: 0,
+                isPressed: true,
+              });
+              hintRafRef.current = requestAnimationFrame(tick);
+            } else if (elapsed < T3) {
+              const t = (elapsed - T2) / PHASE_HOLD;
+              scrollEl.scrollLeft = peekScroll;
+              setHintState({
+                x: targetX,
+                index: 1,
+                opacity: 1,
+                rippleProgress: 0,
+                isPressed: t < 0.65,
+              });
+              hintRafRef.current = requestAnimationFrame(tick);
+            } else if (elapsed < TOTAL) {
+              const t = (elapsed - T3) / PHASE_RETURN;
+              const e = easeInOutCubic(t);
+              scrollEl.scrollLeft = peekScroll * (1 - e);
+              setHintState({
+                x: targetX + (startX - targetX) * e,
+                index: t > 0.55 ? 0 : 1,
+                opacity: t > 0.7 ? Math.max(0, 1 - (t - 0.7) / 0.3) : 1,
+                rippleProgress: 0,
+                isPressed: false,
+              });
+              hintRafRef.current = requestAnimationFrame(tick);
+            } else {
+              scrollEl.scrollLeft = 0;
+              lockedScrollYRef.current = null;
+              setActiveIndex(0);
+              setHintState(null);
               setIsSpotlightActive(false);
-              return;
+              hintRafRef.current = null;
             }
+          };
 
-            const maxScroll = scrollEl.scrollWidth - scrollEl.clientWidth;
-            if (maxScroll <= 16) {
-              setIsSpotlightActive(false);
-              return;
-            }
+          hintRafRef.current = requestAnimationFrame(tick);
+        }, 480);
+      };
 
-            const peekScroll = Math.min(
-              maxScroll,
-              Math.max(130, Math.min(250, scrollEl.clientWidth * 0.32))
-            );
-            const trackW = trackEl.clientWidth || 564;
-            const count = normalizedImages.length;
-            const startX = (0.5 / count) * trackW;
-            const targetX = (1.5 / count) * trackW;
+      // Synchronous scroll watcher catches even very fast mobile flicks before they pass the gallery
+      const checkPositionOnScroll = () => {
+        if (hasPlayedHintRef.current) return;
+        const rect = el.getBoundingClientRect();
+        const vh = window.innerHeight;
+        // Trigger as soon as the gallery's vertical center enters the middle band of the viewport
+        const galleryCenter = rect.top + rect.height / 2;
+        if (galleryCenter <= vh * 0.62 && galleryCenter >= vh * 0.2) {
+          triggerSpotlight();
+        }
+      };
 
-            // Deliberate keynote-paced choreography (~4.5s total)
-            const PHASE_TAP = 720; // virtual pointer appears + tap/click ripple + press-hold
-            const PHASE_DRAG = 1650; // slow, smooth drag to segment 2 + gallery glides right
-            const PHASE_HOLD = 850; // calm pause at segment 2 so preview & next image sink in
-            const PHASE_RETURN = 1280; // smooth return to start & fade out
-            const T1 = PHASE_TAP;
-            const T2 = T1 + PHASE_DRAG;
-            const T3 = T2 + PHASE_HOLD;
-            const TOTAL = T3 + PHASE_RETURN;
+      window.addEventListener("scroll", checkPositionOnScroll, { passive: true });
+      checkPositionOnScroll();
 
-            const startTime = performance.now();
-
-            const tick = (now: number) => {
-              const elapsed = now - startTime;
-
-              if (elapsed < T1) {
-                // Phase 1: Tap / Click ripple on segment 1 + press down
-                const t = elapsed / PHASE_TAP;
-                const ripple = t > 0.15 ? Math.min(1, (t - 0.15) / 0.85) : 0;
-                scrollEl.scrollLeft = 0;
-                setHintState({
-                  x: startX,
-                  index: 0,
-                  opacity: Math.min(1, t / 0.25),
-                  rippleProgress: ripple,
-                  isPressed: t >= 0.2,
-                });
-                hintRafRef.current = requestAnimationFrame(tick);
-              } else if (elapsed < T2) {
-                // Phase 2: Slow held drag from segment 1 -> segment 2
-                const t = (elapsed - T1) / PHASE_DRAG;
-                const e = easeInOutCubic(t);
-                scrollEl.scrollLeft = peekScroll * e;
-                setHintState({
-                  x: startX + (targetX - startX) * e,
-                  index: t > 0.45 ? 1 : 0,
-                  opacity: 1,
-                  rippleProgress: 0,
-                  isPressed: true,
-                });
-                hintRafRef.current = requestAnimationFrame(tick);
-              } else if (elapsed < T3) {
-                // Phase 3: Calm hold at segment 2, then release virtual finger
-                const t = (elapsed - T2) / PHASE_HOLD;
-                scrollEl.scrollLeft = peekScroll;
-                setHintState({
-                  x: targetX,
-                  index: 1,
-                  opacity: 1,
-                  rippleProgress: 0,
-                  isPressed: t < 0.65,
-                });
-                hintRafRef.current = requestAnimationFrame(tick);
-              } else if (elapsed < TOTAL) {
-                // Phase 4: Smooth return back to segment 1 & gentle fade out
-                const t = (elapsed - T3) / PHASE_RETURN;
-                const e = easeInOutCubic(t);
-                scrollEl.scrollLeft = peekScroll * (1 - e);
-                setHintState({
-                  x: targetX + (startX - targetX) * e,
-                  index: t > 0.55 ? 0 : 1,
-                  opacity: t > 0.7 ? Math.max(0, 1 - (t - 0.7) / 0.3) : 1,
-                  rippleProgress: 0,
-                  isPressed: false,
-                });
-                hintRafRef.current = requestAnimationFrame(tick);
-              } else {
-                scrollEl.scrollLeft = 0;
-                setActiveIndex(0);
-                setHintState(null);
-                setIsSpotlightActive(false);
-                hintRafRef.current = null;
-              }
-            };
-
-            hintRafRef.current = requestAnimationFrame(tick);
-          }, 560);
-        },
-        { threshold: 0.75 }
-      );
-
-      observer.observe(el);
       return () => {
-        observer.disconnect();
+        window.removeEventListener("scroll", checkPositionOnScroll);
         cancelHint(true);
       };
     }, [hintOnView, normalizedImages.length, cancelHint]);
@@ -665,34 +705,19 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
                 }`}
               />
 
-              {/* Top Text Hint floating cleanly ABOVE the gallery */}
+              {/* Clean Bottom Text Hint BELOW the gallery — larger typography, zero fill/border */}
               <div
                 role="status"
                 aria-live="polite"
                 style={{ top: `${spotlightBannerTop}px` }}
-                className={`fixed left-1/2 -translate-x-1/2 z-[62] flex items-center gap-[8px] rounded-full border border-border-hardware bg-surface/95 px-[16px] py-[8px] shadow-[0_8px_28px_rgba(0,0,0,0.45)] backdrop-blur-md select-none pointer-events-none transition-all duration-300 ease-out ${
+                className={`fixed left-1/2 -translate-x-1/2 z-[62] w-full max-w-[calc(100vw-32px)] text-center select-none pointer-events-none transition-all duration-300 ease-out ${
                   isSpotlightActive
                     ? "opacity-100 translate-y-0"
                     : "opacity-0 translate-y-[6px]"
                 }`}
               >
-                <svg
-                  width="15"
-                  height="15"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.75"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="shrink-0 text-content-secondary"
-                  aria-hidden="true"
-                >
-                  <path d="M5 12h14" />
-                  <path d="m12 5 7 7-7 7" />
-                </svg>
-                <span className="font-hauora text-[13px] sm:text-[14px] font-normal leading-none text-content-primary whitespace-nowrap">
-                  Swipe images or scrub the bar below
+                <span className="font-hauora text-[18px] sm:text-[20px] font-medium leading-[26px] text-content-primary tracking-normal">
+                  Swipe images or scrub the bar
                 </span>
               </div>
             </>,
@@ -842,17 +867,19 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
                 );
               })}
 
-              {/* Hover / Hint Dot + Keynote Tap Ripple & Held Touch Halo */}
+              {/* Hover / Hint Dot + Keynote Tap Ripple & Held Touch Halo (single concentric anchor, z-50 above everything) */}
               {activeOverlayPos && (
-                <>
+                <div
+                  className="pointer-events-none absolute z-50 h-0 w-0"
+                  style={{ left: `${activeOverlayPos.x}px`, top: "50%" }}
+                >
                   {/* Keynote Tap/Click Expanding Ripple Ring */}
                   {hintState &&
                     hintState.rippleProgress > 0 &&
                     hintState.rippleProgress < 1 && (
                       <div
-                        className="pointer-events-none absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-[18px] h-[18px] rounded-full border-[1.5px] border-white/85 z-20"
+                        className="absolute left-0 top-0 h-[18px] w-[18px] rounded-full border-[1.5px] border-white/85"
                         style={{
-                          left: `${activeOverlayPos.x}px`,
                           transform: `translate(-50%, -50%) scale(${0.65 + hintState.rippleProgress * 2.2})`,
                           opacity: (1 - hintState.rippleProgress) * 0.85,
                         }}
@@ -862,9 +889,8 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
                   {/* Held Virtual Pointer Halo (visible while pressing & dragging) */}
                   {hintState && (
                     <div
-                      className="pointer-events-none absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-[26px] h-[26px] rounded-full bg-white/15 border border-white/40 shadow-[0_0_16px_rgba(255,255,255,0.28)] z-20 transition-[transform,opacity] duration-200 ease-out"
+                      className="absolute left-0 top-0 h-[26px] w-[26px] rounded-full bg-white/15 border border-white/40 shadow-[0_0_16px_rgba(255,255,255,0.28)] transition-[transform,opacity] duration-200 ease-out"
                       style={{
-                        left: `${activeOverlayPos.x}px`,
                         transform: `translate(-50%, -50%) scale(${hintState.isPressed ? 1 : 0.6})`,
                         opacity: hintState.isPressed ? overlayOpacity : 0,
                       }}
@@ -873,14 +899,13 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
 
                   {/* Core Glowing Scrubber Dot */}
                   <div
-                    className="pointer-events-none absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-[8px] h-[8px] rounded-full bg-content-primary shadow-[0_0_10px_rgba(255,255,255,0.65)] z-20 transition-transform duration-150"
+                    className="absolute left-0 top-0 h-[8px] w-[8px] rounded-full bg-content-primary shadow-[0_0_10px_rgba(255,255,255,0.65)] transition-transform duration-150"
                     style={{
-                      left: `${activeOverlayPos.x}px`,
                       transform: `translate(-50%, -50%) scale(${hintState?.isPressed ? 1.25 : 1})`,
                       opacity: overlayOpacity,
                     }}
                   />
-                </>
+                </div>
               )}
 
               {/* Hover / Hint Tooltip: Thumbnail preview preserving aspect ratio + 10px Hauora Alt Text */}
