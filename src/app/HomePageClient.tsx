@@ -186,7 +186,7 @@ export function HomePageClient({
               }
               keyAchievements={proj.keyAchievements}
               caseStudies={proj.caseStudies}
-              galleryHintOnView={galleryHintOnView}
+              galleryHintOnView={galleryHintOnView && idx === 0}
             />
           );
         })}

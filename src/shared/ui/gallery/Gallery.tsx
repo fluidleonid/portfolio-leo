@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { tokens } from "@/shared/config/tokens";
 
 export interface GalleryImageItem {
@@ -107,17 +108,28 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
     // Ref to track latest hover/scrub position without state lag on pointerup
     const currentHoverPosRef = useRef<{ x: number; index: number } | null>(null);
 
-    // One-time interactive onboarding hint state (simultaneous gallery peek + progress-bar scrub dot/tooltip)
+    // One-time interactive spotlight onboarding hint (scroll freeze + dark backdrop + top caption + gallery/scrubber glide)
     const [hintState, setHintState] = useState<{
       x: number;
       index: number;
       opacity: number;
     } | null>(null);
+    const [isSpotlightActive, setIsSpotlightActive] = useState(false);
+    const [spotlightBannerTop, setSpotlightBannerTop] = useState<number>(24);
+    const [portalMounted, setPortalMounted] = useState(false);
     const hasPlayedHintRef = useRef(false);
     const hintRafRef = useRef<number | null>(null);
     const hintTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const hintGraceUntilRef = useRef<number>(0);
 
-    const cancelHint = useCallback(() => {
+    useEffect(() => {
+      setPortalMounted(true);
+    }, []);
+
+    const cancelHint = useCallback((force = false) => {
+      if (!force && performance.now() < hintGraceUntilRef.current) {
+        return;
+      }
       if (hintTimeoutRef.current !== null) {
         clearTimeout(hintTimeoutRef.current);
         hintTimeoutRef.current = null;
@@ -127,9 +139,47 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
         hintRafRef.current = null;
       }
       setHintState(null);
+      setIsSpotlightActive(false);
     }, []);
 
-    // Trigger 1-time choreographed scroll + progress-bar peek when gallery enters viewport
+    // Freeze vertical page scroll while the 1-time spotlight tour is playing
+    useEffect(() => {
+      if (!isSpotlightActive) return;
+
+      const updateBannerPosition = () => {
+        if (!containerRef.current) return;
+        const rect = containerRef.current.getBoundingClientRect();
+        setSpotlightBannerTop(Math.max(16, Math.round(rect.top - 52)));
+      };
+
+      updateBannerPosition();
+      const posInterval = window.setInterval(updateBannerPosition, 60);
+
+      const preventScroll = (e: Event) => {
+        if (e.cancelable) {
+          e.preventDefault();
+        }
+      };
+
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === "Escape") {
+          cancelHint(true);
+        }
+      };
+
+      window.addEventListener("wheel", preventScroll, { passive: false });
+      window.addEventListener("touchmove", preventScroll, { passive: false });
+      window.addEventListener("keydown", handleKeyDown);
+
+      return () => {
+        window.clearInterval(posInterval);
+        window.removeEventListener("wheel", preventScroll);
+        window.removeEventListener("touchmove", preventScroll);
+        window.removeEventListener("keydown", handleKeyDown);
+      };
+    }, [isSpotlightActive, cancelHint]);
+
+    // Trigger 1-time spotlight freeze + choreographed scroll/scrubber peek when gallery is well inside viewport
     useEffect(() => {
       if (!hintOnView || normalizedImages.length <= 1) return;
       const el = containerRef.current;
@@ -153,25 +203,36 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
             return;
           }
 
+          // Smoothly center the gallery in the viewport, then freeze scroll & spotlight it
+          el.scrollIntoView({ behavior: "smooth", block: "center" });
+          hintGraceUntilRef.current = performance.now() + 650;
+          setIsSpotlightActive(true);
+
           hintTimeoutRef.current = setTimeout(() => {
             const scrollEl = scrollContainerRef.current;
             const trackEl = trackRef.current;
-            if (!scrollEl || !trackEl) return;
+            if (!scrollEl || !trackEl) {
+              setIsSpotlightActive(false);
+              return;
+            }
 
             const maxScroll = scrollEl.scrollWidth - scrollEl.clientWidth;
-            if (maxScroll <= 16) return;
+            if (maxScroll <= 16) {
+              setIsSpotlightActive(false);
+              return;
+            }
 
             const peekScroll = Math.min(
               maxScroll,
-              Math.max(110, Math.min(220, scrollEl.clientWidth * 0.28))
+              Math.max(120, Math.min(230, scrollEl.clientWidth * 0.3))
             );
             const trackW = trackEl.clientWidth || 564;
             const count = normalizedImages.length;
             const startX = (0.5 / count) * trackW;
             const targetX = (1.5 / count) * trackW;
 
-            const PHASE1 = 920; // glide right + dot & preview slide to segment 2
-            const PHASE2 = 340; // brief hold at peeked state
+            const PHASE1 = 940; // glide right + dot & preview slide to segment 2
+            const PHASE2 = 420; // hold at peeked state so user clearly reads both image & tooltip
             const PHASE3 = 860; // smooth return to start
             const TOTAL = PHASE1 + PHASE2 + PHASE3;
 
@@ -212,20 +273,21 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
                 scrollEl.scrollLeft = 0;
                 setActiveIndex(0);
                 setHintState(null);
+                setIsSpotlightActive(false);
                 hintRafRef.current = null;
               }
             };
 
             hintRafRef.current = requestAnimationFrame(tick);
-          }, 360);
+          }, 460);
         },
-        { threshold: 0.45 }
+        { threshold: 0.75 }
       );
 
       observer.observe(el);
       return () => {
         observer.disconnect();
-        cancelHint();
+        cancelHint(true);
       };
     }, [hintOnView, normalizedImages.length, cancelHint]);
 
@@ -558,10 +620,64 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
         ? normalizedImages[activeOverlayPos.index]
         : null;
 
+    const spotlightPortal =
+      portalMounted && hintOnView
+        ? createPortal(
+            <>
+              {/* Dark Spotlight Overlay UNDER the elevated gallery (z-55 < gallery z-60) */}
+              <div
+                aria-hidden="true"
+                onClick={() => cancelHint()}
+                className={`fixed inset-0 z-[55] bg-black/75 backdrop-blur-[2px] transition-opacity duration-300 ease-out ${
+                  isSpotlightActive
+                    ? "opacity-100 pointer-events-auto"
+                    : "opacity-0 pointer-events-none"
+                }`}
+              />
+
+              {/* Top Text Hint floating cleanly ABOVE the gallery */}
+              <div
+                role="status"
+                aria-live="polite"
+                style={{ top: `${spotlightBannerTop}px` }}
+                className={`fixed left-1/2 -translate-x-1/2 z-[62] flex items-center gap-[8px] rounded-full border border-border-hardware bg-surface/95 px-[16px] py-[8px] shadow-[0_8px_28px_rgba(0,0,0,0.45)] backdrop-blur-md select-none pointer-events-none transition-all duration-300 ease-out ${
+                  isSpotlightActive
+                    ? "opacity-100 translate-y-0"
+                    : "opacity-0 translate-y-[6px]"
+                }`}
+              >
+                <svg
+                  width="15"
+                  height="15"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.75"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="shrink-0 text-content-secondary"
+                  aria-hidden="true"
+                >
+                  <path d="M5 12h14" />
+                  <path d="m12 5 7 7-7 7" />
+                </svg>
+                <span className="font-hauora text-[13px] sm:text-[14px] font-normal leading-none text-content-primary whitespace-nowrap">
+                  Swipe images or scrub the bar below
+                </span>
+              </div>
+            </>,
+            document.body
+          )
+        : null;
+
     return (
+      <>
+      {spotlightPortal}
       <div
         ref={setRefs}
         className={`relative flex flex-col select-none overflow-hidden ${
+          isSpotlightActive ? "z-[60]" : ""
+        } ${
           isMobile
             ? "w-[calc(100%+32px)] -ml-[16px] -mr-[16px] max-w-[100vw]"
             : bleed
@@ -594,8 +710,8 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
           onPointerCancel={handlePointerUp}
-          onWheel={cancelHint}
-          onTouchStart={cancelHint}
+          onWheel={() => cancelHint()}
+          onTouchStart={() => cancelHint()}
           className={`relative flex h-full w-full overflow-x-auto overflow-y-hidden select-none touch-pan-y [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden ${
             isPointerDown ? "cursor-grabbing" : "cursor-grab"
           }`}
@@ -732,9 +848,10 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
           </div>
         </div>
       )}
-    </div>
-  );
-}
+      </div>
+      </>
+    );
+  }
 );
 
 Gallery.displayName = "Gallery";
