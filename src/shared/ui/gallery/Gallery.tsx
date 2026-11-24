@@ -49,9 +49,6 @@ export interface GalleryProps extends React.HTMLAttributes<HTMLDivElement> {
  *    - Tooltip above dot: aspect-ratio-preserved thumbnail + 10px Hauora alt text.
  *    - Click segment: jumps smoothly to that image.
  */
-const ONBOARDING_HINT_TEXT = "Swipe images or scrub the bar";
-const SCRAMBLE_GLYPHS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789#$%&*+/";
-
 export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
   (
     {
@@ -121,7 +118,7 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
     } | null>(null);
     const [isSpotlightActive, setIsSpotlightActive] = useState(false);
     const [showHintText, setShowHintText] = useState(false);
-    const [scrambledHintText, setScrambledHintText] = useState("");
+    const [isTouchDevice, setIsTouchDevice] = useState(false);
     const [spotlightBannerTop, setSpotlightBannerTop] = useState<number>(24);
     const [portalMounted, setPortalMounted] = useState(false);
     const hasPlayedHintRef = useRef(false);
@@ -129,15 +126,25 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
     const scrollCenterRafRef = useRef<number | null>(null);
     const hintTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const textTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-    const scrambleIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+    const textHideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const hintGraceUntilRef = useRef<number>(0);
     const lockedScrollYRef = useRef<number | null>(null);
 
     useEffect(() => {
       setPortalMounted(true);
+      if (typeof window !== "undefined") {
+        const touch =
+          window.matchMedia("(pointer: coarse)").matches ||
+          "ontouchstart" in window ||
+          navigator.maxTouchPoints > 0;
+        setIsTouchDevice(touch);
+      }
     }, []);
 
-    // Only the top 'X' button (or Escape / unmount) exits onboarding — ignores stray taps/clicks elsewhere
-    const exitOnboarding = useCallback(() => {
+    const exitOnboarding = useCallback((force = true) => {
+      if (!force && performance.now() < hintGraceUntilRef.current) {
+        return;
+      }
       if (hintTimeoutRef.current !== null) {
         clearTimeout(hintTimeoutRef.current);
         hintTimeoutRef.current = null;
@@ -146,9 +153,9 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
         clearTimeout(textTimeoutRef.current);
         textTimeoutRef.current = null;
       }
-      if (scrambleIntervalRef.current !== null) {
-        clearInterval(scrambleIntervalRef.current);
-        scrambleIntervalRef.current = null;
+      if (textHideTimeoutRef.current !== null) {
+        clearTimeout(textHideTimeoutRef.current);
+        textHideTimeoutRef.current = null;
       }
       if (scrollCenterRafRef.current !== null) {
         cancelAnimationFrame(scrollCenterRafRef.current);
@@ -158,11 +165,7 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
         cancelAnimationFrame(hintRafRef.current);
         hintRafRef.current = null;
       }
-      if (scrollContainerRef.current) {
-        scrollContainerRef.current.scrollLeft = 0;
-      }
       lockedScrollYRef.current = null;
-      setActiveIndex(0);
       setHintState(null);
       setShowHintText(false);
       setIsSpotlightActive(false);
@@ -265,6 +268,7 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
         );
 
         // Step 1: Smoothly fade in dark backdrop overlay under gallery
+        hintGraceUntilRef.current = performance.now() + 600;
         setIsSpotlightActive(true);
 
         const centerStart = performance.now();
@@ -284,38 +288,15 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
         };
         scrollCenterRafRef.current = requestAnimationFrame(animateCenter);
 
-        // Step 2 (at 380ms): Smoothly reveal caption below gallery with PET-style code-scramble decode
+        // Step 2 (at 380ms): Smoothly fade in hint text (no scramble), hold for 1.5s max, then fade out
         textTimeoutRef.current = setTimeout(() => {
           setShowHintText(true);
-          let frame = 0;
-          const totalFrames = 22; // ~660ms smooth code decode
-          scrambleIntervalRef.current = setInterval(() => {
-            frame += 1;
-            const lockedCount = Math.floor(
-              (frame / totalFrames) * ONBOARDING_HINT_TEXT.length
-            );
-            const nextText = ONBOARDING_HINT_TEXT.split("")
-              .map((ch, idx) => {
-                if (ch === " ") return " ";
-                if (idx < lockedCount) return ch;
-                return SCRAMBLE_GLYPHS[
-                  Math.floor(Math.random() * SCRAMBLE_GLYPHS.length)
-                ];
-              })
-              .join("");
-            setScrambledHintText(nextText);
-
-            if (frame >= totalFrames) {
-              if (scrambleIntervalRef.current !== null) {
-                clearInterval(scrambleIntervalRef.current);
-                scrambleIntervalRef.current = null;
-              }
-              setScrambledHintText(ONBOARDING_HINT_TEXT);
-            }
-          }, 30);
+          textHideTimeoutRef.current = setTimeout(() => {
+            setShowHintText(false);
+          }, 1500);
         }, 380);
 
-        // Step 3 (at 1120ms — AFTER overlay & code-decoded text have settled): Play keynote tap & drag animation
+        // Step 3 (at 820ms): Play keynote tap & drag animation
         hintTimeoutRef.current = setTimeout(() => {
           const scrollEl = scrollContainerRef.current;
           const trackEl = trackRef.current;
@@ -434,7 +415,7 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
           };
 
           hintRafRef.current = requestAnimationFrame(tick);
-        }, 1120);
+        }, 820);
       };
 
       const checkPositionOnScroll = () => {
@@ -562,7 +543,10 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
 
       cancelMomentum();
 
-      if (isSpotlightActive) return;
+      if (isSpotlightActive) {
+        if (performance.now() < hintGraceUntilRef.current) return;
+        exitOnboarding(true);
+      }
       setIsPointerDown(true);
       setIsDragging(false);
 
@@ -673,9 +657,11 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
       [normalizedImages.length]
     );
 
-    // Pointer Down on progress bar: starts touch dragging / scrubbing
+    // Pointer Down on progress bar: starts touch dragging / scrubbing (dismisses hint immediately)
     const handleTrackPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
-      if (isSpotlightActive) return;
+      if (isSpotlightActive) {
+        exitOnboarding(true);
+      }
       const pos = calculateScrubPos(e.clientX);
       if (!pos) return;
 
@@ -691,9 +677,12 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
       }
     };
 
-    // Pointer Move on progress bar: tracks touch drag and desktop hover
+    // Pointer Move on progress bar: tracks touch drag and desktop hover (dismisses hint after brief grace)
     const handleTrackPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
-      if (isSpotlightActive) return;
+      if (isSpotlightActive) {
+        if (performance.now() < hintGraceUntilRef.current) return;
+        exitOnboarding(true);
+      }
       const pos = calculateScrubPos(e.clientX);
       if (!pos) return;
 
@@ -789,7 +778,7 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
       portalMounted && hintOnView
         ? createPortal(
             <>
-              {/* Dark Spotlight Overlay UNDER the elevated gallery (z-55 < gallery z-60). Ignores clicks. */}
+              {/* Dark Spotlight Overlay UNDER the elevated gallery (z-55 < gallery z-60) */}
               <div
                 aria-hidden="true"
                 className={`fixed inset-0 z-[55] bg-black/75 backdrop-blur-[2px] transition-opacity duration-[650ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${
@@ -799,44 +788,19 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
                 }`}
               />
 
-              {/* Top Icon-Only Close (X) Button — the ONLY click control to exit onboarding */}
-              <button
-                type="button"
-                onClick={exitOnboarding}
-                aria-label="Close gallery hint"
-                className={`fixed top-[20px] right-[20px] sm:top-[28px] sm:right-[28px] z-[65] inline-flex h-[40px] w-[40px] cursor-pointer items-center justify-center rounded-[8px] text-content-secondary hover:text-content-primary transition-all duration-[500ms] ease-[cubic-bezier(0.22,1,0.36,1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-500/40 ${
-                  isSpotlightActive
-                    ? "opacity-100 pointer-events-auto"
-                    : "opacity-0 pointer-events-none"
-                }`}
-              >
-                <svg
-                  width="22"
-                  height="22"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.75"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
-                >
-                  <path d="M18 6 6 18" />
-                  <path d="m6 6 12 12" />
-                </svg>
-              </button>
-
-              {/* Clean Bottom Text Hint BELOW the gallery — appears AFTER overlay with PET code-scramble decode */}
+              {/* Clean Bottom Text Hint BELOW the gallery — device-adapted, fades smoothly for 1.5s max */}
               <div
                 role="status"
                 aria-live="polite"
                 style={{ top: `${spotlightBannerTop}px` }}
-                className={`fixed left-1/2 -translate-x-1/2 z-[62] w-full max-w-[calc(100vw-32px)] text-center select-none pointer-events-none transition-opacity duration-[550ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${
+                className={`fixed left-1/2 -translate-x-1/2 z-[62] w-full max-w-[calc(100vw-32px)] text-center select-none pointer-events-none transition-opacity duration-[500ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${
                   showHintText ? "opacity-100" : "opacity-0"
                 }`}
               >
                 <span className="font-hauora text-[18px] sm:text-[20px] font-medium leading-[26px] text-content-primary tracking-normal">
-                  {scrambledHintText || ONBOARDING_HINT_TEXT}
+                  {isTouchDevice
+                    ? "Swipe or scrub the bar"
+                    : "Drag or scrub the bar"}
                 </span>
               </div>
             </>,
@@ -885,11 +849,7 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
           onPointerUp={handlePointerUp}
           onPointerCancel={handlePointerUp}
           className={`relative flex h-full w-full overflow-x-auto overflow-y-hidden select-none touch-pan-y [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden ${
-            isSpotlightActive
-              ? "pointer-events-none"
-              : isPointerDown
-              ? "cursor-grabbing"
-              : "cursor-grab"
+            isPointerDown ? "cursor-grabbing" : "cursor-grab"
           }`}
           style={{
             touchAction: "pan-y",
