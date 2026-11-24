@@ -1,5 +1,6 @@
 class TactileAudio {
   private ctx: AudioContext | null = null;
+  private noiseBuffer: AudioBuffer | null = null;
   public enabled = true;
 
   private getContext(): AudioContext | null {
@@ -16,80 +17,146 @@ class TactileAudio {
       if (this.ctx.state === "suspended") {
         void this.ctx.resume().catch(() => {});
       }
+      if (!this.noiseBuffer) {
+        // Pre-bake a short white-noise buffer once for realistic physical microswitch transients
+        const length = Math.floor(this.ctx.sampleRate * 0.25);
+        const buffer = this.ctx.createBuffer(1, length, this.ctx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < length; i++) {
+          data[i] = Math.random() * 2 - 1;
+        }
+        this.noiseBuffer = buffer;
+      }
       return this.ctx;
     } catch {
       return null;
     }
   }
 
-  /** Soft low-pitched mechanical detent tick for rotary NAV knob */
+  /**
+   * Subtle, natural mechanical detent tick for the rotary NAV knob.
+   * Uses a dry 6ms filtered-noise contact impulse (no boomy synth sweep).
+   */
   playKnobTick(): void {
     if (!this.enabled) return;
     const ctx = this.getContext();
-    if (!ctx) return;
+    if (!ctx || !this.noiseBuffer) return;
 
     try {
       const now = ctx.currentTime;
+      const jitter = 0.94 + Math.random() * 0.12;
 
+      // 1. Crisp-yet-muted mechanical detent transient (filtered noise, 6ms)
+      const noise = ctx.createBufferSource();
+      noise.buffer = this.noiseBuffer;
+
+      const bandpass = ctx.createBiquadFilter();
+      bandpass.type = "bandpass";
+      bandpass.frequency.setValueAtTime(1050 * jitter, now);
+      bandpass.Q.setValueAtTime(1.8, now);
+
+      const lowpass = ctx.createBiquadFilter();
+      lowpass.type = "lowpass";
+      lowpass.frequency.setValueAtTime(1900, now);
+
+      const noiseGain = ctx.createGain();
+      noiseGain.gain.setValueAtTime(0.0001, now);
+      noiseGain.gain.linearRampToValueAtTime(0.032, now + 0.001);
+      noiseGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.007);
+
+      noise.connect(bandpass);
+      bandpass.connect(lowpass);
+      lowpass.connect(noiseGain);
+      noiseGain.connect(ctx.destination);
+
+      const offset = Math.random() * 0.18;
+      noise.start(now, offset, 0.01);
+
+      // 2. Whisper-quiet dry housing body impulse (7ms, no sub-bass boom)
       const osc = ctx.createOscillator();
-      const filter = ctx.createBiquadFilter();
-      const gain = ctx.createGain();
-
+      const bodyGain = ctx.createGain();
       osc.type = "triangle";
-      const baseFreq = 260 + Math.random() * 35;
-      osc.frequency.setValueAtTime(baseFreq, now);
-      osc.frequency.exponentialRampToValueAtTime(55, now + 0.022);
+      osc.frequency.setValueAtTime(250 * jitter, now);
+      osc.frequency.exponentialRampToValueAtTime(135, now + 0.007);
 
-      // Cut harsh highs above 500 Hz for a warm, velvety mechanical click
-      filter.type = "lowpass";
-      filter.frequency.setValueAtTime(500, now);
+      bodyGain.gain.setValueAtTime(0.012, now);
+      bodyGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.008);
 
-      gain.gain.setValueAtTime(0.06, now);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.022);
-
-      osc.connect(filter);
-      filter.connect(gain);
-      gain.connect(ctx.destination);
+      osc.connect(bodyGain);
+      bodyGain.connect(ctx.destination);
 
       osc.start(now);
-      osc.stop(now + 0.025);
+      osc.stop(now + 0.01);
     } catch {
       // Ignore Web Audio scheduling errors
     }
   }
 
-  /** Soft low-pitched key press & release thock for tactile buttons (COMM / PET / CV / CaseLink) */
+  /**
+   * Natural matte-hardware tactile key click (COMM / PET / CV / CaseLink).
+   * Ultra-short filtered physical transient + tiny dry chassis tap — quiet & organic, never boomy.
+   */
   playKeyClick(type: "down" | "up" = "down"): void {
     if (!this.enabled) return;
     const ctx = this.getContext();
-    if (!ctx) return;
+    if (!ctx || !this.noiseBuffer) return;
 
     try {
       const now = ctx.currentTime;
+      const jitter = 0.95 + Math.random() * 0.1;
+      const isDown = type === "down";
 
+      // 1. Primary tactile switch contact impulse (filtered noise burst)
+      const noise = ctx.createBufferSource();
+      noise.buffer = this.noiseBuffer;
+
+      const bandpass = ctx.createBiquadFilter();
+      bandpass.type = "bandpass";
+      bandpass.frequency.setValueAtTime((isDown ? 1280 : 1750) * jitter, now);
+      bandpass.Q.setValueAtTime(isDown ? 1.4 : 1.7, now);
+
+      const lowpass = ctx.createBiquadFilter();
+      lowpass.type = "lowpass";
+      lowpass.frequency.setValueAtTime(isDown ? 2100 : 2500, now);
+
+      const noiseGain = ctx.createGain();
+      const peakNoise = isDown ? 0.044 : 0.022;
+      const decaySec = isDown ? 0.009 : 0.006;
+
+      noiseGain.gain.setValueAtTime(0.0001, now);
+      noiseGain.gain.linearRampToValueAtTime(peakNoise, now + 0.0008);
+      noiseGain.gain.exponentialRampToValueAtTime(0.0001, now + decaySec);
+
+      noise.connect(bandpass);
+      bandpass.connect(lowpass);
+      lowpass.connect(noiseGain);
+      noiseGain.connect(ctx.destination);
+
+      const offset = Math.random() * 0.18;
+      noise.start(now, offset, decaySec + 0.004);
+
+      // 2. Subtle dry matte-plastic chassis weight (10ms damped mid-low tap, NOT a kick drum)
       const osc = ctx.createOscillator();
-      const filter = ctx.createBiquadFilter();
-      const gain = ctx.createGain();
+      const bodyFilter = ctx.createBiquadFilter();
+      const bodyGain = ctx.createGain();
 
-      osc.type = "sine";
-      const startFreq = type === "down" ? 140 : 175;
-      const endFreq = type === "down" ? 42 : 65;
+      osc.type = "triangle";
+      osc.frequency.setValueAtTime((isDown ? 210 : 270) * jitter, now);
+      osc.frequency.exponentialRampToValueAtTime(isDown ? 105 : 155, now + 0.01);
 
-      osc.frequency.setValueAtTime(startFreq, now);
-      osc.frequency.exponentialRampToValueAtTime(endFreq, now + 0.035);
+      bodyFilter.type = "lowpass";
+      bodyFilter.frequency.setValueAtTime(420, now);
 
-      filter.type = "lowpass";
-      filter.frequency.setValueAtTime(380, now);
+      const peakBody = isDown ? 0.016 : 0.007;
+      bodyGain.gain.setValueAtTime(peakBody, now);
+      bodyGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.011);
 
-      gain.gain.setValueAtTime(type === "down" ? 0.09 : 0.045, now);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.035);
-
-      osc.connect(filter);
-      filter.connect(gain);
-      gain.connect(ctx.destination);
+      osc.connect(bodyFilter);
+      bodyFilter.connect(bodyGain);
+      bodyGain.connect(ctx.destination);
 
       osc.start(now);
-      osc.stop(now + 0.04);
+      osc.stop(now + 0.013);
     } catch {
       // Ignore Web Audio scheduling errors
     }
