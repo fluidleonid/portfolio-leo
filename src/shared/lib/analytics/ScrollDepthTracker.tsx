@@ -2,12 +2,12 @@
 
 import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
-import { track } from "@vercel/analytics";
+import { trackEvent } from "./trackEvent";
 
 const SCROLL_MILESTONES = [25, 50, 75, 100] as const;
 
 /**
- * Tracks page scroll depth milestones (25%, 50%, 75%, 100%) via Vercel Analytics.
+ * Tracks page scroll depth milestones (25%, 50%, 75%, 100%) via GA4 & Vercel Analytics.
  * Fires each milestone at most once per pathname visit.
  */
 export function ScrollDepthTracker() {
@@ -30,7 +30,7 @@ export function ScrollDepthTracker() {
       for (const milestone of SCROLL_MILESTONES) {
         if (percent >= milestone && !firedRef.current.has(milestone)) {
           firedRef.current.add(milestone);
-          track("scroll_depth", {
+          trackEvent("scroll_depth", {
             percent: milestone,
             path: pathname || "/",
           });

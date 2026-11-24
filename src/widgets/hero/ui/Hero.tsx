@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useMemo, useEffect, useRef } from "react";
-import { track } from "@vercel/analytics";
+import { trackEvent } from "@/shared/lib/analytics";
 import {
   Button,
   ButtonLamp,
@@ -101,7 +101,7 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
     const handlePetSelect = (pet: PetProjectData, slotLabel: string) => {
       const next = activePetProject?.id === pet.id ? null : pet;
       if (next) {
-        track("pet_click", {
+        trackEvent("pet_click", {
           project: (pet.shortName || pet.title).trim(),
           slot: slotLabel,
         });
@@ -559,7 +559,7 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
               target="_blank"
               rel="noopener noreferrer"
               aria-label="Download CV"
-              onClick={() => track("contact_click", { channel: "cv_download" })}
+              onClick={() => trackEvent("contact_click", { channel: "cv_download" })}
               className="cursor-pointer"
             >
               <ButtonDownload aria-label="Download CV" />
@@ -576,7 +576,7 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
               href="https://www.linkedin.com/in/leo-dmitriev/"
               target="_blank"
               rel="noopener noreferrer"
-              onClick={() => track("contact_click", { channel: "linkedin" })}
+              onClick={() => trackEvent("contact_click", { channel: "linkedin" })}
               className="cursor-pointer shrink-0"
             >
               <Button label="in" size="responsive" aria-label="LinkedIn Profile" />
@@ -585,7 +585,7 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
               href="https://t.me/hi2leo"
               target="_blank"
               rel="noopener noreferrer"
-              onClick={() => track("contact_click", { channel: "telegram" })}
+              onClick={() => trackEvent("contact_click", { channel: "telegram" })}
               className="cursor-pointer shrink-0"
             >
               <Button label="tg" size="responsive" aria-label="Telegram Channel" />
@@ -595,7 +595,7 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
               size="responsive"
               aria-label="Copy Email Address"
               onClick={(e) => {
-                track("contact_click", { channel: "email_copy" });
+                trackEvent("contact_click", { channel: "email_copy" });
                 handleCopyEmail(e);
               }}
               className="cursor-pointer shrink-0"

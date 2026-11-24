@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Analytics } from "@vercel/analytics/next";
 import { AssetProtection, LedPageTransition } from "@/shared/ui";
-import { ScrollDepthTracker } from "@/shared/lib/analytics";
+import { GoogleAnalytics, ScrollDepthTracker } from "@/shared/lib/analytics";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -55,6 +55,7 @@ export default function RootLayout({
         <AssetProtection />
         <LedPageTransition>{children}</LedPageTransition>
         <ScrollDepthTracker />
+        <GoogleAnalytics />
         <Analytics />
       </body>
     </html>
