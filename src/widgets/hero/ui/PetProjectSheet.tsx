@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useId, useRef, useState } from "react";
+import { track } from "@vercel/analytics";
 import type { PetProjectData } from "@/entities/pet-project";
 
 export interface PetProjectSheetProps {
@@ -313,6 +314,13 @@ export const PetProjectSheet: React.FC<PetProjectSheetProps> = ({
               href={externalHref}
               target="_blank"
               rel="noopener noreferrer"
+              onClick={() => {
+                if (project) {
+                  track("pet_open_external", {
+                    project: (project.shortName || project.title).trim(),
+                  });
+                }
+              }}
               className="inline-flex items-center gap-[6px] font-hauora text-[16px] font-light leading-[24px] text-content-secondary hover:text-content-primary transition-colors duration-150"
             >
               <span>open</span>
