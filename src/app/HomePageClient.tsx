@@ -24,12 +24,14 @@ export interface HomePageClientProps {
   initialProjects: ProjectData[];
   initialPetProjects?: PetProjectData[];
   siteSettings: SiteSettingsData | null;
+  galleryHintOnView?: boolean;
 }
 
 export function HomePageClient({
   initialProjects,
   initialPetProjects,
   siteSettings,
+  galleryHintOnView = false,
 }: HomePageClientProps) {
   const [activeStation, setActiveStation] = useState<string>("index");
   const [theme, setTheme] = useState<"monochrome" | "amber">("amber");
@@ -184,6 +186,7 @@ export function HomePageClient({
               }
               keyAchievements={proj.keyAchievements}
               caseStudies={proj.caseStudies}
+              galleryHintOnView={galleryHintOnView}
             />
           );
         })}

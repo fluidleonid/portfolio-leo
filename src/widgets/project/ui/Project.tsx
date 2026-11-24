@@ -19,6 +19,8 @@ export interface ProjectProps extends React.HTMLAttributes<HTMLDivElement> {
   projectType?: ("B2B" | "B2C" | string)[];
   /** Detailed case study items (rendered in the right "CASE" Section) */
   caseStudies?: CaseItem[];
+  /** Play a one-time gallery scroll + progress-bar onboarding hint when scrolled into view */
+  galleryHintOnView?: boolean;
 }
 
 /**
@@ -44,6 +46,7 @@ export const Project = React.forwardRef<HTMLDivElement, ProjectProps>(
       keyAchievements,
       keyCases,
       caseStudies = [],
+      galleryHintOnView = false,
       projectType,
       className = "",
       ...props
@@ -76,6 +79,7 @@ export const Project = React.forwardRef<HTMLDivElement, ProjectProps>(
           gap={20}
           cornerRadius={0}
           images={images}
+          hintOnView={galleryHintOnView}
         />
 
         {/* 2. TITLE & DESCRIPTION BLOCK (564px, positioned under gallery) */}

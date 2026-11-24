@@ -27,6 +27,8 @@ export interface GalleryProps extends React.HTMLAttributes<HTMLDivElement> {
   cornerRadius?: number;
   /** Wrapper background color token (default tokens.colors.surface) */
   wrapperBg?: string;
+  /** Play a one-time choreographed scroll + progress-bar peek hint when scrolled into view */
+  hintOnView?: boolean;
   /** Custom children to render inside the wrapper */
   children?: React.ReactNode;
 }
@@ -57,6 +59,7 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
       gap = tokens.geometry.galleryGap,
       cornerRadius = 0,
       wrapperBg = tokens.colors.surface,
+      hintOnView = false,
       className = "",
       children,
       style,
@@ -103,6 +106,128 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
 
     // Ref to track latest hover/scrub position without state lag on pointerup
     const currentHoverPosRef = useRef<{ x: number; index: number } | null>(null);
+
+    // One-time interactive onboarding hint state (simultaneous gallery peek + progress-bar scrub dot/tooltip)
+    const [hintState, setHintState] = useState<{
+      x: number;
+      index: number;
+      opacity: number;
+    } | null>(null);
+    const hasPlayedHintRef = useRef(false);
+    const hintRafRef = useRef<number | null>(null);
+    const hintTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    const cancelHint = useCallback(() => {
+      if (hintTimeoutRef.current !== null) {
+        clearTimeout(hintTimeoutRef.current);
+        hintTimeoutRef.current = null;
+      }
+      if (hintRafRef.current !== null) {
+        cancelAnimationFrame(hintRafRef.current);
+        hintRafRef.current = null;
+      }
+      setHintState(null);
+    }, []);
+
+    // Trigger 1-time choreographed scroll + progress-bar peek when gallery enters viewport
+    useEffect(() => {
+      if (!hintOnView || normalizedImages.length <= 1) return;
+      const el = containerRef.current;
+      if (!el || typeof IntersectionObserver === "undefined") return;
+
+      const easeInOutCubic = (t: number) =>
+        t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+
+      const observer = new IntersectionObserver(
+        (entries) => {
+          const entry = entries[0];
+          if (!entry?.isIntersecting || hasPlayedHintRef.current) return;
+
+          hasPlayedHintRef.current = true;
+          observer.disconnect();
+
+          if (
+            typeof window !== "undefined" &&
+            window.matchMedia("(prefers-reduced-motion: reduce)").matches
+          ) {
+            return;
+          }
+
+          hintTimeoutRef.current = setTimeout(() => {
+            const scrollEl = scrollContainerRef.current;
+            const trackEl = trackRef.current;
+            if (!scrollEl || !trackEl) return;
+
+            const maxScroll = scrollEl.scrollWidth - scrollEl.clientWidth;
+            if (maxScroll <= 16) return;
+
+            const peekScroll = Math.min(
+              maxScroll,
+              Math.max(110, Math.min(220, scrollEl.clientWidth * 0.28))
+            );
+            const trackW = trackEl.clientWidth || 564;
+            const count = normalizedImages.length;
+            const startX = (0.5 / count) * trackW;
+            const targetX = (1.5 / count) * trackW;
+
+            const PHASE1 = 920; // glide right + dot & preview slide to segment 2
+            const PHASE2 = 340; // brief hold at peeked state
+            const PHASE3 = 860; // smooth return to start
+            const TOTAL = PHASE1 + PHASE2 + PHASE3;
+
+            const startTime = performance.now();
+
+            const tick = (now: number) => {
+              const elapsed = now - startTime;
+
+              if (elapsed < PHASE1) {
+                const t = elapsed / PHASE1;
+                const e = easeInOutCubic(t);
+                scrollEl.scrollLeft = peekScroll * e;
+                setHintState({
+                  x: startX + (targetX - startX) * e,
+                  index: t > 0.45 ? 1 : 0,
+                  opacity: Math.min(1, t / 0.22),
+                });
+                hintRafRef.current = requestAnimationFrame(tick);
+              } else if (elapsed < PHASE1 + PHASE2) {
+                scrollEl.scrollLeft = peekScroll;
+                setHintState({
+                  x: targetX,
+                  index: 1,
+                  opacity: 1,
+                });
+                hintRafRef.current = requestAnimationFrame(tick);
+              } else if (elapsed < TOTAL) {
+                const t = (elapsed - PHASE1 - PHASE2) / PHASE3;
+                const e = easeInOutCubic(t);
+                scrollEl.scrollLeft = peekScroll * (1 - e);
+                setHintState({
+                  x: targetX + (startX - targetX) * e,
+                  index: t > 0.55 ? 0 : 1,
+                  opacity: t > 0.72 ? Math.max(0, 1 - (t - 0.72) / 0.28) : 1,
+                });
+                hintRafRef.current = requestAnimationFrame(tick);
+              } else {
+                scrollEl.scrollLeft = 0;
+                setActiveIndex(0);
+                setHintState(null);
+                hintRafRef.current = null;
+              }
+            };
+
+            hintRafRef.current = requestAnimationFrame(tick);
+          }, 360);
+        },
+        { threshold: 0.45 }
+      );
+
+      observer.observe(el);
+      return () => {
+        observer.disconnect();
+        cancelHint();
+      };
+    }, [hintOnView, normalizedImages.length, cancelHint]);
 
     // Calculate breakout dimensions so wrapper bleeds cleanly across full viewport width
     useEffect(() => {
@@ -212,6 +337,7 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
 
       setIsPointerDown(true);
       setIsDragging(false);
+      cancelHint();
 
       startXRef.current = e.clientX;
       startScrollLeftRef.current = container.scrollLeft;
@@ -322,6 +448,7 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
 
     // Pointer Down on progress bar: starts touch dragging / scrubbing
     const handleTrackPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+      cancelHint();
       const pos = calculateScrubPos(e.clientX);
       if (!pos) return;
 
@@ -339,6 +466,7 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
 
     // Pointer Move on progress bar: tracks touch drag and desktop hover
     const handleTrackPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+      cancelHint();
       const pos = calculateScrubPos(e.clientX);
       if (!pos) return;
 
@@ -409,18 +537,26 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
         ? `-${leftOffset}px`
         : "calc(-1 * ((100vw - 564px) / 2))";
 
+    // Combine active user hover/scrub with one-time onboarding hint overlay
+    const activeOverlayPos =
+      isHoveringTrack && hoverPos ? hoverPos : hintState;
+    const overlayOpacity =
+      isHoveringTrack && hoverPos ? 1 : (hintState?.opacity ?? 0);
+
     // Tooltip position calculation with edge clamping (max-w: 240px)
     const trackWidth = trackRef.current ? trackRef.current.clientWidth : 564;
     const tooltipHalfWidth = Math.min(125, Math.max(40, trackWidth / 2 - 8));
-    const clampedTooltipX = hoverPos
+    const clampedTooltipX = activeOverlayPos
       ? Math.max(
           tooltipHalfWidth,
-          Math.min(trackWidth - tooltipHalfWidth, hoverPos.x)
+          Math.min(trackWidth - tooltipHalfWidth, activeOverlayPos.x)
         )
       : 0;
 
     const hoveredItem =
-      hoverPos !== null ? normalizedImages[hoverPos.index] : null;
+      activeOverlayPos !== null
+        ? normalizedImages[activeOverlayPos.index]
+        : null;
 
     return (
       <div
@@ -458,6 +594,8 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
           onPointerCancel={handlePointerUp}
+          onWheel={cancelHint}
+          onTouchStart={cancelHint}
           className={`relative flex h-full w-full overflow-x-auto overflow-y-hidden select-none touch-pan-y [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden ${
             isPointerDown ? "cursor-grabbing" : "cursor-grab"
           }`}
@@ -539,6 +677,8 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
                 const isActive =
                   isScrubbing && hoverPos
                     ? hoverPos.index === idx
+                    : hintState
+                    ? hintState.index === idx
                     : activeIndex === idx;
                 return (
                   <div
@@ -556,24 +696,24 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
                 );
               })}
 
-              {/* Hover Dot: Round circle appearing at exact cursor X on the segment line */}
-              {isHoveringTrack && hoverPos && (
+              {/* Hover / Hint Dot: Round circle appearing at cursor X (or gliding during 1x onboarding hint) */}
+              {activeOverlayPos && (
                 <div
                   className="pointer-events-none absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-[8px] h-[8px] rounded-full bg-content-primary shadow-[0_0_8px_rgba(204,204,204,0.5)] z-20"
-                  style={{ left: `${hoverPos.x}px` }}
+                  style={{ left: `${activeOverlayPos.x}px`, opacity: overlayOpacity }}
                 />
               )}
 
-              {/* Hover Tooltip: Thumbnail preview preserving aspect ratio (max-w: 240px, max-h: 280px) + 10px Hauora Alt Text */}
-              {isHoveringTrack && hoverPos && hoveredItem && (
+              {/* Hover / Hint Tooltip: Thumbnail preview preserving aspect ratio + 10px Hauora Alt Text */}
+              {activeOverlayPos && hoveredItem && (
                 <div
-                  className="pointer-events-none absolute z-40 -translate-x-1/2 bottom-[26px] flex flex-col items-center overflow-hidden rounded-[4px] border border-border-hardware bg-[#1a1a1a]/95 backdrop-blur-md p-[3px] shadow-2xl transition-opacity duration-150 animate-in fade-in"
-                  style={{ left: `${clampedTooltipX}px` }}
+                  className="pointer-events-none absolute z-40 -translate-x-1/2 bottom-[26px] flex flex-col items-center overflow-hidden rounded-[4px] border border-border-hardware bg-[#1a1a1a]/95 backdrop-blur-md p-[3px] shadow-2xl"
+                  style={{ left: `${clampedTooltipX}px`, opacity: overlayOpacity }}
                 >
                   <div className="relative flex items-center justify-center overflow-hidden rounded-[2px] bg-[#121212] max-w-[240px] max-h-[280px]">
                     <img
                       src={hoveredItem.url}
-                      alt={hoveredItem.alt || `Preview ${hoverPos.index + 1}`}
+                      alt={hoveredItem.alt || `Preview ${activeOverlayPos.index + 1}`}
                       className="max-w-[240px] max-h-[280px] w-auto h-auto object-contain block select-none"
                     />
 
@@ -582,7 +722,7 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
                       <span className="block font-hauora text-[10px] font-normal leading-[13px] text-content-primary tracking-normal text-center truncate max-w-[228px]">
                         {hoveredItem.alt && hoveredItem.alt.trim()
                           ? hoveredItem.alt
-                          : `Photo ${hoverPos.index + 1}`}
+                          : `Photo ${activeOverlayPos.index + 1}`}
                       </span>
                     </div>
                   </div>
