@@ -1,9 +1,17 @@
 export type TactileMaterial = "matte" | "lamp";
 
+interface ActiveKnobDragVoice {
+  source: AudioBufferSourceNode;
+  filter: BiquadFilterNode;
+  gain: GainNode;
+  idleTimer: ReturnType<typeof setTimeout> | null;
+}
+
 class TactileAudio {
   private ctx: AudioContext | null = null;
   private noiseBuffer: AudioBuffer | null = null;
-  private lastKnobSoundAt = 0;
+  private activeDragVoice: ActiveKnobDragVoice | null = null;
+  private activeGlideGain: GainNode | null = null;
   public enabled = true;
 
   private getContext(allowCreate = true): AudioContext | null {
@@ -22,8 +30,8 @@ class TactileAudio {
         void this.ctx.resume().catch(() => {});
       }
       if (!this.noiseBuffer) {
-        // Pre-bake a smooth pink-tinted noise buffer for silky rustles & matte transients
-        const length = Math.floor(this.ctx.sampleRate * 0.5);
+        // Pre-bake a seamless 1.5s brown/pink-velvet noise loop for oil-damped friction & transients
+        const length = Math.floor(this.ctx.sampleRate * 1.5);
         const buffer = this.ctx.createBuffer(1, length, this.ctx.sampleRate);
         const data = buffer.getChannelData(0);
         let b0 = 0;
@@ -36,6 +44,12 @@ class TactileAudio {
           b2 = 0.57 * b2 + white * 1.0526913;
           data[i] = (b0 + b1 + b2 + white * 0.1848) * 0.18;
         }
+        // Tiny crossfade at loop seam so looping never clicks
+        const fadeSamples = 256;
+        for (let i = 0; i < fadeSamples; i++) {
+          const t = i / fadeSamples;
+          data[i] = data[i] * t + data[length - fadeSamples + i] * (1 - t);
+        }
         this.noiseBuffer = buffer;
       }
       return this.ctx;
@@ -45,92 +59,215 @@ class TactileAudio {
   }
 
   /**
-   * Silky, oil-damped rotary potentiometer rustle ("шелест") for the NAV knob.
-   * - "drag": soft velvet whisper while turning (throttled so it never scrapes)
-   * - "glide": slightly longer airy silk rustle when knob glides to a hovered/selected position
+   * Continuous velocity-coupled oil-damped friction while rotating the NAV knob.
+   * Uses a single dead-dry low-frequency voice (zero overlapping bursts, zero room echo).
    */
-  playKnobRustle(mode: "drag" | "glide" = "drag", requireRunning = false): void {
+  updateKnobDrag(angularSpeedDeg: number): void {
+    if (!this.enabled || angularSpeedDeg <= 0.15) return;
+    const ctx = this.getContext();
+    if (!ctx || !this.noiseBuffer) return;
+
+    try {
+      const now = ctx.currentTime;
+
+      if (!this.activeDragVoice) {
+        const source = ctx.createBufferSource();
+        source.buffer = this.noiseBuffer;
+        source.loop = true;
+
+        // Dead-dry greased shaft band: warm low-mid (80–280Hz), zero hollow/echoey highs
+        const highpass = ctx.createBiquadFilter();
+        highpass.type = "highpass";
+        highpass.frequency.setValueAtTime(75, now);
+        highpass.Q.setValueAtTime(0.4, now);
+
+        const filter = ctx.createBiquadFilter();
+        filter.type = "lowpass";
+        filter.frequency.setValueAtTime(240, now);
+        filter.Q.setValueAtTime(0.35, now);
+
+        const gain = ctx.createGain();
+        gain.gain.setValueAtTime(0.0001, now);
+
+        source.connect(highpass);
+        highpass.connect(filter);
+        filter.connect(gain);
+        gain.connect(ctx.destination);
+
+        source.start(now, Math.random() * 0.8);
+
+        this.activeDragVoice = {
+          source,
+          filter,
+          gain,
+          idleTimer: null,
+        };
+      }
+
+      const voice = this.activeDragVoice;
+      const clampedSpeed = Math.min(14, angularSpeedDeg);
+      const targetGain = Math.min(0.024, 0.004 + clampedSpeed * 0.0016);
+      const targetCutoff = 210 + clampedSpeed * 12;
+
+      voice.filter.frequency.setTargetAtTime(targetCutoff, now, 0.015);
+      voice.gain.gain.cancelScheduledValues(now);
+      voice.gain.gain.setTargetAtTime(targetGain, now, 0.012);
+
+      if (voice.idleTimer) {
+        clearTimeout(voice.idleTimer);
+      }
+      // Immediately silence when finger pauses (no lingering echo tail)
+      voice.idleTimer = setTimeout(() => {
+        if (!this.activeDragVoice || !this.ctx) return;
+        const t = this.ctx.currentTime;
+        this.activeDragVoice.gain.gain.cancelScheduledValues(t);
+        this.activeDragVoice.gain.gain.setTargetAtTime(0.0001, t, 0.014);
+      }, 38);
+    } catch {
+      // Ignore Web Audio scheduling errors
+    }
+  }
+
+  /** Cleanly releases the continuous oil-damped knob drag voice */
+  stopKnobDrag(): void {
+    const voice = this.activeDragVoice;
+    if (!voice) return;
+    this.activeDragVoice = null;
+
+    if (voice.idleTimer) {
+      clearTimeout(voice.idleTimer);
+    }
+    try {
+      if (this.ctx) {
+        const now = this.ctx.currentTime;
+        voice.gain.gain.cancelScheduledValues(now);
+        voice.gain.gain.setValueAtTime(voice.gain.gain.value, now);
+        voice.gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.022);
+        voice.source.stop(now + 0.028);
+      } else {
+        voice.source.stop();
+      }
+    } catch {
+      // Ignore stop errors
+    }
+  }
+
+  /**
+   * Single dead-dry oiled turn when the NAV knob glides to a hovered/selected position.
+   * Monophonic (cancels previous glide) so rapid hovers never overlap or echo.
+   */
+  playKnobRustle(mode: "drag" | "glide" = "glide", requireRunning = false): void {
     if (!this.enabled) return;
+    if (mode === "drag") {
+      this.updateKnobDrag(5);
+      return;
+    }
+
     const ctx = this.getContext(true);
     if (!ctx || !this.noiseBuffer) return;
     if (requireRunning && ctx.state !== "running") return;
 
-    const nowMs = performance.now();
-    const minInterval = mode === "drag" ? 58 : 45;
-    if (nowMs - this.lastKnobSoundAt < minInterval) return;
-    this.lastKnobSoundAt = nowMs;
-
     try {
       const now = ctx.currentTime;
-      const jitter = 0.94 + Math.random() * 0.12;
-      const isGlide = mode === "glide";
+
+      // Cancel any previous glide immediately so it never echoes
+      if (this.activeGlideGain) {
+        try {
+          this.activeGlideGain.gain.cancelScheduledValues(now);
+          this.activeGlideGain.gain.setTargetAtTime(0.0001, now, 0.006);
+        } catch {
+          // ignore
+        }
+      }
 
       const noise = ctx.createBufferSource();
       noise.buffer = this.noiseBuffer;
 
-      // Smooth wide-band velvet shaping (no resonant scratch/scrape!)
       const highpass = ctx.createBiquadFilter();
       highpass.type = "highpass";
-      highpass.frequency.setValueAtTime(170, now);
-      highpass.Q.setValueAtTime(0.5, now);
+      highpass.frequency.setValueAtTime(75, now);
+      highpass.Q.setValueAtTime(0.4, now);
 
+      // Low, heavily damped greased-bearing filter (280Hz -> 175Hz, zero hollow air)
       const lowpass = ctx.createBiquadFilter();
       lowpass.type = "lowpass";
-      lowpass.frequency.setValueAtTime((isGlide ? 780 : 680) * jitter, now);
-      lowpass.Q.setValueAtTime(0.55, now);
+      lowpass.frequency.setValueAtTime(290, now);
+      lowpass.frequency.exponentialRampToValueAtTime(175, now + 0.058);
+      lowpass.Q.setValueAtTime(0.35, now);
 
       const gain = ctx.createGain();
-      const attack = isGlide ? 0.022 : 0.012;
-      const duration = isGlide ? 0.105 : 0.055;
-      const peak = isGlide ? 0.032 : 0.026;
-
       gain.gain.setValueAtTime(0.0001, now);
-      gain.gain.linearRampToValueAtTime(peak, now + attack);
-      gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+      gain.gain.linearRampToValueAtTime(0.02, now + 0.012);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.06);
 
       noise.connect(highpass);
       highpass.connect(lowpass);
       lowpass.connect(gain);
       gain.connect(ctx.destination);
 
-      const offset = Math.random() * 0.3;
-      noise.start(now, offset, duration + 0.01);
+      this.activeGlideGain = gain;
+      noise.start(now, Math.random() * 0.8, 0.066);
     } catch {
       // Ignore Web Audio scheduling errors
     }
   }
 
-  /** Backwards-compatible alias for rotary knob rustle */
+  /** Backwards-compatible alias */
   playKnobTick(): void {
-    this.playKnobRustle("drag");
+    this.playKnobRustle("glide");
   }
 
   /**
-   * Subtle warm incandescent lamp buzz/hum inside frosted soft plastic.
+   * Warm, lower-pitched incandescent lamp hum with gentle analog wave undulation.
    */
   private playLampHum(ctx: AudioContext, durationSec: number, peakGain: number): void {
     const now = ctx.currentTime;
     const jitter = 0.98 + Math.random() * 0.04;
 
-    // Warm analog 108Hz + 216Hz filament hum harmonics
+    // Lower warm filament register (74Hz + detuned 78.5Hz for natural wave + 148Hz warmth)
     const osc1 = ctx.createOscillator();
     const osc2 = ctx.createOscillator();
+    const oscSub = ctx.createOscillator();
     osc1.type = "sawtooth";
     osc2.type = "triangle";
-    osc1.frequency.setValueAtTime(108 * jitter, now);
-    osc2.frequency.setValueAtTime(216 * jitter, now);
+    oscSub.type = "sine";
 
-    // Heavy lowpass keeps it velvety & warm (zero harsh buzzing)
+    osc1.frequency.setValueAtTime(74 * jitter, now);
+    osc2.frequency.setValueAtTime(78.5 * jitter, now);
+    oscSub.frequency.setValueAtTime(148 * jitter, now);
+
+    // Gentle 15Hz LFO wave modulating filter warmth & subtle amplitude undulation ("немного волн")
+    const lfo = ctx.createOscillator();
+    lfo.type = "sine";
+    lfo.frequency.setValueAtTime(15.5, now);
+
+    const lfoFilterDepth = ctx.createGain();
+    lfoFilterDepth.gain.setValueAtTime(52, now);
+
     const lowpass = ctx.createBiquadFilter();
     lowpass.type = "lowpass";
-    lowpass.frequency.setValueAtTime(340, now);
-    lowpass.Q.setValueAtTime(0.7, now);
+    lowpass.frequency.setValueAtTime(255, now);
+    lowpass.Q.setValueAtTime(0.75, now);
+
+    lfo.connect(lfoFilterDepth);
+    lfoFilterDepth.connect(lowpass.frequency);
 
     const osc2Gain = ctx.createGain();
-    osc2Gain.gain.setValueAtTime(0.35, now);
+    osc2Gain.gain.setValueAtTime(0.65, now);
+
+    const oscSubGain = ctx.createGain();
+    oscSubGain.gain.setValueAtTime(0.3, now);
+
+    // Wave tremolo stage
+    const waveStage = ctx.createGain();
+    waveStage.gain.setValueAtTime(0.78, now);
+    const lfoAmpDepth = ctx.createGain();
+    lfoAmpDepth.gain.setValueAtTime(0.24, now);
+    lfo.connect(lfoAmpDepth);
+    lfoAmpDepth.connect(waveStage.gain);
 
     const masterGain = ctx.createGain();
-    const attack = Math.min(0.045, durationSec * 0.28);
+    const attack = Math.min(0.042, durationSec * 0.25);
     masterGain.gain.setValueAtTime(0.0001, now);
     masterGain.gain.linearRampToValueAtTime(peakGain, now + attack);
     masterGain.gain.exponentialRampToValueAtTime(0.0001, now + durationSec);
@@ -138,19 +275,29 @@ class TactileAudio {
     osc1.connect(lowpass);
     osc2.connect(osc2Gain);
     osc2Gain.connect(lowpass);
-    lowpass.connect(masterGain);
+    oscSub.connect(oscSubGain);
+    oscSubGain.connect(lowpass);
+
+    lowpass.connect(waveStage);
+    waveStage.connect(masterGain);
     masterGain.connect(ctx.destination);
 
     osc1.start(now);
     osc2.start(now);
-    osc1.stop(now + durationSec + 0.01);
-    osc2.stop(now + durationSec + 0.01);
+    oscSub.start(now);
+    lfo.start(now);
+
+    const stopAt = now + durationSec + 0.012;
+    osc1.stop(stopAt);
+    osc2.stop(stopAt);
+    oscSub.stop(stopAt);
+    lfo.stop(stopAt);
   }
 
   /**
-   * Single natural press sound for tactile hardware buttons (no double release click).
+   * Single natural press sound for tactile hardware buttons.
    * - "matte": dry matte-polymer microswitch click (COMM, CV, CaseLink)
-   * - "lamp": soft-plastic press + subtle warm incandescent lamp hum (PET buttons)
+   * - "lamp": soft-plastic press + lower warm undulating lamp hum (PET buttons)
    */
   playKeyClick(material: TactileMaterial = "matte"): void {
     if (!this.enabled) return;
@@ -163,27 +310,27 @@ class TactileAudio {
       const isLamp = material === "lamp";
 
       if (isLamp) {
-        // 1. Soft cushioned silicone-plastic touch
+        // 1. Soft cushioned silicone-plastic touch (lower & softer)
         const noise = ctx.createBufferSource();
         noise.buffer = this.noiseBuffer;
 
         const lowpass = ctx.createBiquadFilter();
         lowpass.type = "lowpass";
-        lowpass.frequency.setValueAtTime(950 * jitter, now);
+        lowpass.frequency.setValueAtTime(780 * jitter, now);
 
         const touchGain = ctx.createGain();
         touchGain.gain.setValueAtTime(0.0001, now);
-        touchGain.gain.linearRampToValueAtTime(0.022, now + 0.003);
+        touchGain.gain.linearRampToValueAtTime(0.02, now + 0.003);
         touchGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.014);
 
         noise.connect(lowpass);
         lowpass.connect(touchGain);
         touchGain.connect(ctx.destination);
 
-        noise.start(now, Math.random() * 0.3, 0.02);
+        noise.start(now, Math.random() * 0.8, 0.02);
 
-        // 2. Subtle warm lamp filament buzz/hum on press
-        this.playLampHum(ctx, 0.18, 0.02);
+        // 2. Deeper warm undulating lamp buzz/hum
+        this.playLampHum(ctx, 0.22, 0.024);
         return;
       }
 
@@ -210,7 +357,7 @@ class TactileAudio {
       lowpass.connect(noiseGain);
       noiseGain.connect(ctx.destination);
 
-      noise.start(now, Math.random() * 0.3, 0.014);
+      noise.start(now, Math.random() * 0.8, 0.014);
 
       // Dry matte housing tap
       const osc = ctx.createOscillator();
@@ -252,8 +399,8 @@ class TactileAudio {
       const jitter = 0.96 + Math.random() * 0.08;
 
       if (material === "lamp") {
-        // Gentle warm incandescent filament hum as the amber lamp lights up on hover
-        this.playLampHum(ctx, 0.16, 0.014);
+        // Deeper warm undulating filament hum on hover
+        this.playLampHum(ctx, 0.2, 0.017);
         return;
       }
 
@@ -280,7 +427,7 @@ class TactileAudio {
       lowpass.connect(gain);
       gain.connect(ctx.destination);
 
-      noise.start(now, Math.random() * 0.3, 0.014);
+      noise.start(now, Math.random() * 0.8, 0.014);
     } catch {
       // Ignore Web Audio scheduling errors
     }
