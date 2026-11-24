@@ -91,7 +91,7 @@ export const siteSettingsType = defineType({
       name: "siteUrl",
       title: "Canonical Site URL",
       type: "url",
-      initialValue: "https://leo-portfolio-orpin.vercel.app",
+      initialValue: "https://portfolio-leo-virid.vercel.app",
     }),
     defineField({
       name: "keywords",

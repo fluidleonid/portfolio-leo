@@ -5,7 +5,7 @@ import { GoogleAnalytics, ScrollDepthTracker } from "@/shared/lib/analytics";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://leo-portfolio-orpin.vercel.app"),
+  metadataBase: new URL("https://portfolio-leo-virid.vercel.app"),
   title: {
     default: "Leonid Dmitriev — Product Designer",
     template: "%s — Leonid Dmitriev",
@@ -20,7 +20,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: "https://leo-portfolio-orpin.vercel.app",
+    url: "https://portfolio-leo-virid.vercel.app",
     siteName: "Leonid Dmitriev — Product Designer",
     title: "Leonid Dmitriev — Product Designer",
     description:
