@@ -270,31 +270,38 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
           const startX = (0.5 / count) * trackW;
           const targetX = (1.5 / count) * trackW;
 
-          // Deliberate keynote-paced choreography (~4.5s total)
-          const PHASE_TAP = 720;
+          // Deliberate keynote-paced choreography with silky entry & exit (~5.0s total)
+          const PHASE_TAP = 820;
           const PHASE_DRAG = 1650;
           const PHASE_HOLD = 850;
           const PHASE_RETURN = 1280;
+          const PHASE_FADE_OUT = 520;
           const T1 = PHASE_TAP;
           const T2 = T1 + PHASE_DRAG;
           const T3 = T2 + PHASE_HOLD;
-          const TOTAL = T3 + PHASE_RETURN;
+          const T4 = T3 + PHASE_RETURN;
+          const TOTAL = T4 + PHASE_FADE_OUT;
+
+          const easeOutCubic = (t: number) => 1 - Math.pow(1 - Math.max(0, Math.min(1, t)), 3);
 
           const startTime = performance.now();
+          let startedBackdropFadeOut = false;
 
           const tick = (now: number) => {
             const elapsed = now - startTime;
 
             if (elapsed < T1) {
+              // Phase 1: Silky fade-in (over ~440ms) + tap ripple + press-hold
               const t = elapsed / PHASE_TAP;
-              const ripple = t > 0.15 ? Math.min(1, (t - 0.15) / 0.85) : 0;
+              const fadeIn = easeOutCubic(Math.min(1, t / 0.54));
+              const ripple = t > 0.22 ? Math.min(1, (t - 0.22) / 0.78) : 0;
               scrollEl.scrollLeft = 0;
               setHintState({
                 x: startX,
                 index: 0,
-                opacity: Math.min(1, t / 0.25),
+                opacity: fadeIn,
                 rippleProgress: ripple,
-                isPressed: t >= 0.2,
+                isPressed: t >= 0.28,
               });
               hintRafRef.current = requestAnimationFrame(tick);
             } else if (elapsed < T2) {
@@ -320,17 +327,35 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
                 isPressed: true,
               });
               hintRafRef.current = requestAnimationFrame(tick);
-            } else if (elapsed < TOTAL) {
-              // Keep finger held during return glide, releasing smoothly only at the very end
+            } else if (elapsed < T4) {
+              // Keep finger held steadily during the full return glide
               const t = (elapsed - T3) / PHASE_RETURN;
               const e = easeInOutCubic(t);
               scrollEl.scrollLeft = peekScroll * (1 - e);
               setHintState({
                 x: targetX + (startX - targetX) * e,
                 index: t > 0.55 ? 0 : 1,
-                opacity: t > 0.78 ? Math.max(0, 1 - (t - 0.78) / 0.22) : 1,
+                opacity: 1,
                 rippleProgress: 0,
-                isPressed: t < 0.85,
+                isPressed: true,
+              });
+              hintRafRef.current = requestAnimationFrame(tick);
+            } else if (elapsed < TOTAL) {
+              // Phase 5: Velvety dissolve of dot, halo, tooltip, overlay & caption together
+              if (!startedBackdropFadeOut) {
+                startedBackdropFadeOut = true;
+                lockedScrollYRef.current = null;
+                setIsSpotlightActive(false);
+              }
+              const t = (elapsed - T4) / PHASE_FADE_OUT;
+              const fadeOut = 1 - easeInOutCubic(t);
+              scrollEl.scrollLeft = 0;
+              setHintState({
+                x: startX,
+                index: 0,
+                opacity: fadeOut,
+                rippleProgress: 0,
+                isPressed: t < 0.35,
               });
               hintRafRef.current = requestAnimationFrame(tick);
             } else {
@@ -344,7 +369,7 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
           };
 
           hintRafRef.current = requestAnimationFrame(tick);
-        }, 480);
+        }, 540);
       };
 
       // Synchronous scroll watcher catches even very fast mobile flicks before they pass the gallery
@@ -705,7 +730,7 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
               <div
                 aria-hidden="true"
                 onClick={() => cancelHint()}
-                className={`fixed inset-0 z-[55] bg-black/75 backdrop-blur-[2px] transition-opacity duration-300 ease-out ${
+                className={`fixed inset-0 z-[55] bg-black/75 backdrop-blur-[2px] transition-opacity duration-[600ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${
                   isSpotlightActive
                     ? "opacity-100 pointer-events-auto"
                     : "opacity-0 pointer-events-none"
@@ -717,7 +742,7 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
                 role="status"
                 aria-live="polite"
                 style={{ top: `${spotlightBannerTop}px` }}
-                className={`fixed left-1/2 -translate-x-1/2 z-[62] w-full max-w-[calc(100vw-32px)] text-center select-none pointer-events-none transition-opacity duration-300 ease-out ${
+                className={`fixed left-1/2 -translate-x-1/2 z-[62] w-full max-w-[calc(100vw-32px)] text-center select-none pointer-events-none transition-opacity duration-[600ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${
                   isSpotlightActive ? "opacity-100" : "opacity-0"
                 }`}
               >
@@ -913,11 +938,15 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
                 </div>
               )}
 
-              {/* Hover / Hint Tooltip: Thumbnail preview preserving aspect ratio + 10px Hauora Alt Text */}
+              {/* Hover / Hint Tooltip: Thumbnail preview with gentle breathe-in/out scale */}
               {activeOverlayPos && hoveredItem && (
                 <div
-                  className="pointer-events-none absolute z-40 -translate-x-1/2 bottom-[26px] flex flex-col items-center overflow-hidden rounded-[4px] border border-border-hardware bg-[#1a1a1a]/95 backdrop-blur-md p-[3px] shadow-2xl"
-                  style={{ left: `${clampedTooltipX}px`, opacity: overlayOpacity }}
+                  className="pointer-events-none absolute z-40 bottom-[26px] flex flex-col items-center overflow-hidden rounded-[4px] border border-border-hardware bg-[#1a1a1a]/95 backdrop-blur-md p-[3px] shadow-2xl origin-bottom"
+                  style={{
+                    left: `${clampedTooltipX}px`,
+                    opacity: overlayOpacity,
+                    transform: `translateX(-50%) translateY(${(1 - overlayOpacity) * 6}px) scale(${0.94 + overlayOpacity * 0.06})`,
+                  }}
                 >
                   <div className="relative flex items-center justify-center overflow-hidden rounded-[2px] bg-[#121212] max-w-[240px] max-h-[280px]">
                     <img
