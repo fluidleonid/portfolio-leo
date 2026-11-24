@@ -236,6 +236,12 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
         lockedScrollYRef.current = targetScrollY;
         window.scrollTo(0, targetScrollY);
 
+        // Compute final banner Y synchronously AFTER snap so it never flies in from top
+        const snappedRect = el.getBoundingClientRect();
+        setSpotlightBannerTop(
+          Math.min(window.innerHeight - 48, Math.max(16, Math.round(snappedRect.bottom + 20)))
+        );
+
         hintGraceUntilRef.current = performance.now() + 950;
         setIsSpotlightActive(true);
 
@@ -304,26 +310,27 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
               });
               hintRafRef.current = requestAnimationFrame(tick);
             } else if (elapsed < T3) {
-              const t = (elapsed - T2) / PHASE_HOLD;
+              // Keep finger held steadily through the hold phase
               scrollEl.scrollLeft = peekScroll;
               setHintState({
                 x: targetX,
                 index: 1,
                 opacity: 1,
                 rippleProgress: 0,
-                isPressed: t < 0.65,
+                isPressed: true,
               });
               hintRafRef.current = requestAnimationFrame(tick);
             } else if (elapsed < TOTAL) {
+              // Keep finger held during return glide, releasing smoothly only at the very end
               const t = (elapsed - T3) / PHASE_RETURN;
               const e = easeInOutCubic(t);
               scrollEl.scrollLeft = peekScroll * (1 - e);
               setHintState({
                 x: targetX + (startX - targetX) * e,
                 index: t > 0.55 ? 0 : 1,
-                opacity: t > 0.7 ? Math.max(0, 1 - (t - 0.7) / 0.3) : 1,
+                opacity: t > 0.78 ? Math.max(0, 1 - (t - 0.78) / 0.22) : 1,
                 rippleProgress: 0,
-                isPressed: false,
+                isPressed: t < 0.85,
               });
               hintRafRef.current = requestAnimationFrame(tick);
             } else {
@@ -705,15 +712,13 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
                 }`}
               />
 
-              {/* Clean Bottom Text Hint BELOW the gallery — larger typography, zero fill/border */}
+              {/* Clean Bottom Text Hint BELOW the gallery — pure opacity fade in sync with overlay */}
               <div
                 role="status"
                 aria-live="polite"
                 style={{ top: `${spotlightBannerTop}px` }}
-                className={`fixed left-1/2 -translate-x-1/2 z-[62] w-full max-w-[calc(100vw-32px)] text-center select-none pointer-events-none transition-all duration-300 ease-out ${
-                  isSpotlightActive
-                    ? "opacity-100 translate-y-0"
-                    : "opacity-0 translate-y-[6px]"
+                className={`fixed left-1/2 -translate-x-1/2 z-[62] w-full max-w-[calc(100vw-32px)] text-center select-none pointer-events-none transition-opacity duration-300 ease-out ${
+                  isSpotlightActive ? "opacity-100" : "opacity-0"
                 }`}
               >
                 <span className="font-hauora text-[18px] sm:text-[20px] font-medium leading-[26px] text-content-primary tracking-normal">
@@ -886,23 +891,23 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
                       />
                     )}
 
-                  {/* Held Virtual Pointer Halo (visible while pressing & dragging) */}
+                  {/* Held Virtual Pointer Halo — stays visible through drag/hold/return at 70% opacity */}
                   {hintState && (
                     <div
-                      className="absolute left-0 top-0 h-[26px] w-[26px] rounded-full bg-white/15 border border-white/40 shadow-[0_0_16px_rgba(255,255,255,0.28)] transition-[transform,opacity] duration-200 ease-out"
+                      className="absolute left-0 top-0 h-[26px] w-[26px] rounded-full bg-white/15 border border-white/40 shadow-[0_0_14px_rgba(255,255,255,0.2)] transition-[transform,opacity] duration-200 ease-out"
                       style={{
-                        transform: `translate(-50%, -50%) scale(${hintState.isPressed ? 1 : 0.6})`,
-                        opacity: hintState.isPressed ? overlayOpacity : 0,
+                        transform: `translate(-50%, -50%) scale(${hintState.isPressed ? 1 : 0.65})`,
+                        opacity: hintState.isPressed ? overlayOpacity * 0.7 : 0,
                       }}
                     />
                   )}
 
-                  {/* Core Glowing Scrubber Dot */}
+                  {/* Core Glowing Scrubber Dot — 70% opacity during hint so it feels soft and refined */}
                   <div
-                    className="absolute left-0 top-0 h-[8px] w-[8px] rounded-full bg-content-primary shadow-[0_0_10px_rgba(255,255,255,0.65)] transition-transform duration-150"
+                    className="absolute left-0 top-0 h-[8px] w-[8px] rounded-full bg-content-primary shadow-[0_0_10px_rgba(255,255,255,0.5)] transition-transform duration-150"
                     style={{
-                      transform: `translate(-50%, -50%) scale(${hintState?.isPressed ? 1.25 : 1})`,
-                      opacity: overlayOpacity,
+                      transform: `translate(-50%, -50%) scale(${hintState?.isPressed ? 1.2 : 1})`,
+                      opacity: hintState ? overlayOpacity * 0.7 : overlayOpacity,
                     }}
                   />
                 </div>
