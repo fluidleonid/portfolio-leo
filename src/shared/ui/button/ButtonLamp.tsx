@@ -1,4 +1,7 @@
-import React from "react";
+"use client";
+
+import React, { useRef } from "react";
+import { tactileAudio } from "@/shared/lib/audio";
 
 export interface ButtonLampProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -35,10 +38,16 @@ export const ButtonLamp = React.forwardRef<HTMLButtonElement, ButtonLampProps>(
       active = false,
       disabled,
       children,
+      onPointerDown,
+      onPointerUp,
+      onPointerLeave,
+      onPointerCancel,
+      onKeyDown,
       ...props
     },
     ref
   ) => {
+    const isPressedRef = useRef(false);
     // Outer socket classes
     const socketSizeClass =
       size === "sm"
@@ -69,6 +78,34 @@ export const ButtonLamp = React.forwardRef<HTMLButtonElement, ButtonLampProps>(
         type="button"
         disabled={disabled}
         aria-label={props["aria-label"] || `Button lamp ${label}`}
+        onPointerDown={(e) => {
+          if (!disabled && e.button === 0) {
+            isPressedRef.current = true;
+            tactileAudio.playKeyClick("down");
+          }
+          onPointerDown?.(e);
+        }}
+        onPointerUp={(e) => {
+          if (isPressedRef.current) {
+            isPressedRef.current = false;
+            tactileAudio.playKeyClick("up");
+          }
+          onPointerUp?.(e);
+        }}
+        onPointerLeave={(e) => {
+          isPressedRef.current = false;
+          onPointerLeave?.(e);
+        }}
+        onPointerCancel={(e) => {
+          isPressedRef.current = false;
+          onPointerCancel?.(e);
+        }}
+        onKeyDown={(e) => {
+          if (!disabled && (e.key === "Enter" || e.key === " ")) {
+            tactileAudio.playKeyClick("down");
+          }
+          onKeyDown?.(e);
+        }}
         className={`group relative inline-flex shrink-0 cursor-pointer select-none items-center justify-center bg-black/16 shadow-[inset_0_-1px_2px_rgba(0,0,0,0.25),inset_0_-3px_2px_rgba(0,0,0,0.25)] transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-500/40 disabled:pointer-events-none disabled:opacity-40 [transform:translateZ(0)] ${socketSizeClass} ${className}`}
         {...props}
       >

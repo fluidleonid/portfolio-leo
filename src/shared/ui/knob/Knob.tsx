@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
+import { tactileAudio } from "@/shared/lib/audio";
 
 export interface KnobProps
   extends Omit<React.HTMLAttributes<HTMLDivElement>, "onChange"> {
@@ -134,6 +135,7 @@ export const Knob = React.forwardRef<HTMLDivElement, KnobProps>(
 
     // Drag handlers - incremental delta tracking for true 360° unconstrained radial slider rotation
     const lastPointerAngleRef = useRef<number>(0);
+    const lastTickAngleRef = useRef<number>(currentAngle);
 
     const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
       if (disabled || e.button !== 0) return;
@@ -141,6 +143,7 @@ export const Knob = React.forwardRef<HTMLDivElement, KnobProps>(
 
       const pointerAngle = calculateAngleFromPointer(e);
       lastPointerAngleRef.current = pointerAngle;
+      lastTickAngleRef.current = internalAngleRef.current;
 
       setIsDragging(true);
       (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
@@ -161,6 +164,11 @@ export const Knob = React.forwardRef<HTMLDivElement, KnobProps>(
 
       if (minAngle !== undefined) nextAngle = Math.max(minAngle, nextAngle);
       if (maxAngle !== undefined) nextAngle = Math.min(maxAngle, nextAngle);
+
+      if (Math.abs(nextAngle - lastTickAngleRef.current) >= 18) {
+        tactileAudio.playKnobTick();
+        lastTickAngleRef.current = nextAngle;
+      }
 
       setCurrentAngle(nextAngle);
       internalAngleRef.current = nextAngle;
@@ -186,6 +194,7 @@ export const Knob = React.forwardRef<HTMLDivElement, KnobProps>(
       // Magnetically glide to exact nearest snap position on release
       setCurrentAngle(snappedAngle);
       internalAngleRef.current = snappedAngle;
+      tactileAudio.playKnobTick();
 
       onChange?.(nearest.angle);
       onSnap?.(nearest.angle, nearest.index);
@@ -202,6 +211,11 @@ export const Knob = React.forwardRef<HTMLDivElement, KnobProps>(
 
       if (minAngle !== undefined) nextAngle = Math.max(minAngle, nextAngle);
       if (maxAngle !== undefined) nextAngle = Math.min(maxAngle, nextAngle);
+
+      if (Math.abs(nextAngle - lastTickAngleRef.current) >= 12) {
+        tactileAudio.playKnobTick();
+        lastTickAngleRef.current = nextAngle;
+      }
 
       setCurrentAngle(nextAngle);
       internalAngleRef.current = nextAngle;
@@ -231,6 +245,7 @@ export const Knob = React.forwardRef<HTMLDivElement, KnobProps>(
           setCurrentAngle(snappedAngle);
           internalAngleRef.current = snappedAngle;
         }
+        tactileAudio.playKnobTick();
 
         onChange?.(nearest.angle);
         onSnap?.(nearest.angle, nearest.index);

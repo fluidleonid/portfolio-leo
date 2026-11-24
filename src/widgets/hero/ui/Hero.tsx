@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo, useEffect, useRef } from "react";
 import { trackEvent } from "@/shared/lib/analytics";
+import { tactileAudio } from "@/shared/lib/audio";
 import {
   Button,
   ButtonLamp,
@@ -292,7 +293,10 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
     const activeNav = hoveredNav ?? (controlledActiveNav ?? selectedNav);
     const knobTargetAngle = snapMap[activeNav];
 
-    const handleSelectNav = (item: NavItem) => {
+    const handleSelectNav = (item: NavItem, playSound = true) => {
+      if (playSound) {
+        tactileAudio.playKnobTick();
+      }
       setSelectedNav(item);
       onNavChange?.(item);
 
@@ -353,7 +357,7 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
       });
 
       setHoveredNav(null);
-      handleSelectNav(nearest);
+      handleSelectNav(nearest, false);
     };
 
     // Calculate dynamic anchor positions for NAV rays and labels based on container dimensions
