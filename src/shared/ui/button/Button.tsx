@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef } from "react";
+import React from "react";
 import { tactileAudio } from "@/shared/lib/audio";
 
 export interface ButtonProps
@@ -41,16 +41,13 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       size = "default",
       disabled,
       children,
+      onPointerEnter,
       onPointerDown,
-      onPointerUp,
-      onPointerLeave,
-      onPointerCancel,
       onKeyDown,
       ...props
     },
     ref
   ) => {
-    const isPressedRef = useRef(false);
     const isHorizontal = labelPosition === "right";
 
     // Well size classes (outer base of the button)
@@ -96,31 +93,21 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
           props["aria-label"] ||
           (typeof label === "string" ? label : "Tactile Button")
         }
+        onPointerEnter={(e) => {
+          if (!disabled && e.pointerType === "mouse") {
+            tactileAudio.playHover("matte");
+          }
+          onPointerEnter?.(e);
+        }}
         onPointerDown={(e) => {
           if (!disabled && e.button === 0) {
-            isPressedRef.current = true;
-            tactileAudio.playKeyClick("down");
+            tactileAudio.playKeyClick("matte");
           }
           onPointerDown?.(e);
         }}
-        onPointerUp={(e) => {
-          if (isPressedRef.current) {
-            isPressedRef.current = false;
-            tactileAudio.playKeyClick("up");
-          }
-          onPointerUp?.(e);
-        }}
-        onPointerLeave={(e) => {
-          isPressedRef.current = false;
-          onPointerLeave?.(e);
-        }}
-        onPointerCancel={(e) => {
-          isPressedRef.current = false;
-          onPointerCancel?.(e);
-        }}
         onKeyDown={(e) => {
           if (!disabled && (e.key === "Enter" || e.key === " ")) {
-            tactileAudio.playKeyClick("down");
+            tactileAudio.playKeyClick("matte");
           }
           onKeyDown?.(e);
         }}

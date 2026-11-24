@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef } from "react";
+import React from "react";
 import { tactileAudio } from "@/shared/lib/audio";
 
 export interface ButtonLampProps
@@ -38,16 +38,13 @@ export const ButtonLamp = React.forwardRef<HTMLButtonElement, ButtonLampProps>(
       active = false,
       disabled,
       children,
+      onPointerEnter,
       onPointerDown,
-      onPointerUp,
-      onPointerLeave,
-      onPointerCancel,
       onKeyDown,
       ...props
     },
     ref
   ) => {
-    const isPressedRef = useRef(false);
     // Outer socket classes
     const socketSizeClass =
       size === "sm"
@@ -78,31 +75,21 @@ export const ButtonLamp = React.forwardRef<HTMLButtonElement, ButtonLampProps>(
         type="button"
         disabled={disabled}
         aria-label={props["aria-label"] || `Button lamp ${label}`}
+        onPointerEnter={(e) => {
+          if (!disabled && e.pointerType === "mouse") {
+            tactileAudio.playHover("lamp");
+          }
+          onPointerEnter?.(e);
+        }}
         onPointerDown={(e) => {
           if (!disabled && e.button === 0) {
-            isPressedRef.current = true;
-            tactileAudio.playKeyClick("down");
+            tactileAudio.playKeyClick("lamp");
           }
           onPointerDown?.(e);
         }}
-        onPointerUp={(e) => {
-          if (isPressedRef.current) {
-            isPressedRef.current = false;
-            tactileAudio.playKeyClick("up");
-          }
-          onPointerUp?.(e);
-        }}
-        onPointerLeave={(e) => {
-          isPressedRef.current = false;
-          onPointerLeave?.(e);
-        }}
-        onPointerCancel={(e) => {
-          isPressedRef.current = false;
-          onPointerCancel?.(e);
-        }}
         onKeyDown={(e) => {
           if (!disabled && (e.key === "Enter" || e.key === " ")) {
-            tactileAudio.playKeyClick("down");
+            tactileAudio.playKeyClick("lamp");
           }
           onKeyDown?.(e);
         }}

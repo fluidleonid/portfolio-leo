@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef } from "react";
+import React from "react";
 import { tactileAudio } from "@/shared/lib/audio";
 
 export interface ButtonDownloadProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {}
@@ -16,48 +16,34 @@ export const ButtonDownload = React.forwardRef<HTMLButtonElement, ButtonDownload
     {
       className = "",
       disabled,
+      onPointerEnter,
       onPointerDown,
-      onPointerUp,
-      onPointerLeave,
-      onPointerCancel,
       onKeyDown,
       ...props
     },
     ref
   ) => {
-    const isPressedRef = useRef(false);
-
     return (
       <button
         ref={ref}
         type="button"
         disabled={disabled}
         aria-label={props["aria-label"] || "Download"}
+        onPointerEnter={(e) => {
+          if (!disabled && e.pointerType === "mouse") {
+            tactileAudio.playHover("matte");
+          }
+          onPointerEnter?.(e);
+        }}
         onPointerDown={(e) => {
           if (!disabled && e.button === 0) {
-            isPressedRef.current = true;
-            tactileAudio.playKeyClick("down");
+            tactileAudio.playKeyClick("matte");
           }
           onPointerDown?.(e);
         }}
-        onPointerUp={(e) => {
-          if (isPressedRef.current) {
-            isPressedRef.current = false;
-            tactileAudio.playKeyClick("up");
-          }
-          onPointerUp?.(e);
-        }}
-        onPointerLeave={(e) => {
-          isPressedRef.current = false;
-          onPointerLeave?.(e);
-        }}
-        onPointerCancel={(e) => {
-          isPressedRef.current = false;
-          onPointerCancel?.(e);
-        }}
         onKeyDown={(e) => {
           if (!disabled && (e.key === "Enter" || e.key === " ")) {
-            tactileAudio.playKeyClick("down");
+            tactileAudio.playKeyClick("matte");
           }
           onKeyDown?.(e);
         }}

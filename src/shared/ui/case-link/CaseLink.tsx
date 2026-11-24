@@ -54,34 +54,23 @@ export const CaseLink = React.forwardRef<HTMLElement, CaseLinkProps>(
     const [toastVisible, setToastVisible] = useState(false);
     const [mounted, setMounted] = useState(false);
     const toastTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-    const isPressedRef = useRef(false);
 
     const tactileHandlers = {
+      onPointerEnter: (e: React.PointerEvent<HTMLElement>) => {
+        if (e.pointerType === "mouse") {
+          tactileAudio.playHover("matte");
+        }
+        props.onPointerEnter?.(e);
+      },
       onPointerDown: (e: React.PointerEvent<HTMLElement>) => {
         if (e.button === 0) {
-          isPressedRef.current = true;
-          tactileAudio.playKeyClick("down");
+          tactileAudio.playKeyClick("matte");
         }
         props.onPointerDown?.(e);
       },
-      onPointerUp: (e: React.PointerEvent<HTMLElement>) => {
-        if (isPressedRef.current) {
-          isPressedRef.current = false;
-          tactileAudio.playKeyClick("up");
-        }
-        props.onPointerUp?.(e);
-      },
-      onPointerLeave: (e: React.PointerEvent<HTMLElement>) => {
-        isPressedRef.current = false;
-        props.onPointerLeave?.(e);
-      },
-      onPointerCancel: (e: React.PointerEvent<HTMLElement>) => {
-        isPressedRef.current = false;
-        props.onPointerCancel?.(e);
-      },
       onKeyDown: (e: React.KeyboardEvent<HTMLElement>) => {
         if (e.key === "Enter" || e.key === " ") {
-          tactileAudio.playKeyClick("down");
+          tactileAudio.playKeyClick("matte");
         }
         props.onKeyDown?.(e);
       },
