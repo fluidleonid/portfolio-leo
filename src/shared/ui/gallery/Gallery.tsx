@@ -108,11 +108,13 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
     // Ref to track latest hover/scrub position without state lag on pointerup
     const currentHoverPosRef = useRef<{ x: number; index: number } | null>(null);
 
-    // One-time interactive spotlight onboarding hint (scroll freeze + dark backdrop + top caption + gallery/scrubber glide)
+    // One-time interactive spotlight onboarding hint (scroll freeze + dark backdrop + top caption + keynote tap/drag)
     const [hintState, setHintState] = useState<{
       x: number;
       index: number;
       opacity: number;
+      rippleProgress: number;
+      isPressed: boolean;
     } | null>(null);
     const [isSpotlightActive, setIsSpotlightActive] = useState(false);
     const [spotlightBannerTop, setSpotlightBannerTop] = useState<number>(24);
@@ -205,7 +207,7 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
 
           // Smoothly center the gallery in the viewport, then freeze scroll & spotlight it
           el.scrollIntoView({ behavior: "smooth", block: "center" });
-          hintGraceUntilRef.current = performance.now() + 650;
+          hintGraceUntilRef.current = performance.now() + 900;
           setIsSpotlightActive(true);
 
           hintTimeoutRef.current = setTimeout(() => {
@@ -224,49 +226,77 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
 
             const peekScroll = Math.min(
               maxScroll,
-              Math.max(120, Math.min(230, scrollEl.clientWidth * 0.3))
+              Math.max(130, Math.min(250, scrollEl.clientWidth * 0.32))
             );
             const trackW = trackEl.clientWidth || 564;
             const count = normalizedImages.length;
             const startX = (0.5 / count) * trackW;
             const targetX = (1.5 / count) * trackW;
 
-            const PHASE1 = 940; // glide right + dot & preview slide to segment 2
-            const PHASE2 = 420; // hold at peeked state so user clearly reads both image & tooltip
-            const PHASE3 = 860; // smooth return to start
-            const TOTAL = PHASE1 + PHASE2 + PHASE3;
+            // Deliberate keynote-paced choreography (~4.5s total)
+            const PHASE_TAP = 720; // virtual pointer appears + tap/click ripple + press-hold
+            const PHASE_DRAG = 1650; // slow, smooth drag to segment 2 + gallery glides right
+            const PHASE_HOLD = 850; // calm pause at segment 2 so preview & next image sink in
+            const PHASE_RETURN = 1280; // smooth return to start & fade out
+            const T1 = PHASE_TAP;
+            const T2 = T1 + PHASE_DRAG;
+            const T3 = T2 + PHASE_HOLD;
+            const TOTAL = T3 + PHASE_RETURN;
 
             const startTime = performance.now();
 
             const tick = (now: number) => {
               const elapsed = now - startTime;
 
-              if (elapsed < PHASE1) {
-                const t = elapsed / PHASE1;
+              if (elapsed < T1) {
+                // Phase 1: Tap / Click ripple on segment 1 + press down
+                const t = elapsed / PHASE_TAP;
+                const ripple = t > 0.15 ? Math.min(1, (t - 0.15) / 0.85) : 0;
+                scrollEl.scrollLeft = 0;
+                setHintState({
+                  x: startX,
+                  index: 0,
+                  opacity: Math.min(1, t / 0.25),
+                  rippleProgress: ripple,
+                  isPressed: t >= 0.2,
+                });
+                hintRafRef.current = requestAnimationFrame(tick);
+              } else if (elapsed < T2) {
+                // Phase 2: Slow held drag from segment 1 -> segment 2
+                const t = (elapsed - T1) / PHASE_DRAG;
                 const e = easeInOutCubic(t);
                 scrollEl.scrollLeft = peekScroll * e;
                 setHintState({
                   x: startX + (targetX - startX) * e,
                   index: t > 0.45 ? 1 : 0,
-                  opacity: Math.min(1, t / 0.22),
+                  opacity: 1,
+                  rippleProgress: 0,
+                  isPressed: true,
                 });
                 hintRafRef.current = requestAnimationFrame(tick);
-              } else if (elapsed < PHASE1 + PHASE2) {
+              } else if (elapsed < T3) {
+                // Phase 3: Calm hold at segment 2, then release virtual finger
+                const t = (elapsed - T2) / PHASE_HOLD;
                 scrollEl.scrollLeft = peekScroll;
                 setHintState({
                   x: targetX,
                   index: 1,
                   opacity: 1,
+                  rippleProgress: 0,
+                  isPressed: t < 0.65,
                 });
                 hintRafRef.current = requestAnimationFrame(tick);
               } else if (elapsed < TOTAL) {
-                const t = (elapsed - PHASE1 - PHASE2) / PHASE3;
+                // Phase 4: Smooth return back to segment 1 & gentle fade out
+                const t = (elapsed - T3) / PHASE_RETURN;
                 const e = easeInOutCubic(t);
                 scrollEl.scrollLeft = peekScroll * (1 - e);
                 setHintState({
                   x: targetX + (startX - targetX) * e,
                   index: t > 0.55 ? 0 : 1,
-                  opacity: t > 0.72 ? Math.max(0, 1 - (t - 0.72) / 0.28) : 1,
+                  opacity: t > 0.7 ? Math.max(0, 1 - (t - 0.7) / 0.3) : 1,
+                  rippleProgress: 0,
+                  isPressed: false,
                 });
                 hintRafRef.current = requestAnimationFrame(tick);
               } else {
@@ -279,7 +309,7 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
             };
 
             hintRafRef.current = requestAnimationFrame(tick);
-          }, 460);
+          }, 560);
         },
         { threshold: 0.75 }
       );
@@ -812,12 +842,45 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
                 );
               })}
 
-              {/* Hover / Hint Dot: Round circle appearing at cursor X (or gliding during 1x onboarding hint) */}
+              {/* Hover / Hint Dot + Keynote Tap Ripple & Held Touch Halo */}
               {activeOverlayPos && (
-                <div
-                  className="pointer-events-none absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-[8px] h-[8px] rounded-full bg-content-primary shadow-[0_0_8px_rgba(204,204,204,0.5)] z-20"
-                  style={{ left: `${activeOverlayPos.x}px`, opacity: overlayOpacity }}
-                />
+                <>
+                  {/* Keynote Tap/Click Expanding Ripple Ring */}
+                  {hintState &&
+                    hintState.rippleProgress > 0 &&
+                    hintState.rippleProgress < 1 && (
+                      <div
+                        className="pointer-events-none absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-[18px] h-[18px] rounded-full border-[1.5px] border-white/85 z-20"
+                        style={{
+                          left: `${activeOverlayPos.x}px`,
+                          transform: `translate(-50%, -50%) scale(${0.65 + hintState.rippleProgress * 2.2})`,
+                          opacity: (1 - hintState.rippleProgress) * 0.85,
+                        }}
+                      />
+                    )}
+
+                  {/* Held Virtual Pointer Halo (visible while pressing & dragging) */}
+                  {hintState && (
+                    <div
+                      className="pointer-events-none absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-[26px] h-[26px] rounded-full bg-white/15 border border-white/40 shadow-[0_0_16px_rgba(255,255,255,0.28)] z-20 transition-[transform,opacity] duration-200 ease-out"
+                      style={{
+                        left: `${activeOverlayPos.x}px`,
+                        transform: `translate(-50%, -50%) scale(${hintState.isPressed ? 1 : 0.6})`,
+                        opacity: hintState.isPressed ? overlayOpacity : 0,
+                      }}
+                    />
+                  )}
+
+                  {/* Core Glowing Scrubber Dot */}
+                  <div
+                    className="pointer-events-none absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-[8px] h-[8px] rounded-full bg-content-primary shadow-[0_0_10px_rgba(255,255,255,0.65)] z-20 transition-transform duration-150"
+                    style={{
+                      left: `${activeOverlayPos.x}px`,
+                      transform: `translate(-50%, -50%) scale(${hintState?.isPressed ? 1.25 : 1})`,
+                      opacity: overlayOpacity,
+                    }}
+                  />
+                </>
               )}
 
               {/* Hover / Hint Tooltip: Thumbnail preview preserving aspect ratio + 10px Hauora Alt Text */}
