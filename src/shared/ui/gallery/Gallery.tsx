@@ -108,15 +108,18 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
     // Ref to track latest hover/scrub position without state lag on pointerup
     const currentHoverPosRef = useRef<{ x: number; index: number } | null>(null);
 
-    // One-time interactive spotlight onboarding hint (scroll freeze + dark backdrop + top caption + keynote tap/drag)
+    // One-time interactive spotlight onboarding hint (scroll freeze + dark backdrop + bottom caption + keynote tap/drag)
     const [hintState, setHintState] = useState<{
       x: number;
       index: number;
       opacity: number;
       rippleProgress: number;
+      dragPulse: number;
+      dragRippleProgress: number;
       isPressed: boolean;
     } | null>(null);
     const [isSpotlightActive, setIsSpotlightActive] = useState(false);
+    const [isGalleryElevated, setIsGalleryElevated] = useState(false);
     const [showHintText, setShowHintText] = useState(false);
     const [isTouchDevice, setIsTouchDevice] = useState(false);
     const [spotlightBannerTop, setSpotlightBannerTop] = useState<number>(24);
@@ -127,6 +130,7 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
     const hintTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const textTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const textHideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const elevateTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const hintGraceUntilRef = useRef<number>(0);
     const lockedScrollYRef = useRef<number | null>(null);
 
@@ -139,6 +143,16 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
           navigator.maxTouchPoints > 0;
         setIsTouchDevice(touch);
       }
+    }, []);
+
+    const scheduleGalleryLower = useCallback(() => {
+      if (elevateTimeoutRef.current !== null) {
+        clearTimeout(elevateTimeoutRef.current);
+      }
+      elevateTimeoutRef.current = setTimeout(() => {
+        setIsGalleryElevated(false);
+        elevateTimeoutRef.current = null;
+      }, 900);
     }, []);
 
     const exitOnboarding = useCallback((force = true) => {
@@ -169,7 +183,8 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
       setHintState(null);
       setShowHintText(false);
       setIsSpotlightActive(false);
-    }, []);
+      scheduleGalleryLower();
+    }, [scheduleGalleryLower]);
 
     // Hard-freeze vertical page scroll while spotlight onboarding is active
     useEffect(() => {
@@ -268,7 +283,12 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
         );
 
         // Step 1: Smoothly fade in dark backdrop overlay under gallery
+        if (elevateTimeoutRef.current !== null) {
+          clearTimeout(elevateTimeoutRef.current);
+          elevateTimeoutRef.current = null;
+        }
         hintGraceUntilRef.current = performance.now() + 600;
+        setIsGalleryElevated(true);
         setIsSpotlightActive(true);
 
         const centerStart = performance.now();
@@ -324,7 +344,7 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
           const PHASE_DRAG = 1650;
           const PHASE_HOLD = 850;
           const PHASE_RETURN = 1280;
-          const PHASE_FADE_OUT = 580;
+          const PHASE_FADE_OUT = 850;
           const T1 = PHASE_TAP;
           const T2 = T1 + PHASE_DRAG;
           const T3 = T2 + PHASE_HOLD;
@@ -347,49 +367,67 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
                 index: 0,
                 opacity: fadeIn,
                 rippleProgress: ripple,
+                dragPulse: 0,
+                dragRippleProgress: 0,
                 isPressed: t >= 0.28,
               });
               hintRafRef.current = requestAnimationFrame(tick);
             } else if (elapsed < T2) {
-              const t = (elapsed - T1) / PHASE_DRAG;
+              const dragElapsed = elapsed - T1;
+              const t = dragElapsed / PHASE_DRAG;
               const e = easeInOutCubic(t);
+              const dragPulse = 0.5 - 0.5 * Math.cos((dragElapsed / 1100) * Math.PI * 2);
+              const dragRippleProgress = (dragElapsed % 1250) / 1250;
               scrollEl.scrollLeft = peekScroll * e;
               setHintState({
                 x: startX + (targetX - startX) * e,
                 index: t > 0.45 ? 1 : 0,
                 opacity: 1,
                 rippleProgress: 0,
+                dragPulse,
+                dragRippleProgress,
                 isPressed: true,
               });
               hintRafRef.current = requestAnimationFrame(tick);
             } else if (elapsed < T3) {
+              const dragElapsed = elapsed - T1;
+              const dragPulse = 0.5 - 0.5 * Math.cos((dragElapsed / 1100) * Math.PI * 2);
+              const dragRippleProgress = (dragElapsed % 1250) / 1250;
               scrollEl.scrollLeft = peekScroll;
               setHintState({
                 x: targetX,
                 index: 1,
                 opacity: 1,
                 rippleProgress: 0,
+                dragPulse,
+                dragRippleProgress,
                 isPressed: true,
               });
               hintRafRef.current = requestAnimationFrame(tick);
             } else if (elapsed < T4) {
+              const dragElapsed = elapsed - T1;
               const t = (elapsed - T3) / PHASE_RETURN;
               const e = easeInOutCubic(t);
+              const dragPulse = 0.5 - 0.5 * Math.cos((dragElapsed / 1100) * Math.PI * 2);
+              const dragRippleProgress = (dragElapsed % 1250) / 1250;
               scrollEl.scrollLeft = peekScroll * (1 - e);
               setHintState({
                 x: targetX + (startX - targetX) * e,
                 index: t > 0.55 ? 0 : 1,
                 opacity: 1,
                 rippleProgress: 0,
+                dragPulse,
+                dragRippleProgress,
                 isPressed: true,
               });
               hintRafRef.current = requestAnimationFrame(tick);
             } else if (elapsed < TOTAL) {
-              // Step 4: Velvety synchronized fade-out of dot, tooltip, caption & overlay
+              // Step 4: Velvety 850ms synchronized fade-out — gallery stays z-60 above overlay until overlay finishes fading
               if (!startedExitFade) {
                 startedExitFade = true;
                 setShowHintText(false);
                 setIsSpotlightActive(false);
+                scheduleGalleryLower();
                 lockedScrollYRef.current = null;
               }
               const t = (elapsed - T4) / PHASE_FADE_OUT;
@@ -400,7 +438,9 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
                 index: 0,
                 opacity: fadeOut,
                 rippleProgress: 0,
-                isPressed: t < 0.35,
+                dragPulse: 0,
+                dragRippleProgress: 0,
+                isPressed: true,
               });
               hintRafRef.current = requestAnimationFrame(tick);
             } else {
@@ -433,9 +473,13 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
 
       return () => {
         window.removeEventListener("scroll", checkPositionOnScroll);
+        if (elevateTimeoutRef.current !== null) {
+          clearTimeout(elevateTimeoutRef.current);
+          elevateTimeoutRef.current = null;
+        }
         exitOnboarding();
       };
-    }, [hintOnView, normalizedImages.length, exitOnboarding]);
+    }, [hintOnView, normalizedImages.length, exitOnboarding, scheduleGalleryLower]);
 
     // Calculate breakout dimensions so wrapper bleeds cleanly across full viewport width
     useEffect(() => {
@@ -781,7 +825,7 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
               {/* Dark Spotlight Overlay UNDER the elevated gallery (z-55 < gallery z-60) */}
               <div
                 aria-hidden="true"
-                className={`fixed inset-0 z-[55] bg-black/75 backdrop-blur-[2px] transition-opacity duration-[650ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${
+                className={`fixed inset-0 z-[55] bg-black/75 backdrop-blur-[2px] transition-opacity duration-[850ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${
                   isSpotlightActive
                     ? "opacity-100 pointer-events-auto"
                     : "opacity-0 pointer-events-none"
@@ -814,7 +858,7 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
       <div
         ref={setRefs}
         className={`relative flex flex-col select-none overflow-hidden ${
-          isSpotlightActive ? "z-[60]" : ""
+          isGalleryElevated ? "z-[60]" : ""
         } ${
           isMobile
             ? "w-[calc(100%+32px)] -ml-[16px] -mr-[16px] max-w-[100vw]"
@@ -954,7 +998,7 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
                   className="pointer-events-none absolute z-50 h-0 w-0"
                   style={{ left: `${activeOverlayPos.x}px`, top: "50%" }}
                 >
-                  {/* Keynote Tap/Click Expanding Ripple Ring */}
+                  {/* Keynote Tap/Click Expanding Ripple Ring (initial strong tap pulse) */}
                   {hintState &&
                     hintState.rippleProgress > 0 &&
                     hintState.rippleProgress < 1 && (
@@ -967,22 +1011,47 @@ export const Gallery = React.forwardRef<HTMLDivElement, GalleryProps>(
                       />
                     )}
 
-                  {/* Held Virtual Pointer Halo — stays visible through drag/hold/return at 70% opacity */}
+                  {/* Subtle Continuous Drag Pulse Ring (softer echo of initial pulse while dragging/holding/returning) */}
+                  {hintState &&
+                    hintState.dragRippleProgress > 0 &&
+                    hintState.dragRippleProgress < 1 && (
+                      <div
+                        className="absolute left-0 top-0 h-[20px] w-[20px] rounded-full border border-white/45"
+                        style={{
+                          transform: `translate(-50%, -50%) scale(${0.95 + hintState.dragRippleProgress * 0.95})`,
+                          opacity:
+                            Math.sin(hintState.dragRippleProgress * Math.PI) *
+                            (1 - hintState.dragRippleProgress * 0.4) *
+                            0.38 *
+                            overlayOpacity,
+                        }}
+                      />
+                    )}
+
+                  {/* Held Virtual Pointer Halo — subtly breathes during drag and melts out smoothly */}
                   {hintState && (
                     <div
-                      className="absolute left-0 top-0 h-[26px] w-[26px] rounded-full bg-white/15 border border-white/40 shadow-[0_0_14px_rgba(255,255,255,0.2)] transition-[transform,opacity] duration-200 ease-out"
+                      className="absolute left-0 top-0 h-[26px] w-[26px] rounded-full bg-white/15 border border-white/40 shadow-[0_0_14px_rgba(255,255,255,0.2)]"
                       style={{
-                        transform: `translate(-50%, -50%) scale(${hintState.isPressed ? 1 : 0.65})`,
-                        opacity: hintState.isPressed ? overlayOpacity * 0.7 : 0,
+                        transform: `translate(-50%, -50%) scale(${
+                          hintState.isPressed
+                            ? (0.86 + overlayOpacity * 0.14) * (1 + hintState.dragPulse * 0.12)
+                            : 0.65
+                        })`,
+                        opacity: hintState.isPressed
+                          ? overlayOpacity * (0.58 + hintState.dragPulse * 0.14)
+                          : 0,
                       }}
                     />
                   )}
 
                   {/* Core Glowing Scrubber Dot — 70% opacity during hint so it feels soft and refined */}
                   <div
-                    className="absolute left-0 top-0 h-[8px] w-[8px] rounded-full bg-content-primary shadow-[0_0_10px_rgba(255,255,255,0.5)] transition-transform duration-150"
+                    className="absolute left-0 top-0 h-[8px] w-[8px] rounded-full bg-content-primary shadow-[0_0_10px_rgba(255,255,255,0.5)]"
                     style={{
-                      transform: `translate(-50%, -50%) scale(${hintState?.isPressed ? 1.2 : 1})`,
+                      transform: `translate(-50%, -50%) scale(${
+                        hintState?.isPressed ? 1.15 + (hintState.dragPulse ?? 0) * 0.08 : 1
+                      })`,
                       opacity: hintState ? overlayOpacity * 0.7 : overlayOpacity,
                     }}
                   />
