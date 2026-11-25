@@ -4,4 +4,3 @@ export {
   type TactileAudioParams,
   type TactileMaterial,
 } from "./tactileAudio";
-export { TactileAudioTuner } from "./TactileAudioTuner";

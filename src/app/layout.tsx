@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Analytics } from "@vercel/analytics/next";
 import { AssetProtection, LedPageTransition } from "@/shared/ui";
 import { GoogleAnalytics, ScrollDepthTracker } from "@/shared/lib/analytics";
-import { TactileAudioTuner } from "@/shared/lib/audio";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -55,7 +54,6 @@ export default function RootLayout({
       <body className="bg-canvas text-white antialiased overflow-x-hidden max-w-full">
         <AssetProtection />
         <LedPageTransition>{children}</LedPageTransition>
-        <TactileAudioTuner />
         <ScrollDepthTracker />
         <GoogleAnalytics />
         <Analytics />

@@ -294,6 +294,7 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
     const knobTargetAngle = snapMap[activeNav];
 
     const handleHoverNav = (item: NavItem | null) => {
+      if (tactileAudio.isKnobDragging) return;
       if (item !== null && item !== activeNav) {
         tactileAudio.playKnobRustle("glide", true);
       } else if (item === null && hoveredNav !== null && hoveredNav !== (controlledActiveNav ?? selectedNav)) {
@@ -350,7 +351,7 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
         }
       });
 
-      setHoveredNav(nearest);
+      setHoveredNav((prev) => (prev === nearest ? prev : nearest));
     };
 
     const handleKnobSnap = (angle: number) => {
