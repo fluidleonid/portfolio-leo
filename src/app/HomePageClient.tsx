@@ -219,8 +219,7 @@ export function HomePageClient({
           {/* Interactive Skeuomorphic Cassette Player at the end of About */}
           <CassettePlayer
             audioUrl={siteSettings?.cassetteAudioUrl}
-            title={siteSettings?.cassetteTitle || "Legends Never Die"}
-            subtitle={siteSettings?.cassetteArtist || "League of Legends"}
+            title={siteSettings?.cassetteTitle || "Working Mix"}
             className="mt-[28px] sm:mt-[40px]"
           />
         </section>

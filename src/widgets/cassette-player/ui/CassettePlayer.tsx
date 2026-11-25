@@ -1,18 +1,24 @@
 "use client";
 
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Button, Section } from "@/shared/ui";
+import { VintageTapeEngine } from "../model/vintageTapeEngine";
 
 export interface CassettePlayerProps {
-  /** Optional audio track URL from Sanity CMS (or public/) */
+  /** Optional single audio track URL from Sanity CMS */
   audioUrl?: string;
-  /** Optional track title printed on the cassette label (defaults to Figma text) */
+  /** Optional track title printed on the cassette label (default: "Working Mix") */
   title?: string;
-  /** Optional artist/subtitle printed on the cassette label (defaults to Figma text) */
-  subtitle?: string;
   /** Optional className */
   className?: string;
 }
+
+const DEFAULT_MIXTAPE_TRACKS = [
+  "/audio/mix/1.mp3",
+  "/audio/mix/2.mp3",
+  "/audio/mix/3.mp3",
+  "/audio/mix/4.mp3",
+];
 
 type TransportMode = "paused" | "playing" | "rewinding" | "forwarding";
 
@@ -23,183 +29,128 @@ function formatTime(sec: number): string {
   return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
 }
 
-/**
- * Built-in warm lo-fi analog tape synth fallback when no external/local audio file is loaded yet.
- */
-class FallbackTapeSynth {
-  private ctx: AudioContext | null = null;
-  private masterGain: GainNode | null = null;
-  private hissSource: AudioBufferSourceNode | null = null;
-  private chordTimer: ReturnType<typeof setInterval> | null = null;
-  private chordStep = 0;
-  private playing = false;
-
-  private readonly chords = [
-    [220.0, 261.63, 329.63, 392.0],
-    [174.61, 220.0, 261.63, 329.63],
-    [196.0, 246.94, 293.66, 349.23],
-    [164.81, 196.0, 246.94, 293.66],
-  ];
-
-  start() {
-    if (this.playing || typeof window === "undefined") return;
-    try {
-      const AudioCtx =
-        window.AudioContext ||
-        (window as unknown as { webkitAudioContext?: typeof AudioContext })
-          .webkitAudioContext;
-      if (!AudioCtx) return;
-      if (!this.ctx) this.ctx = new AudioCtx();
-      if (this.ctx.state === "suspended") void this.ctx.resume().catch(() => {});
-
-      const ctx = this.ctx;
-      const now = ctx.currentTime;
-
-      const master = ctx.createGain();
-      master.gain.value = 0;
-      master.gain.setValueAtTime(0, now);
-      master.gain.linearRampToValueAtTime(0.18, now + 0.35);
-      master.connect(ctx.destination);
-      this.masterGain = master;
-
-      const hissLen = Math.floor(ctx.sampleRate * 2);
-      const hissBuf = ctx.createBuffer(1, hissLen, ctx.sampleRate);
-      const data = hissBuf.getChannelData(0);
-      for (let i = 0; i < hissLen; i++) {
-        data[i] = (Math.random() * 2 - 1) * 0.045;
-      }
-      const hiss = ctx.createBufferSource();
-      hiss.buffer = hissBuf;
-      hiss.loop = true;
-
-      const hissBp = ctx.createBiquadFilter();
-      hissBp.type = "bandpass";
-      hissBp.frequency.value = 2600;
-      hissBp.Q.value = 0.7;
-
-      const hissGain = ctx.createGain();
-      hissGain.gain.value = 0.25;
-
-      hiss.connect(hissBp);
-      hissBp.connect(hissGain);
-      hissGain.connect(master);
-      hiss.start(now);
-      this.hissSource = hiss;
-
-      const playChord = () => {
-        if (!this.ctx || !this.masterGain || !this.playing) return;
-        const c = this.ctx;
-        const t = c.currentTime;
-        const notes = this.chords[this.chordStep % this.chords.length];
-        this.chordStep += 1;
-
-        notes.forEach((freq, idx) => {
-          const osc = c.createOscillator();
-          const lp = c.createBiquadFilter();
-          const g = c.createGain();
-
-          osc.type = idx === 0 ? "triangle" : "sine";
-          osc.frequency.setValueAtTime(freq * (0.997 + Math.random() * 0.006), t);
-
-          lp.type = "lowpass";
-          lp.frequency.setValueAtTime(920, t);
-          lp.frequency.exponentialRampToValueAtTime(380, t + 2.6);
-
-          g.gain.value = 0;
-          g.gain.setValueAtTime(0, t);
-          g.gain.linearRampToValueAtTime(idx === 0 ? 0.22 : 0.14, t + 0.18 + idx * 0.04);
-          g.gain.exponentialRampToValueAtTime(0.0001, t + 2.9);
-
-          osc.connect(lp);
-          lp.connect(g);
-          g.connect(this.masterGain!);
-
-          osc.start(t);
-          osc.stop(t + 3.0);
-        });
-      };
-
-      this.playing = true;
-      playChord();
-      this.chordTimer = setInterval(playChord, 2800);
-    } catch {
-      // ignore audio errors
-    }
-  }
-
-  stop() {
-    if (!this.playing) return;
-    this.playing = false;
-    if (this.chordTimer) {
-      clearInterval(this.chordTimer);
-      this.chordTimer = null;
-    }
-    try {
-      if (this.ctx && this.masterGain) {
-        const now = this.ctx.currentTime;
-        this.masterGain.gain.cancelScheduledValues(now);
-        this.masterGain.gain.setValueAtTime(this.masterGain.gain.value, now);
-        this.masterGain.gain.linearRampToValueAtTime(0, now + 0.14);
-      }
-      if (this.hissSource) {
-        const src = this.hissSource;
-        this.hissSource = null;
-        setTimeout(() => {
-          try {
-            src.stop();
-          } catch {
-            // ignore
-          }
-        }, 160);
-      }
-    } catch {
-      // ignore
-    }
-  }
-}
-
 export const CassettePlayer: React.FC<CassettePlayerProps> = ({
   audioUrl,
-  title = "Legends Never Die",
-  subtitle = "League of Legends",
+  title = "Working Mix",
   className = "",
 }) => {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const synthRef = useRef<FallbackTapeSynth | null>(null);
+  const engineRef = useRef<VintageTapeEngine | null>(null);
   const rafRef = useRef<number | null>(null);
+  const spinUpRafRef = useRef<number | null>(null);
   const lastFrameRef = useRef<number>(0);
   const scrubIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const holdActiveRef = useRef<boolean>(false);
 
   const [localTrackUrl, setLocalTrackUrl] = useState<string | null>(null);
   const [trackTitle, setTrackTitle] = useState<string>(title);
-  const [trackSubtitle, setTrackSubtitle] = useState<string>(subtitle);
+  const [trackIndex, setTrackIndex] = useState<number>(0);
   const [mode, setMode] = useState<TransportMode>("paused");
   const [currentTime, setCurrentTime] = useState<number>(0);
-  const [duration, setDuration] = useState<number>(180);
+  const [duration, setDuration] = useState<number>(0);
   const [reelAngle, setReelAngle] = useState<number>(0);
   const [isDragOver, setIsDragOver] = useState<boolean>(false);
 
-  const effectiveAudioUrl = localTrackUrl || audioUrl || null;
-  const isUsingRealAudio = Boolean(effectiveAudioUrl);
+  const playlist = useMemo(() => {
+    if (localTrackUrl) return [localTrackUrl];
+    if (audioUrl) return [audioUrl];
+    return DEFAULT_MIXTAPE_TRACKS;
+  }, [localTrackUrl, audioUrl]);
+
+  const currentSrc = playlist[trackIndex % playlist.length];
 
   useEffect(() => {
     if (!localTrackUrl) {
       setTrackTitle(title);
-      setTrackSubtitle(subtitle);
     }
-  }, [title, subtitle, localTrackUrl]);
+  }, [title, localTrackUrl]);
 
+  // Reset index when playlist changes
+  useEffect(() => {
+    setTrackIndex(0);
+  }, [localTrackUrl, audioUrl]);
+
+  // Cleanup on unmount
   useEffect(() => {
     return () => {
       if (localTrackUrl) URL.revokeObjectURL(localTrackUrl);
-      synthRef.current?.stop();
+      engineRef.current?.dispose();
       if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
+      if (spinUpRafRef.current !== null) cancelAnimationFrame(spinUpRafRef.current);
       if (scrubIntervalRef.current) clearInterval(scrubIntervalRef.current);
     };
   }, [localTrackUrl]);
 
+  const ensureEngine = useCallback(() => {
+    if (!engineRef.current) {
+      engineRef.current = new VintageTapeEngine();
+    }
+    if (audioRef.current) {
+      engineRef.current.attachAudioElement(audioRef.current);
+    }
+    return engineRef.current;
+  }, []);
+
+  /** Realistic cassette motor spin-up inertia (0.86x -> 1.0x pitch rise over 220ms) */
+  const runMotorSpinUp = useCallback((audio: HTMLAudioElement) => {
+    if (spinUpRafRef.current !== null) {
+      cancelAnimationFrame(spinUpRafRef.current);
+    }
+    try {
+      // Allow pitch shift during motor spin-up like real magnetic tape
+      (audio as HTMLAudioElement & { preservesPitch?: boolean }).preservesPitch = false;
+      audio.playbackRate = 0.86;
+      const start = performance.now();
+      const DUR = 220;
+      const step = (now: number) => {
+        const t = Math.min(1, (now - start) / DUR);
+        const eased = 1 - Math.pow(1 - t, 3);
+        audio.playbackRate = 0.86 + 0.14 * eased;
+        if (t < 1) {
+          spinUpRafRef.current = requestAnimationFrame(step);
+        } else {
+          audio.playbackRate = 1.0;
+          spinUpRafRef.current = null;
+        }
+      };
+      spinUpRafRef.current = requestAnimationFrame(step);
+    } catch {
+      audio.playbackRate = 1.0;
+    }
+  }, []);
+
+  const startPlayback = useCallback(
+    (withMotorSpinUp = true) => {
+      const audio = audioRef.current;
+      if (!audio) return;
+      const engine = ensureEngine();
+      engine.setTapeHiss(true);
+      if (withMotorSpinUp) {
+        runMotorSpinUp(audio);
+      } else {
+        audio.playbackRate = 1.0;
+      }
+      void audio.play().catch(() => {});
+      setMode("playing");
+    },
+    [ensureEngine, runMotorSpinUp]
+  );
+
+  const pausePlayback = useCallback(() => {
+    if (spinUpRafRef.current !== null) {
+      cancelAnimationFrame(spinUpRafRef.current);
+      spinUpRafRef.current = null;
+    }
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.playbackRate = 1.0;
+    }
+    engineRef.current?.setTapeHiss(false);
+    setMode("paused");
+  }, []);
+
+  // Wire <audio> metadata, timeupdate, and seamless mixtape auto-advance
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
@@ -211,9 +162,22 @@ export const CassettePlayer: React.FC<CassettePlayerProps> = ({
     };
     const handleTimeUpdate = () => setCurrentTime(audio.currentTime);
     const handleEnded = () => {
-      setMode("paused");
-      setCurrentTime(0);
-      audio.currentTime = 0;
+      if (playlist.length > 1) {
+        const nextIdx = (trackIndex + 1) % playlist.length;
+        setTrackIndex(nextIdx);
+        setCurrentTime(0);
+        setTimeout(() => {
+          if (audioRef.current) {
+            audioRef.current.currentTime = 0;
+            startPlayback(false);
+          }
+        }, 40);
+      } else {
+        setMode("paused");
+        setCurrentTime(0);
+        audio.currentTime = 0;
+        engineRef.current?.setTapeHiss(false);
+      }
     };
 
     audio.addEventListener("loadedmetadata", handleLoadedMetadata);
@@ -225,8 +189,9 @@ export const CassettePlayer: React.FC<CassettePlayerProps> = ({
       audio.removeEventListener("timeupdate", handleTimeUpdate);
       audio.removeEventListener("ended", handleEnded);
     };
-  }, [effectiveAudioUrl]);
+  }, [currentSrc, playlist.length, trackIndex, startPlayback]);
 
+  // Spin reels smoothly via RAF based on transport mode
   useEffect(() => {
     if (mode === "paused") {
       if (rafRef.current !== null) {
@@ -242,14 +207,9 @@ export const CassettePlayer: React.FC<CassettePlayerProps> = ({
       lastFrameRef.current = now;
 
       const speedDegPerSec =
-        mode === "playing" ? 48 : mode === "forwarding" ? 260 : -260;
+        mode === "playing" ? 48 : mode === "forwarding" ? 290 : -290;
 
       setReelAngle((prev) => (prev + speedDegPerSec * dtSec) % 360);
-
-      if (!isUsingRealAudio && mode === "playing") {
-        setCurrentTime((prev) => (prev + dtSec >= duration ? 0 : prev + dtSec));
-      }
-
       rafRef.current = requestAnimationFrame(tick);
     };
 
@@ -260,61 +220,74 @@ export const CassettePlayer: React.FC<CassettePlayerProps> = ({
         rafRef.current = null;
       }
     };
-  }, [mode, isUsingRealAudio, duration]);
-
-  const startPlayback = useCallback(() => {
-    if (isUsingRealAudio && audioRef.current) {
-      synthRef.current?.stop();
-      void audioRef.current.play().catch(() => {});
-    } else {
-      if (!synthRef.current) synthRef.current = new FallbackTapeSynth();
-      synthRef.current.start();
-    }
-    setMode("playing");
-  }, [isUsingRealAudio]);
-
-  const pausePlayback = useCallback(() => {
-    if (audioRef.current) audioRef.current.pause();
-    synthRef.current?.stop();
-    setMode("paused");
-  }, []);
+  }, [mode]);
 
   const handleTogglePlay = () => {
     if (mode === "playing") {
       pausePlayback();
     } else {
-      startPlayback();
+      startPlayback(true);
     }
   };
 
   const seekBy = useCallback(
     (deltaSec: number) => {
-      if (isUsingRealAudio && audioRef.current) {
-        const dur = audioRef.current.duration || duration;
-        const next = Math.max(0, Math.min(dur, audioRef.current.currentTime + deltaSec));
-        audioRef.current.currentTime = next;
-        setCurrentTime(next);
-      } else {
-        setCurrentTime((prev) => Math.max(0, Math.min(duration, prev + deltaSec)));
-      }
+      const audio = audioRef.current;
+      if (!audio) return;
+      const dur = Number.isFinite(audio.duration) && audio.duration > 0 ? audio.duration : duration;
+      if (dur <= 0) return;
+      const next = Math.max(0, Math.min(dur, audio.currentTime + deltaSec));
+      audio.currentTime = next;
+      setCurrentTime(next);
     },
-    [isUsingRealAudio, duration]
+    [duration]
   );
 
+  const switchTrack = useCallback(
+    (delta: -1 | 1, resumePlay: boolean) => {
+      if (playlist.length <= 1) {
+        if (audioRef.current) {
+          audioRef.current.currentTime = 0;
+          setCurrentTime(0);
+        }
+        return;
+      }
+      const nextIdx = (trackIndex + delta + playlist.length) % playlist.length;
+      setTrackIndex(nextIdx);
+      setCurrentTime(0);
+      setTimeout(() => {
+        if (audioRef.current) {
+          audioRef.current.currentTime = 0;
+          if (resumePlay) {
+            startPlayback(true);
+          }
+        }
+      }, 50);
+    },
+    [playlist.length, trackIndex, startPlayback]
+  );
+
+  // Hold-to-scrub with authentic cassette FF/REW whir sound; short tap skips track / restarts
   const beginHoldScrub = (direction: "rew" | "ff") => {
     const wasPlaying = mode === "playing";
-    if (wasPlaying) {
-      if (audioRef.current) audioRef.current.pause();
-      synthRef.current?.stop();
+    const engine = ensureEngine();
+
+    if (wasPlaying && audioRef.current) {
+      audioRef.current.pause();
+      engine.setTapeHiss(false);
     }
+
     holdActiveRef.current = false;
-
     setMode(direction === "rew" ? "rewinding" : "forwarding");
+    engine.startScrubSound(direction);
 
+    const holdStartedAt = performance.now();
     if (scrubIntervalRef.current) clearInterval(scrubIntervalRef.current);
     scrubIntervalRef.current = setInterval(() => {
-      holdActiveRef.current = true;
-      seekBy(direction === "rew" ? -1.4 : 1.4);
+      if (performance.now() - holdStartedAt >= 200) {
+        holdActiveRef.current = true;
+        seekBy(direction === "rew" ? -1.8 : 1.8);
+      }
     }, 60);
 
     const stopScrub = () => {
@@ -322,14 +295,34 @@ export const CassettePlayer: React.FC<CassettePlayerProps> = ({
         clearInterval(scrubIntervalRef.current);
         scrubIntervalRef.current = null;
       }
+
       if (!holdActiveRef.current) {
-        seekBy(direction === "rew" ? -10 : 10);
-      }
-      if (wasPlaying) {
-        startPlayback();
+        // Short tap: let the whir finish briefly (140ms) and jump to prev/next track (or ±10s on single track)
+        setTimeout(() => engine.stopScrubSound(), 110);
+        if (playlist.length > 1) {
+          if (direction === "rew" && (audioRef.current?.currentTime ?? 0) > 3) {
+            if (audioRef.current) audioRef.current.currentTime = 0;
+            setCurrentTime(0);
+            if (wasPlaying) startPlayback(true);
+            else setMode("paused");
+          } else {
+            switchTrack(direction === "rew" ? -1 : 1, wasPlaying);
+            if (!wasPlaying) setMode("paused");
+          }
+        } else {
+          seekBy(direction === "rew" ? -10 : 10);
+          if (wasPlaying) startPlayback(true);
+          else setMode("paused");
+        }
       } else {
-        setMode("paused");
+        engine.stopScrubSound();
+        if (wasPlaying) {
+          startPlayback(true);
+        } else {
+          setMode("paused");
+        }
       }
+
       window.removeEventListener("pointerup", stopScrub);
       window.removeEventListener("pointercancel", stopScrub);
     };
@@ -343,31 +336,22 @@ export const CassettePlayer: React.FC<CassettePlayerProps> = ({
       if (!file.type.startsWith("audio/") && !/\.(mp3|wav|ogg|m4a|flac|aac)$/i.test(file.name)) {
         return;
       }
-      synthRef.current?.stop();
       if (localTrackUrl) URL.revokeObjectURL(localTrackUrl);
       const url = URL.createObjectURL(file);
       setLocalTrackUrl(url);
 
       const cleanName = file.name.replace(/\.[^/.]+$/, "").trim();
-      if (cleanName.includes(" - ")) {
-        const [artistPart, titlePart] = cleanName.split(" - ");
-        setTrackTitle(titlePart?.trim() || cleanName);
-        setTrackSubtitle(artistPart?.trim() || "Custom Tape");
-      } else {
-        setTrackTitle(cleanName || "Custom Track");
-        setTrackSubtitle("Custom Tape");
-      }
+      setTrackTitle(cleanName || "Custom Mix");
       setCurrentTime(0);
 
       setTimeout(() => {
         if (audioRef.current) {
           audioRef.current.currentTime = 0;
-          void audioRef.current.play().catch(() => {});
-          setMode("playing");
+          startPlayback(true);
         }
       }, 60);
     },
-    [localTrackUrl]
+    [localTrackUrl, startPlayback]
   );
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -383,37 +367,40 @@ export const CassettePlayer: React.FC<CassettePlayerProps> = ({
     if (file) loadAudioFile(file);
   };
 
-  const progress = duration > 0 ? Math.max(0, Math.min(1, currentTime / duration)) : 0;
+  // Total cassette tape progress across all tracks in the mixtape (0 -> 1)
+  const trackProgress = duration > 0 ? Math.max(0, Math.min(1, currentTime / duration)) : 0;
+  const overallProgress =
+    playlist.length > 1
+      ? (trackIndex + trackProgress) / playlist.length
+      : trackProgress;
+
   const isPlaying = mode === "playing";
   const isRewinding = mode === "rewinding";
   const isForwarding = mode === "forwarding";
 
+  const trackCounter = playlist.length > 1 ? `${trackIndex + 1}/${playlist.length} • ` : "";
   const statusText = isRewinding
-    ? `REW • ${formatTime(currentTime)}`
+    ? `REW • ${trackCounter}${formatTime(currentTime)}`
     : isForwarding
-    ? `FF • ${formatTime(currentTime)}`
+    ? `FF • ${trackCounter}${formatTime(currentTime)}`
     : isPlaying
-    ? `PLAY • ${formatTime(currentTime)} / ${formatTime(duration)}`
-    : `TAPE • ${formatTime(currentTime)} / ${formatTime(duration)}`;
+    ? `PLAY • ${trackCounter}${formatTime(currentTime)}`
+    : `TAPE • ${trackCounter}${formatTime(currentTime)}`;
 
-  // Dynamic magnetic tape pack radii (left shrinks as track plays, right grows)
-  const leftTapeR = 114 - progress * 44; // 114 -> 70
-  const rightTapeR = 70 + progress * 44; // 70 -> 114
+  // Dynamic magnetic tape pack radii (left shrinks across the mixtape, right grows)
+  const leftTapeR = 114 - overallProgress * 44; // 114 -> 70
+  const rightTapeR = 70 + overallProgress * 44; // 70 -> 114
 
-  // Reusable reel with TRUE see-through spindle hole (page canvas visible between the 6 white teeth!)
   const renderTdkReel = (cx: number, cy: number, maskId: string) => {
     const tapeR = cx < 280 ? leftTapeR : rightTapeR;
     return (
       <g transform={`translate(${cx}, ${cy})`}>
-        {/* Magnetic tape pack with hollow center (spindle r=33 punched out) */}
         <g mask={`url(#${maskId})`}>
           <circle cx={0} cy={0} r={tapeR} fill="#14110d" />
           <circle cx={0} cy={0} r={tapeR} fill="url(#tdkTapeRings)" opacity={0.75} />
         </g>
 
-        {/* Rotating white toothed reel ring + amber-orange lock clip (center r=33 is 100% transparent!) */}
         <g transform={`rotate(${reelAngle})`}>
-          {/* Outer white reel flange ring (annulus r=60 outer, r=33 inner — true transparent hole) */}
           <path
             d="M 60 0 A 60 60 0 1 0 -60 0 A 60 60 0 1 0 60 0 Z M 33 0 A 33 33 0 1 1 -33 0 A 33 33 0 1 1 33 0 Z"
             fill="#ffffff"
@@ -421,7 +408,6 @@ export const CassettePlayer: React.FC<CassettePlayerProps> = ({
           />
           <circle cx={0} cy={0} r={59} fill="none" stroke="#d2d2d2" strokeWidth={2} />
 
-          {/* 6 white cassette drive teeth projecting inward into the transparent spindle hole */}
           {[0, 60, 120, 180, 240, 300].map((deg) => (
             <rect
               key={deg}
@@ -435,7 +421,6 @@ export const CassettePlayer: React.FC<CassettePlayerProps> = ({
             />
           ))}
 
-          {/* Signature warm amber-orange (#dd7027) tape lock clip on reel rim */}
           <path
             d="M 54 -17 A 57 57 0 0 1 54 17 L 46 14 A 49 49 0 0 0 46 -14 Z"
             fill="#dd7027"
@@ -458,7 +443,12 @@ export const CassettePlayer: React.FC<CassettePlayerProps> = ({
 
   return (
     <div className={`flex w-full max-w-[564px] flex-col items-center gap-[20px] sm:gap-[24px] ${className}`}>
-      <audio ref={audioRef} src={effectiveAudioUrl ?? undefined} preload="metadata" />
+      <audio
+        ref={audioRef}
+        src={currentSrc}
+        crossOrigin="anonymous"
+        preload="metadata"
+      />
       <input
         ref={fileInputRef}
         type="file"
@@ -500,28 +490,22 @@ export const CassettePlayer: React.FC<CassettePlayerProps> = ({
               <stop offset="100%" stopColor="#090909" />
             </radialGradient>
 
-            {/* Translucent glass sheen over the transparent center window (0.26 opacity) */}
             <linearGradient id="tdkGlass" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor="#ffffff" stopOpacity="0.26" />
               <stop offset="100%" stopColor="#ffffff" stopOpacity="0.065" />
             </linearGradient>
 
-            {/* TRUE SEE-THROUGH SHELL CUTOUT MASK: punches out window, both reel holes, and 4 bottom holes */}
             <mask id="tdkShellCutouts">
               <rect x="0" y="0" width="558" height="342" fill="#ffffff" />
-              {/* Center transparent window cutout */}
               <rect x="212" y="122" width="134" height="76" rx="4" fill="#000000" />
-              {/* Left & right reel spindle holes */}
               <circle cx="158" cy="160" r="35" fill="#000000" />
               <circle cx="400" cy="160" r="35" fill="#000000" />
-              {/* 4 bottom alignment & capstan holes */}
               <circle cx="148" cy="312" r="10" fill="#000000" />
               <circle cx="212" cy="296" r="8.5" fill="#000000" />
               <circle cx="346" cy="296" r="8.5" fill="#000000" />
               <circle cx="410" cy="312" r="10" fill="#000000" />
             </mask>
 
-            {/* Reel spindle hole masks (local coords centered at 0,0) */}
             <mask id="reelHoleLeft">
               <rect x="-130" y="-130" width="260" height="260" fill="#ffffff" />
               <circle cx="0" cy="0" r="33" fill="#000000" />
@@ -531,7 +515,6 @@ export const CassettePlayer: React.FC<CassettePlayerProps> = ({
               <circle cx="0" cy="0" r="33" fill="#000000" />
             </mask>
 
-            {/* Clip for reels & tape packs visible through transparent window + reel cutouts */}
             <clipPath id="tdkWindowArea">
               <rect x="212" y="122" width="134" height="76" rx="4" />
               <circle cx="158" cy="160" r="35" />
@@ -543,16 +526,12 @@ export const CassettePlayer: React.FC<CassettePlayerProps> = ({
             </clipPath>
           </defs>
 
-          {/* Left & Right Mechanical Shell Ears */}
           <rect x="0" y="234" width="6" height="82" rx="2" fill="#171717" stroke="#2b2a2b" strokeWidth="0.8" />
           <rect x="552" y="234" width="6" height="82" rx="2" fill="#171717" stroke="#2b2a2b" strokeWidth="0.8" />
 
-          {/* Main Shell Body with ALL 7 True See-Through Cutout Holes Punched Out */}
           <g mask="url(#tdkShellCutouts)">
             <g clipPath="url(#tdkShellClip)">
               <rect x="4" y="0" width="550" height="342" rx="20" fill="#171717" />
-
-              {/* Subtle Recessed Top Molding */}
               <rect
                 x="24"
                 y="18"
@@ -563,8 +542,6 @@ export const CassettePlayer: React.FC<CassettePlayerProps> = ({
                 stroke="rgba(255,255,255,0.05)"
                 strokeWidth="1"
               />
-
-              {/* Bottom Trapezoid Capstan Bridge */}
               <path
                 d="M 102 262 H 456 L 474 342 H 84 Z"
                 fill="rgba(0,0,0,0.28)"
@@ -574,7 +551,6 @@ export const CassettePlayer: React.FC<CassettePlayerProps> = ({
             </g>
           </g>
 
-          {/* Outer Shell Bevel Border */}
           <rect
             x="4.75"
             y="0.75"
@@ -594,7 +570,6 @@ export const CassettePlayer: React.FC<CassettePlayerProps> = ({
 
             {/* Printed Sticker Template Elements (#100f0f at 72% opacity) */}
             <g opacity="0.72">
-              {/* Left 'A' Square Badge */}
               <g transform="translate(58, 55)">
                 <rect x="0" y="0" width="24" height="24" rx="1.5" fill="#100f0f" />
                 <text
@@ -610,7 +585,6 @@ export const CassettePlayer: React.FC<CassettePlayerProps> = ({
                 </text>
               </g>
 
-              {/* ONLY ACOUSTIC CASSETTE next to badge (ALL CAPS, 10px) */}
               <text
                 x="90"
                 y="70.5"
@@ -622,7 +596,6 @@ export const CassettePlayer: React.FC<CassettePlayerProps> = ({
                 ACOUSTIC CASSETTE
               </text>
 
-              {/* Right N.R.[                     ] with empty space inside brackets (10px) */}
               <text
                 x="434"
                 y="70.5"
@@ -636,7 +609,6 @@ export const CassettePlayer: React.FC<CassettePlayerProps> = ({
                 {"N.R.[                     ]"}
               </text>
 
-              {/* Right □IN  □OUT (ALL CAPS, 10px) */}
               <text
                 x="500"
                 y="70.5"
@@ -666,17 +638,14 @@ export const CassettePlayer: React.FC<CassettePlayerProps> = ({
             </text>
           </g>
 
-          {/* Spinning Reels & Dynamic Magnetic Tape Packs (visible through transparent window & reel cutouts — NO opaque backing!) */}
           <g clipPath="url(#tdkWindowArea)">
             {renderTdkReel(158, 160, "reelHoleLeft")}
             {renderTdkReel(400, 160, "reelHoleRight")}
           </g>
 
-          {/* Subtle Molded Rims around the See-Through Reel Holes */}
           <circle cx="158" cy="160" r="35" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="1.2" />
           <circle cx="400" cy="160" r="35" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="1.2" />
 
-          {/* Transparent Frosted Glass Sheen over the See-Through Center Window (0.26 opacity, no dark fill behind!) */}
           <rect
             x="212"
             y="122"
@@ -688,7 +657,6 @@ export const CassettePlayer: React.FC<CassettePlayerProps> = ({
             strokeWidth="1.5"
           />
 
-          {/* Crisp White Bottom Print: TDK • Normal Bias 120µs EQ • A|90 • Made in Japan */}
           <g fill="#fafafa">
             <g transform="translate(103, 224)">
               <polygon points="8,0 13,5 8,10 3,5" />
@@ -740,7 +708,6 @@ export const CassettePlayer: React.FC<CassettePlayerProps> = ({
             </text>
           </g>
 
-          {/* Subtle Inner Rim Rings around the 4 Punched-Through Bottom Holes (transparent interior!) */}
           {[
             { cx: 148, cy: 312, r: 10 },
             { cx: 212, cy: 296, r: 8.5 },
@@ -758,7 +725,6 @@ export const CassettePlayer: React.FC<CassettePlayerProps> = ({
             />
           ))}
 
-          {/* 5 Precision Screws */}
           {renderTdkScrew(22, 18, 25)}
           {renderTdkScrew(536, 18, -35)}
           {renderTdkScrew(22, 324, 40)}
@@ -785,7 +751,7 @@ export const CassettePlayer: React.FC<CassettePlayerProps> = ({
         <Button
           label="rew"
           size="responsive"
-          aria-label="Rewind track"
+          aria-label="Rewind or previous track"
           onPointerDown={() => beginHoldScrub("rew")}
           className="shrink-0"
         >
@@ -820,7 +786,7 @@ export const CassettePlayer: React.FC<CassettePlayerProps> = ({
         <Button
           label="ff"
           size="responsive"
-          aria-label="Fast forward track"
+          aria-label="Fast forward or next track"
           onPointerDown={() => beginHoldScrub("ff")}
           className="shrink-0"
         >

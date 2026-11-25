@@ -138,8 +138,8 @@ export const siteSettingsType = defineType({
       name: "cassetteTitle",
       title: "Cassette Label Title",
       type: "string",
-      description: "Main title printed on the cassette label (default: Legends Never Die).",
-      initialValue: "Legends Never Die",
+      description: "Handwritten title printed on the cassette label (default: Working Mix).",
+      initialValue: "Working Mix",
     }),
     defineField({
       name: "cassetteArtist",
