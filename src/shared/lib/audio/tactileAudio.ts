@@ -37,7 +37,7 @@ export interface TactileAudioParams {
 }
 
 export const DEFAULT_TACTILE_AUDIO_PARAMS: TactileAudioParams = {
-  masterGain: 0.55,
+  masterGain: 0.66,
 
   matteClickGain: 0.048,
   matteClickFreq: 740,
@@ -331,7 +331,7 @@ class TactileAudio {
     const p = this.params;
     if (!this.enabled || p.masterGain <= 0) return;
     if (mode === "drag") {
-      this.updateKnobDrag(4);
+      this.playTopBarGlide();
       return;
     }
     // Never fire hover/glide burst while dragging the knob or releasing over a NAV label

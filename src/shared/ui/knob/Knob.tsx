@@ -138,7 +138,9 @@ export const Knob = React.forwardRef<HTMLDivElement, KnobProps>(
 
     // Drag handlers - incremental delta tracking for true 360° unconstrained radial slider rotation
     const lastPointerAngleRef = useRef<number>(0);
-    const lastMoveTimeRef = useRef<number>(0);
+    const dragStartAngleRef = useRef<number>(0);
+    const lastGlideAngleRef = useRef<number | null>(null);
+    const lastSnapIndexRef = useRef<number>(-1);
 
     const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
       if (disabled || e.button !== 0) return;
@@ -146,7 +148,9 @@ export const Knob = React.forwardRef<HTMLDivElement, KnobProps>(
 
       const pointerAngle = calculateAngleFromPointer(e);
       lastPointerAngleRef.current = pointerAngle;
-      lastMoveTimeRef.current = performance.now();
+      dragStartAngleRef.current = internalAngleRef.current;
+      lastGlideAngleRef.current = null;
+      lastSnapIndexRef.current = findNearestSnap(internalAngleRef.current).index;
 
       tactileAudio.startKnobDrag();
       setIsDragging(true);
@@ -156,10 +160,6 @@ export const Knob = React.forwardRef<HTMLDivElement, KnobProps>(
     const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
       if (!isDragging || disabled) return;
       e.preventDefault();
-
-      const now = performance.now();
-      const dt = Math.max(8, Math.min(80, now - lastMoveTimeRef.current));
-      lastMoveTimeRef.current = now;
 
       const pointerAngle = calculateAngleFromPointer(e);
       const delta = getShortestDelta(
@@ -173,9 +173,25 @@ export const Knob = React.forwardRef<HTMLDivElement, KnobProps>(
       if (minAngle !== undefined) nextAngle = Math.max(minAngle, nextAngle);
       if (maxAngle !== undefined) nextAngle = Math.min(maxAngle, nextAngle);
 
-      // Time-normalized angular speed (deg per 16ms frame) prevents any spike on React re-renders
-      const normalizedSpeed = (Math.abs(delta) / dt) * 16;
-      tactileAudio.updateKnobDrag(normalizedSpeed);
+      const movedFromStart = Math.abs(nextAngle - dragStartAngleRef.current);
+      const movedSinceLastGlide =
+        lastGlideAngleRef.current !== null
+          ? Math.abs(nextAngle - lastGlideAngleRef.current)
+          : movedFromStart;
+      const nearest = findNearestSnap(nextAngle);
+      const quadrantChanged =
+        nearest.index !== -1 && nearest.index !== lastSnapIndexRef.current;
+
+      if (
+        movedFromStart >= 4 &&
+        (lastGlideAngleRef.current === null ||
+          movedSinceLastGlide >= 26 ||
+          quadrantChanged)
+      ) {
+        tactileAudio.playTopBarGlide();
+        lastGlideAngleRef.current = nextAngle;
+        lastSnapIndexRef.current = nearest.index;
+      }
 
       setCurrentAngle(nextAngle);
       internalAngleRef.current = nextAngle;
@@ -202,8 +218,8 @@ export const Knob = React.forwardRef<HTMLDivElement, KnobProps>(
       // Magnetically glide to exact nearest snap position on release
       setCurrentAngle(snappedAngle);
       internalAngleRef.current = snappedAngle;
-      if (Math.abs(delta) > 6) {
-        tactileAudio.playKnobSnap();
+      if (Math.abs(delta) > 10) {
+        tactileAudio.playTopBarGlide();
       }
 
       onChange?.(nearest.angle);
@@ -222,7 +238,7 @@ export const Knob = React.forwardRef<HTMLDivElement, KnobProps>(
       if (minAngle !== undefined) nextAngle = Math.max(minAngle, nextAngle);
       if (maxAngle !== undefined) nextAngle = Math.min(maxAngle, nextAngle);
 
-      tactileAudio.updateKnobDrag(step);
+      tactileAudio.playTopBarGlide();
 
       setCurrentAngle(nextAngle);
       internalAngleRef.current = nextAngle;
@@ -252,7 +268,7 @@ export const Knob = React.forwardRef<HTMLDivElement, KnobProps>(
           setCurrentAngle(snappedAngle);
           internalAngleRef.current = snappedAngle;
         }
-        tactileAudio.playKnobRustle("glide");
+        tactileAudio.playTopBarGlide();
 
         onChange?.(nearest.angle);
         onSnap?.(nearest.angle, nearest.index);
