@@ -22,13 +22,6 @@ const DEFAULT_MIXTAPE_TRACKS = [
 
 type TransportMode = "paused" | "playing" | "rewinding" | "forwarding";
 
-function formatTime(sec: number): string {
-  if (!Number.isFinite(sec) || sec < 0) return "00:00";
-  const m = Math.floor(sec / 60);
-  const s = Math.floor(sec % 60);
-  return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
-}
-
 export const CassettePlayer: React.FC<CassettePlayerProps> = ({
   audioUrl,
   title = "Working Mix",
@@ -378,15 +371,6 @@ export const CassettePlayer: React.FC<CassettePlayerProps> = ({
   const isRewinding = mode === "rewinding";
   const isForwarding = mode === "forwarding";
 
-  const trackCounter = playlist.length > 1 ? `${trackIndex + 1}/${playlist.length} • ` : "";
-  const statusText = isRewinding
-    ? `REW • ${trackCounter}${formatTime(currentTime)}`
-    : isForwarding
-    ? `FF • ${trackCounter}${formatTime(currentTime)}`
-    : isPlaying
-    ? `PLAY • ${trackCounter}${formatTime(currentTime)}`
-    : `TAPE • ${trackCounter}${formatTime(currentTime)}`;
-
   // Dynamic magnetic tape pack radii (left shrinks across the mixtape, right grows)
   const leftTapeR = 114 - overallProgress * 44; // 114 -> 70
   const rightTapeR = 70 + overallProgress * 44; // 70 -> 114
@@ -568,7 +552,7 @@ export const CassettePlayer: React.FC<CassettePlayerProps> = ({
             <rect x="40" y="43" width="478" height="48" fill="#ffffff" />
             <rect x="40" y="91" width="478" height="12" rx="2" fill="#dd7027" />
 
-            {/* Printed Sticker Template Elements (#100f0f at 72% opacity) */}
+            {/* Printed Sticker Template Elements (#100f0f at 72% opacity, top-aligned with A badge at y=55) */}
             <g opacity="0.72">
               <g transform="translate(58, 55)">
                 <rect x="0" y="0" width="24" height="24" rx="1.5" fill="#100f0f" />
@@ -587,7 +571,7 @@ export const CassettePlayer: React.FC<CassettePlayerProps> = ({
 
               <text
                 x="90"
-                y="70.5"
+                y="62.5"
                 fill="#100f0f"
                 fontSize="10"
                 fontWeight="600"
@@ -597,8 +581,8 @@ export const CassettePlayer: React.FC<CassettePlayerProps> = ({
               </text>
 
               <text
-                x="434"
-                y="70.5"
+                x="432"
+                y="62.5"
                 textAnchor="end"
                 fill="#100f0f"
                 fontSize="10"
@@ -609,17 +593,45 @@ export const CassettePlayer: React.FC<CassettePlayerProps> = ({
                 {"N.R.[                     ]"}
               </text>
 
+              {/* Vector checkboxes matched to exact 10px cap-height (7.2px) & top-aligned at y=55.2 */}
+              <rect
+                x="441"
+                y="55.2"
+                width="7.2"
+                height="7.2"
+                fill="none"
+                stroke="#100f0f"
+                strokeWidth="1"
+              />
               <text
-                x="500"
-                y="70.5"
-                textAnchor="end"
+                x="451"
+                y="62.5"
                 fill="#100f0f"
                 fontSize="10"
                 fontWeight="500"
                 fontFamily="var(--font-hauora), sans-serif"
-                style={{ whiteSpace: "pre" }}
               >
-                {"□IN  □OUT"}
+                IN
+              </text>
+
+              <rect
+                x="468.5"
+                y="55.2"
+                width="7.2"
+                height="7.2"
+                fill="none"
+                stroke="#100f0f"
+                strokeWidth="1"
+              />
+              <text
+                x="478.5"
+                y="62.5"
+                fill="#100f0f"
+                fontSize="10"
+                fontWeight="500"
+                fontFamily="var(--font-hauora), sans-serif"
+              >
+                OUT
               </text>
             </g>
 
@@ -741,29 +753,61 @@ export const CassettePlayer: React.FC<CassettePlayerProps> = ({
         )}
       </div>
 
-      {/* 2. COMM-Style Tactile Hardware Deck Controls Underneath */}
+      {/* 2. COMM-Style Tactile Hardware Deck Controls Underneath (No button labels, CV incandescent active/hover glow) */}
       <Section
-        label={statusText}
-        labelClassName="max-w-[calc(100%-32px)]"
-        textClassName="truncate whitespace-nowrap"
-        className="flex h-[94px] sm:h-[116px] w-full max-w-[490px] flex-row items-center justify-center gap-[14px] sm:gap-[24px] px-[16px] sm:px-[24px]"
+        label="TAPE"
+        className="flex h-[80px] sm:h-[96px] w-full max-w-[490px] flex-row items-center justify-center gap-[14px] sm:gap-[24px] px-[16px] sm:px-[24px]"
       >
+        {/* Shared SVG defs matching ButtonDownload's exact incandescent amber lamp gradient & contour glow */}
+        <svg width="0" height="0" className="absolute pointer-events-none" aria-hidden="true">
+          <defs>
+            <linearGradient id="tapeDeckLampGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#FFF8C4" />
+              <stop offset="35%" stopColor="#FFDF64" />
+              <stop offset="65%" stopColor="#FFC438" />
+              <stop offset="85%" stopColor="#F59820" />
+              <stop offset="100%" stopColor="#E57810" />
+            </linearGradient>
+            <filter id="tapeDeckLampGlow" x="-40%" y="-40%" width="180%" height="180%">
+              <feGaussianBlur in="SourceAlpha" stdDeviation="1.4" result="contourBlur" />
+              <feFlood floodColor="#E58E1A" floodOpacity="0.28" result="amberFlood" />
+              <feComposite in="amberFlood" in2="contourBlur" operator="in" result="coloredOutline" />
+              <feMerge>
+                <feMergeNode in="coloredOutline" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+          </defs>
+        </svg>
+
         <Button
-          label="rew"
           size="responsive"
           aria-label="Rewind or previous track"
           onPointerDown={() => beginHoldScrub("rew")}
           className="shrink-0"
         >
           <span className="flex h-full w-full items-center justify-center">
-            <svg width="14" height="10" viewBox="0 0 19 12" fill="none" className={isRewinding ? "text-[#dd7027]" : "text-content-tertiary group-hover:text-content-primary transition-colors"}>
-              <path d="M9 12L0.5 6L9 0V12ZM18.5 12L10 6L18.5 0V12Z" fill="currentColor" />
+            <svg width="14" height="10" viewBox="0 0 19 12" fill="none" className="overflow-visible">
+              <path
+                d="M9 12L0.5 6L9 0V12ZM18.5 12L10 6L18.5 0V12Z"
+                fill="var(--color-border-hardware, #383838)"
+                className={`transition-opacity duration-200 ease-out ${
+                  isRewinding ? "opacity-0" : "group-hover:opacity-0 group-active:opacity-0"
+                }`}
+              />
+              <path
+                d="M9 12L0.5 6L9 0V12ZM18.5 12L10 6L18.5 0V12Z"
+                fill="url(#tapeDeckLampGrad)"
+                filter="url(#tapeDeckLampGlow)"
+                className={`transition-opacity duration-200 ease-out ${
+                  isRewinding ? "opacity-100" : "opacity-0 group-hover:opacity-100 group-active:opacity-100"
+                }`}
+              />
             </svg>
           </span>
         </Button>
 
         <Button
-          label={isPlaying ? "pause" : "play"}
           size="responsive"
           aria-label={isPlaying ? "Pause cassette" : "Play cassette"}
           onClick={handleTogglePlay}
@@ -771,42 +815,76 @@ export const CassettePlayer: React.FC<CassettePlayerProps> = ({
         >
           <span className="flex h-full w-full items-center justify-center">
             {isPlaying ? (
-              <svg width="10" height="11" viewBox="0 0 10 12" fill="none" className="text-[#dd7027] drop-shadow-[0_0_6px_rgba(221,112,39,0.5)]">
-                <rect x="0.5" y="0.5" width="3" height="11" rx="0.8" fill="currentColor" />
-                <rect x="6.5" y="0.5" width="3" height="11" rx="0.8" fill="currentColor" />
+              <svg width="10" height="11" viewBox="0 0 10 12" fill="none" className="overflow-visible">
+                <g fill="url(#tapeDeckLampGrad)" filter="url(#tapeDeckLampGlow)">
+                  <rect x="0.5" y="0.5" width="3" height="11" rx="0.8" />
+                  <rect x="6.5" y="0.5" width="3" height="11" rx="0.8" />
+                </g>
               </svg>
             ) : (
-              <svg width="10" height="12" viewBox="0 0 11 14" fill="none" className="translate-x-[1px] text-content-tertiary group-hover:text-content-primary transition-colors">
-                <path d="M0.5 0.5V13.5L10.5 7L0.5 0.5Z" fill="currentColor" />
+              <svg width="10" height="12" viewBox="0 0 11 14" fill="none" className="translate-x-[1px] overflow-visible">
+                <path
+                  d="M0.5 0.5V13.5L10.5 7L0.5 0.5Z"
+                  fill="var(--color-border-hardware, #383838)"
+                  className="transition-opacity duration-200 ease-out group-hover:opacity-0 group-active:opacity-0"
+                />
+                <path
+                  d="M0.5 0.5V13.5L10.5 7L0.5 0.5Z"
+                  fill="url(#tapeDeckLampGrad)"
+                  filter="url(#tapeDeckLampGlow)"
+                  className="opacity-0 transition-opacity duration-200 ease-out group-hover:opacity-100 group-active:opacity-100"
+                />
               </svg>
             )}
           </span>
         </Button>
 
         <Button
-          label="ff"
           size="responsive"
           aria-label="Fast forward or next track"
           onPointerDown={() => beginHoldScrub("ff")}
           className="shrink-0"
         >
           <span className="flex h-full w-full items-center justify-center">
-            <svg width="14" height="10" viewBox="0 0 19 12" fill="none" className={isForwarding ? "text-[#dd7027]" : "text-content-tertiary group-hover:text-content-primary transition-colors"}>
-              <path d="M0.5 12V0L9 6L0.5 12ZM10 12V0L18.5 6L10 12Z" fill="currentColor" />
+            <svg width="14" height="10" viewBox="0 0 19 12" fill="none" className="overflow-visible">
+              <path
+                d="M0.5 12V0L9 6L0.5 12ZM10 12V0L18.5 6L10 12Z"
+                fill="var(--color-border-hardware, #383838)"
+                className={`transition-opacity duration-200 ease-out ${
+                  isForwarding ? "opacity-0" : "group-hover:opacity-0 group-active:opacity-0"
+                }`}
+              />
+              <path
+                d="M0.5 12V0L9 6L0.5 12ZM10 12V0L18.5 6L10 12Z"
+                fill="url(#tapeDeckLampGrad)"
+                filter="url(#tapeDeckLampGlow)"
+                className={`transition-opacity duration-200 ease-out ${
+                  isForwarding ? "opacity-100" : "opacity-0 group-hover:opacity-100 group-active:opacity-100"
+                }`}
+              />
             </svg>
           </span>
         </Button>
 
         <Button
-          label="tape"
           size="responsive"
           aria-label="Load your own audio track"
           onClick={() => fileInputRef.current?.click()}
           className="shrink-0"
         >
           <span className="flex h-full w-full items-center justify-center">
-            <svg width="11" height="11" viewBox="0 0 12 12" fill="none" className="text-content-tertiary group-hover:text-content-primary transition-colors">
-              <path d="M6 1.5L11 7H1L6 1.5ZM1 9H11V10.8H1V9Z" fill="currentColor" />
+            <svg width="11" height="11" viewBox="0 0 12 12" fill="none" className="overflow-visible">
+              <path
+                d="M6 1.5L11 7H1L6 1.5ZM1 9H11V10.8H1V9Z"
+                fill="var(--color-border-hardware, #383838)"
+                className="transition-opacity duration-200 ease-out group-hover:opacity-0 group-active:opacity-0"
+              />
+              <path
+                d="M6 1.5L11 7H1L6 1.5ZM1 9H11V10.8H1V9Z"
+                fill="url(#tapeDeckLampGrad)"
+                filter="url(#tapeDeckLampGlow)"
+                className="opacity-0 transition-opacity duration-200 ease-out group-hover:opacity-100 group-active:opacity-100"
+              />
             </svg>
           </span>
         </Button>
