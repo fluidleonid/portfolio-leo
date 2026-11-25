@@ -3,6 +3,7 @@
 import React, { useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
+import { tactileAudio } from "@/shared/lib/audio";
 
 const ARROW_PATH =
   "M6.92395 21.7257C5.97195 21.7257 5.20021 20.954 5.20019 20.002C5.20019 19.05 5.97194 18.2782 6.92395 18.2782L29.469 18.2782C28.7711 17.5461 27.914 16.7519 27.0265 15.9813C25.9457 15.0429 24.8599 14.171 24.0411 13.532C23.6326 13.2133 23.2923 12.9543 23.0555 12.7754C22.9373 12.6861 22.8451 12.6165 22.7828 12.57C22.7517 12.5468 22.7276 12.5293 22.7121 12.5178C22.7045 12.5122 22.6989 12.5079 22.6952 12.5052C22.6934 12.5039 22.691 12.5018 22.691 12.5018C21.9245 11.9373 21.7604 10.8578 22.3249 10.0913C22.8895 9.32496 23.9682 9.16153 24.7346 9.726L24.7372 9.72768C24.7372 9.72768 24.7406 9.73011 24.743 9.73189C24.7479 9.73549 24.7551 9.74041 24.7641 9.74704C24.7822 9.76047 24.8084 9.78067 24.8424 9.80596C24.9102 9.85653 25.009 9.92982 25.1336 10.024C25.3828 10.2122 25.7374 10.4828 26.1621 10.8143C27.0097 11.4758 28.1454 12.3873 29.2864 13.378C30.419 14.3614 31.5967 15.4568 32.5041 16.4838C32.956 16.9952 33.3773 17.5305 33.6951 18.0577C33.9844 18.5377 34.3247 19.2292 34.3247 20.002C34.3247 20.7748 33.9844 21.4663 33.6951 21.9462C33.3772 22.4735 32.9552 23.0087 32.5033 23.5202C31.5959 24.547 30.4189 25.6427 29.2864 26.6259C28.1454 27.6166 27.0097 28.5282 26.1621 29.1897C25.7375 29.521 25.3828 29.7909 25.1336 29.9792C25.0089 30.0733 24.9102 30.1474 24.8424 30.198C24.8085 30.2232 24.7822 30.2427 24.7641 30.2561C24.755 30.2628 24.748 30.2684 24.743 30.2721C24.7407 30.2738 24.7372 30.2763 24.7372 30.2763L24.7355 30.2771L24.7346 30.278C23.9681 30.8423 22.8894 30.6783 22.3249 29.9118C21.7605 29.1454 21.9239 28.0667 22.6902 27.5021L22.691 27.5013C22.691 27.5013 22.6935 27.5001 22.6952 27.4988C22.6989 27.4961 22.7044 27.4918 22.7121 27.4861C22.7276 27.4746 22.7516 27.4572 22.7828 27.4339C22.8451 27.3875 22.9372 27.3179 23.0555 27.2286C23.2923 27.0497 23.6326 26.7907 24.0411 26.4719C24.8599 25.8329 25.9456 24.9611 27.0265 24.0226C27.9138 23.2522 28.7703 22.4577 29.4682 21.7257L6.92395 21.7257Z";
@@ -53,6 +54,27 @@ export const CaseLink = React.forwardRef<HTMLElement, CaseLinkProps>(
     const [toastVisible, setToastVisible] = useState(false);
     const [mounted, setMounted] = useState(false);
     const toastTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    const tactileHandlers = {
+      onPointerEnter: (e: React.PointerEvent<HTMLElement>) => {
+        if (e.pointerType === "mouse") {
+          tactileAudio.playHover("matte");
+        }
+        props.onPointerEnter?.(e);
+      },
+      onPointerDown: (e: React.PointerEvent<HTMLElement>) => {
+        if (e.button === 0) {
+          tactileAudio.playKeyClick("matte");
+        }
+        props.onPointerDown?.(e);
+      },
+      onKeyDown: (e: React.KeyboardEvent<HTMLElement>) => {
+        if (e.key === "Enter" || e.key === " ") {
+          tactileAudio.playKeyClick("matte");
+        }
+        props.onKeyDown?.(e);
+      },
+    };
 
     useEffect(() => {
       setMounted(true);
@@ -224,6 +246,7 @@ export const CaseLink = React.forwardRef<HTMLElement, CaseLinkProps>(
             href={href}
             className={baseClasses}
             {...(props as any)}
+            {...(tactileHandlers as any)}
           >
             {innerContent}
           </Link>
@@ -238,6 +261,7 @@ export const CaseLink = React.forwardRef<HTMLElement, CaseLinkProps>(
           rel="noopener noreferrer"
           className={baseClasses}
           {...(props as React.AnchorHTMLAttributes<HTMLAnchorElement>)}
+          {...(tactileHandlers as React.AnchorHTMLAttributes<HTMLAnchorElement>)}
         >
           {innerContent}
         </a>
@@ -252,6 +276,7 @@ export const CaseLink = React.forwardRef<HTMLElement, CaseLinkProps>(
           onClick={onClick}
           className={`${baseClasses} bg-transparent border-0 p-0 text-left`}
           {...(props as React.ButtonHTMLAttributes<HTMLButtonElement>)}
+          {...(tactileHandlers as React.ButtonHTMLAttributes<HTMLButtonElement>)}
         >
           {innerContent}
         </button>
@@ -266,6 +291,7 @@ export const CaseLink = React.forwardRef<HTMLElement, CaseLinkProps>(
           onClick={handleInactiveClick}
           className={`${baseClasses} bg-transparent border-0 p-0 text-left`}
           {...(props as React.ButtonHTMLAttributes<HTMLButtonElement>)}
+          {...(tactileHandlers as React.ButtonHTMLAttributes<HTMLButtonElement>)}
         >
           {innerContent}
         </button>

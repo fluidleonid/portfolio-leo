@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo, useEffect, useRef } from "react";
 import { trackEvent } from "@/shared/lib/analytics";
+import { tactileAudio } from "@/shared/lib/audio";
 import {
   Button,
   ButtonLamp,
@@ -292,7 +293,20 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
     const activeNav = hoveredNav ?? (controlledActiveNav ?? selectedNav);
     const knobTargetAngle = snapMap[activeNav];
 
-    const handleSelectNav = (item: NavItem) => {
+    const handleHoverNav = (item: NavItem | null) => {
+      if (tactileAudio.isKnobDragging) return;
+      if (item !== null && item !== activeNav) {
+        tactileAudio.playKnobRustle("glide", true);
+      } else if (item === null && hoveredNav !== null && hoveredNav !== (controlledActiveNav ?? selectedNav)) {
+        tactileAudio.playKnobRustle("glide", true);
+      }
+      setHoveredNav(item);
+    };
+
+    const handleSelectNav = (item: NavItem, playSound = true) => {
+      if (playSound) {
+        tactileAudio.playKnobRustle("glide");
+      }
       setSelectedNav(item);
       onNavChange?.(item);
 
@@ -337,7 +351,7 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
         }
       });
 
-      setHoveredNav(nearest);
+      setHoveredNav((prev) => (prev === nearest ? prev : nearest));
     };
 
     const handleKnobSnap = (angle: number) => {
@@ -353,7 +367,7 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
       });
 
       setHoveredNav(null);
-      handleSelectNav(nearest);
+      handleSelectNav(nearest, false);
     };
 
     // Calculate dynamic anchor positions for NAV rays and labels based on container dimensions
@@ -477,8 +491,8 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
                   e.preventDefault();
                   handleSelectNav("works");
                 }}
-                onMouseEnter={() => setHoveredNav("works")}
-                onMouseLeave={() => setHoveredNav(null)}
+                onMouseEnter={() => handleHoverNav("works")}
+                onMouseLeave={() => handleHoverNav(null)}
                 className={`absolute left-[16px] sm:left-[20px] top-[22px] sm:top-[32px] -translate-y-1/2 cursor-pointer text-left text-[16px] sm:text-[18px] leading-none font-normal font-stetica select-none tracking-normal transition-colors duration-150 ${
                   activeNav === "works"
                     ? "text-content-primary"
@@ -494,8 +508,8 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
                   e.preventDefault();
                   handleSelectNav("index");
                 }}
-                onMouseEnter={() => setHoveredNav("index")}
-                onMouseLeave={() => setHoveredNav(null)}
+                onMouseEnter={() => handleHoverNav("index")}
+                onMouseLeave={() => handleHoverNav(null)}
                 className={`absolute left-[16px] sm:left-[20px] top-[72px] sm:top-[92px] -translate-y-1/2 cursor-pointer text-left text-[16px] sm:text-[18px] leading-none font-normal font-stetica select-none tracking-normal transition-colors duration-150 ${
                   activeNav === "index"
                     ? "text-content-primary"
@@ -523,8 +537,8 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
               <button
                 type="button"
                 onClick={() => handleSelectNav("career")}
-                onMouseEnter={() => setHoveredNav("career")}
-                onMouseLeave={() => setHoveredNav(null)}
+                onMouseEnter={() => handleHoverNav("career")}
+                onMouseLeave={() => handleHoverNav(null)}
                 className={`absolute right-[16px] sm:right-[20px] top-[22px] sm:top-[32px] -translate-y-1/2 cursor-pointer text-right text-[16px] sm:text-[18px] leading-none font-normal font-stetica select-none tracking-normal transition-colors duration-150 ${
                   activeNav === "career" || activeNav === "experience"
                     ? "text-content-primary"
@@ -537,8 +551,8 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
               <button
                 type="button"
                 onClick={() => handleSelectNav("about")}
-                onMouseEnter={() => setHoveredNav("about")}
-                onMouseLeave={() => setHoveredNav(null)}
+                onMouseEnter={() => handleHoverNav("about")}
+                onMouseLeave={() => handleHoverNav(null)}
                 className={`absolute right-[16px] sm:right-[20px] top-[72px] sm:top-[92px] -translate-y-1/2 cursor-pointer text-right text-[16px] sm:text-[18px] leading-none font-normal font-stetica select-none tracking-normal transition-colors duration-150 ${
                   activeNav === "about"
                     ? "text-content-primary"

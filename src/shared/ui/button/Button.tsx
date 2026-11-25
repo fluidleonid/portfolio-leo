@@ -1,4 +1,7 @@
+"use client";
+
 import React from "react";
+import { tactileAudio } from "@/shared/lib/audio";
 
 export interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -38,6 +41,9 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       size = "default",
       disabled,
       children,
+      onPointerEnter,
+      onPointerDown,
+      onKeyDown,
       ...props
     },
     ref
@@ -87,6 +93,24 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
           props["aria-label"] ||
           (typeof label === "string" ? label : "Tactile Button")
         }
+        onPointerEnter={(e) => {
+          if (!disabled && e.pointerType === "mouse") {
+            tactileAudio.playHover("matte");
+          }
+          onPointerEnter?.(e);
+        }}
+        onPointerDown={(e) => {
+          if (!disabled && e.button === 0) {
+            tactileAudio.playKeyClick("matte");
+          }
+          onPointerDown?.(e);
+        }}
+        onKeyDown={(e) => {
+          if (!disabled && (e.key === "Enter" || e.key === " ")) {
+            tactileAudio.playKeyClick("matte");
+          }
+          onKeyDown?.(e);
+        }}
         className={`group relative inline-flex ${
           isHorizontal ? "flex-row items-start sm:items-center gap-[16px] w-full"
             : `flex-col items-center gap-[4px] ${containerWidthClass}`

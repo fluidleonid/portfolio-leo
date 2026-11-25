@@ -1,4 +1,7 @@
+"use client";
+
 import React from "react";
+import { tactileAudio } from "@/shared/lib/audio";
 
 export interface ButtonLampProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -35,6 +38,9 @@ export const ButtonLamp = React.forwardRef<HTMLButtonElement, ButtonLampProps>(
       active = false,
       disabled,
       children,
+      onPointerEnter,
+      onPointerDown,
+      onKeyDown,
       ...props
     },
     ref
@@ -69,6 +75,24 @@ export const ButtonLamp = React.forwardRef<HTMLButtonElement, ButtonLampProps>(
         type="button"
         disabled={disabled}
         aria-label={props["aria-label"] || `Button lamp ${label}`}
+        onPointerEnter={(e) => {
+          if (!disabled && e.pointerType === "mouse") {
+            tactileAudio.playHover("lamp");
+          }
+          onPointerEnter?.(e);
+        }}
+        onPointerDown={(e) => {
+          if (!disabled && e.button === 0) {
+            tactileAudio.playKeyClick("lamp");
+          }
+          onPointerDown?.(e);
+        }}
+        onKeyDown={(e) => {
+          if (!disabled && (e.key === "Enter" || e.key === " ")) {
+            tactileAudio.playKeyClick("lamp");
+          }
+          onKeyDown?.(e);
+        }}
         className={`group relative inline-flex shrink-0 cursor-pointer select-none items-center justify-center bg-black/16 shadow-[inset_0_-1px_2px_rgba(0,0,0,0.25),inset_0_-3px_2px_rgba(0,0,0,0.25)] transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-500/40 disabled:pointer-events-none disabled:opacity-40 [transform:translateZ(0)] ${socketSizeClass} ${className}`}
         {...props}
       >
