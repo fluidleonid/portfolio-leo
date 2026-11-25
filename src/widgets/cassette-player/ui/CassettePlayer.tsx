@@ -449,7 +449,7 @@ export const CassettePlayer: React.FC<CassettePlayerProps> = ({
         }}
         onDragLeave={() => setIsDragOver(false)}
         onDrop={handleDrop}
-        className={`relative w-full max-w-[490px] transition-transform duration-200 select-none ${
+        className={`relative w-full transition-transform duration-200 select-none ${
           isDragOver ? "scale-[1.01] ring-1 ring-[#dd7027]/60 rounded-[20px]" : ""
         }`}
       >
@@ -756,7 +756,7 @@ export const CassettePlayer: React.FC<CassettePlayerProps> = ({
       {/* 2. COMM-Style Tactile Hardware Deck Controls Underneath (No button labels, CV incandescent active/hover glow) */}
       <Section
         label="TAPE"
-        className="flex h-[80px] sm:h-[96px] w-full max-w-[490px] flex-row items-center justify-center gap-[14px] sm:gap-[24px] px-[16px] sm:px-[24px]"
+        className="flex h-[80px] sm:h-[96px] w-full flex-row items-center justify-center gap-[14px] sm:gap-[24px] px-[16px] sm:px-[24px]"
       >
         {/* Shared SVG defs matching ButtonDownload's exact incandescent amber lamp gradient & contour glow */}
         <svg width="0" height="0" className="absolute pointer-events-none" aria-hidden="true">
