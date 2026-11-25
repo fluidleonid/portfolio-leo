@@ -7,6 +7,7 @@ import React, {
   useCallback,
   useMemo,
 } from "react";
+import { tactileAudio } from "@/shared/lib/audio";
 
 export interface TunerFrame {
   id: string;
@@ -63,6 +64,9 @@ export const TopBar: React.FC<TopBarProps> = ({
   const hideTimerRef = useRef<NodeJS.Timeout | null>(null);
   const trackRef = useRef<HTMLDivElement>(null);
   const rafScrollRef = useRef<number | null>(null);
+  const dragStartRatioRef = useRef<number | null>(null);
+  const lastSoundRatioRef = useRef<number | null>(null);
+  const lastSoundStationRef = useRef<number | null>(null);
 
   // Unified page structure resolution
   const frames = useMemo<TunerFrame[]>(() => {
@@ -321,7 +325,7 @@ export const TopBar: React.FC<TopBarProps> = ({
 
   // Convert horizontal clientX pointer coordinate smoothly into needle ratio & throttled scroll position
   const updateFromPointerX = useCallback(
-    (clientX: number) => {
+    (clientX: number, isInitialDown = false) => {
       if (!trackRef.current) return;
       const rect = trackRef.current.getBoundingClientRect();
       const trackWidth = rect.width;
@@ -334,10 +338,10 @@ export const TopBar: React.FC<TopBarProps> = ({
       // 1. Instantaneous needle & glow update for 0ms input latency on mobile touch & desktop pointer
       setNeedleRatio(ratio);
 
-      // 2. Synchronize active station label highlight
-      if (onStationChange && frames.length > 0) {
+      // 2. Synchronize active station label highlight & play soft knob-hover glide on drag
+      let closestIdx = 0;
+      if (frames.length > 0) {
         const ratios = stationRatiosRef.current;
-        let closestIdx = 0;
         let minDiff = Infinity;
         for (let i = 0; i < frames.length; i++) {
           const stationMark = ratios[i] ?? (i / Math.max(1, frames.length - 1));
@@ -347,8 +351,37 @@ export const TopBar: React.FC<TopBarProps> = ({
             closestIdx = i;
           }
         }
-        if (frames[closestIdx]) {
+        if (onStationChange && frames[closestIdx]) {
           onStationChange(frames[closestIdx].id);
+        }
+      }
+
+      if (isInitialDown) {
+        dragStartRatioRef.current = ratio;
+        lastSoundRatioRef.current = null;
+        lastSoundStationRef.current = closestIdx;
+      } else if (isDraggingRef.current) {
+        const movedFromStart =
+          dragStartRatioRef.current !== null
+            ? Math.abs(ratio - dragStartRatioRef.current)
+            : 1;
+        const movedSinceLastSound =
+          lastSoundRatioRef.current !== null
+            ? Math.abs(ratio - lastSoundRatioRef.current)
+            : movedFromStart;
+        const stationChanged =
+          lastSoundStationRef.current !== null &&
+          closestIdx !== lastSoundStationRef.current;
+
+        if (
+          movedFromStart >= 0.008 &&
+          (lastSoundRatioRef.current === null ||
+            movedSinceLastSound >= 0.045 ||
+            stationChanged)
+        ) {
+          tactileAudio.playTopBarGlide();
+          lastSoundRatioRef.current = ratio;
+          lastSoundStationRef.current = closestIdx;
         }
       }
 
@@ -409,7 +442,7 @@ export const TopBar: React.FC<TopBarProps> = ({
       // Ignore if pointer capture not supported
     }
 
-    updateFromPointerX(e.clientX);
+    updateFromPointerX(e.clientX, true);
   };
 
   // Click on a specific station frame or label
@@ -417,6 +450,7 @@ export const TopBar: React.FC<TopBarProps> = ({
     const target = frames[frameIdx];
     if (!target) return;
 
+    tactileAudio.playTopBarGlide();
     triggerActivity(1500);
 
     if (onStationChange) {

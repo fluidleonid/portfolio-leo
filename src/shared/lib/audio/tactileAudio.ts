@@ -83,6 +83,7 @@ class TactileAudio {
   private noiseBuffer: AudioBuffer | null = null;
   private activeDragVoice: ActiveKnobDragVoice | null = null;
   private activeGlideGain: GainNode | null = null;
+  private lastTopBarGlideAt = 0;
   private smoothedSpeed = 0;
   private dragCooldownUntil = 0;
   public isKnobDragging = false;
@@ -404,6 +405,65 @@ class TactileAudio {
 
   playKnobTick(): void {
     this.playKnobRustle("glide");
+  }
+
+  /**
+   * Plays the exact NAV knob hover glide sound when dragging/scrubbing the TopBar radio tuner.
+   * Uses natural 125ms spacing so each 98ms-attack / 145ms-duration swoosh blooms cleanly without self-cancelling.
+   */
+  playTopBarGlide(): void {
+    const p = this.params;
+    if (!this.enabled || p.masterGain <= 0 || p.knobGlideGain <= 0.0001) return;
+
+    const nowMs = typeof performance !== "undefined" ? performance.now() : 0;
+    if (nowMs - this.lastTopBarGlideAt < 125) return;
+    this.lastTopBarGlideAt = nowMs;
+
+    const ctx = this.getContext(true);
+    if (!ctx || !this.noiseBuffer) return;
+
+    try {
+      const now = ctx.currentTime;
+      const peak = p.knobGlideGain * p.masterGain;
+      const durSec = Math.max(0.02, p.knobGlideDurationMs / 1000);
+      const attackSec = Math.min(durSec * 0.68, Math.max(0.008, p.knobGlideAttackMs / 1000));
+      const hpFreq = Math.max(25, p.knobHighpassHz);
+      const lpFreq = Math.max(hpFreq + 20, p.knobLowpassHz);
+
+      const noise = ctx.createBufferSource();
+      noise.buffer = this.noiseBuffer;
+
+      const highpass = ctx.createBiquadFilter();
+      highpass.type = "highpass";
+      highpass.frequency.value = hpFreq;
+      highpass.frequency.setValueAtTime(hpFreq, now);
+      highpass.Q.value = 0.5;
+
+      const lowpass = ctx.createBiquadFilter();
+      lowpass.type = "lowpass";
+      lowpass.frequency.value = lpFreq * 1.15;
+      lowpass.frequency.setValueAtTime(lpFreq * 1.15, now);
+      lowpass.frequency.exponentialRampToValueAtTime(
+        Math.max(40, lpFreq * 0.8),
+        now + durSec
+      );
+      lowpass.Q.value = 0.4;
+
+      const gain = ctx.createGain();
+      gain.gain.value = 0;
+      gain.gain.setValueAtTime(0, now);
+      gain.gain.linearRampToValueAtTime(peak, now + attackSec);
+      gain.gain.linearRampToValueAtTime(0, now + durSec);
+
+      noise.connect(highpass);
+      highpass.connect(lowpass);
+      lowpass.connect(gain);
+      gain.connect(ctx.destination);
+
+      noise.start(now, Math.random() * 0.8, durSec + 0.02);
+    } catch {
+      // Ignore Web Audio scheduling errors
+    }
   }
 
   /**
