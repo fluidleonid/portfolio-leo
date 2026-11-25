@@ -1,8 +1,16 @@
 import type { Metadata } from "next";
+import { Rock_Salt } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { AssetProtection, LedPageTransition } from "@/shared/ui";
 import { GoogleAnalytics, ScrollDepthTracker } from "@/shared/lib/analytics";
 import "./globals.css";
+
+const rockSalt = Rock_Salt({
+  weight: "400",
+  subsets: ["latin"],
+  variable: "--font-rock-salt",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://portfolio-leo-virid.vercel.app"),
@@ -50,7 +58,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="ru" className="overflow-x-hidden max-w-full">
+    <html lang="ru" className={`${rockSalt.variable} overflow-x-hidden max-w-full`}>
       <body className="bg-canvas text-white antialiased overflow-x-hidden max-w-full">
         <AssetProtection />
         <LedPageTransition>{children}</LedPageTransition>

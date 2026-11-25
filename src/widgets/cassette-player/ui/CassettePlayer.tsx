@@ -592,68 +592,77 @@ export const CassettePlayer: React.FC<CassettePlayerProps> = ({
             <rect x="40" y="43" width="478" height="48" fill="#ffffff" />
             <rect x="40" y="91" width="478" height="12" rx="2" fill="#dd7027" />
 
-            {/* Left 'A' Square Badge */}
-            <g transform="translate(58, 55)">
-              <rect x="0" y="0" width="24" height="24" rx="1.5" fill="#100f0f" />
+            {/* Printed Sticker Template Elements (#100f0f at 72% opacity) */}
+            <g opacity="0.72">
+              {/* Left 'A' Square Badge */}
+              <g transform="translate(58, 55)">
+                <rect x="0" y="0" width="24" height="24" rx="1.5" fill="#100f0f" />
+                <text
+                  x="12"
+                  y="18"
+                  textAnchor="middle"
+                  fill="#ffffff"
+                  fontSize="18"
+                  fontWeight="700"
+                  fontFamily="var(--font-hauora), sans-serif"
+                >
+                  A
+                </text>
+              </g>
+
+              {/* ONLY ACOUSTIC CASSETTE next to badge (ALL CAPS, 10px) */}
               <text
-                x="12"
-                y="18"
-                textAnchor="middle"
-                fill="#ffffff"
-                fontSize="18"
-                fontWeight="700"
+                x="90"
+                y="70.5"
+                fill="#100f0f"
+                fontSize="10"
+                fontWeight="600"
                 fontFamily="var(--font-hauora), sans-serif"
               >
-                A
+                ACOUSTIC CASSETTE
+              </text>
+
+              {/* Right N.R.[                     ] with empty space inside brackets (10px) */}
+              <text
+                x="434"
+                y="70.5"
+                textAnchor="end"
+                fill="#100f0f"
+                fontSize="10"
+                fontWeight="500"
+                fontFamily="var(--font-hauora), sans-serif"
+                style={{ whiteSpace: "pre" }}
+              >
+                {"N.R.[                     ]"}
+              </text>
+
+              {/* Right □IN  □OUT (ALL CAPS, 10px) */}
+              <text
+                x="500"
+                y="70.5"
+                textAnchor="end"
+                fill="#100f0f"
+                fontSize="10"
+                fontWeight="500"
+                fontFamily="var(--font-hauora), sans-serif"
+                style={{ whiteSpace: "pre" }}
+              >
+                {"□IN  □OUT"}
               </text>
             </g>
 
-            {/* Acoustic Cassette & Subtitle */}
-            <text
-              x="90"
-              y="64"
-              fill="#100f0f"
-              fontSize="10"
-              fontWeight="600"
-              fontFamily="var(--font-hauora), sans-serif"
-            >
-              Acoustic Cassette
-            </text>
-            <text
-              x="90"
-              y="78"
-              fill="#100f0f"
-              fontSize="9"
-              opacity="0.7"
-              fontFamily="var(--font-hauora), sans-serif"
-            >
-              {trackSubtitle.length > 22 ? `${trackSubtitle.slice(0, 21)}…` : trackSubtitle}
-            </text>
-
-            {/* Center Track Title */}
+            {/* Handwritten Track Title (Rock Salt, 20px, #100f0f 100% opacity, centered in sticker) */}
             <text
               x="279"
-              y="74"
+              y="67"
               textAnchor="middle"
+              dominantBaseline="central"
               fill="#100f0f"
               fontSize="20"
-              fontWeight="700"
-              letterSpacing="-0.02em"
-              fontFamily="var(--font-hauora), sans-serif"
+              fontWeight="400"
+              fontFamily="var(--font-rock-salt), 'Rock Salt', cursive"
             >
               {trackTitle.length > 22 ? `${trackTitle.slice(0, 21)}…` : trackTitle}
-            </text>
-
-            {/* Right N.R. & In/Out Marks */}
-            <text
-              x="404"
-              y="69"
-              fill="#100f0f"
-              fontSize="9"
-              fontWeight="500"
-              fontFamily="var(--font-hauora), sans-serif"
-            >
-              N.R.[    ]  □In □Out
             </text>
           </g>
 
