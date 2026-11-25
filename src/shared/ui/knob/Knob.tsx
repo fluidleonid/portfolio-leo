@@ -194,7 +194,7 @@ export const Knob = React.forwardRef<HTMLDivElement, KnobProps>(
       setCurrentAngle(snappedAngle);
       internalAngleRef.current = snappedAngle;
       if (Math.abs(delta) > 6) {
-        tactileAudio.playKnobRustle("glide");
+        tactileAudio.playKnobSnap();
       }
 
       onChange?.(nearest.angle);

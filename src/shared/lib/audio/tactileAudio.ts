@@ -25,45 +25,56 @@ export interface TactileAudioParams {
 
   // 3. Rotary NAV Knob
   knobDragGain: number;
+  knobAttackMs: number;
+  knobReleaseMs: number;
+  knobSpeedSens: number;
   knobLowpassHz: number;
   knobHighpassHz: number;
+  knobSnapGain: number;
   knobGlideGain: number;
+  knobGlideAttackMs: number;
   knobGlideDurationMs: number;
 }
 
 export const DEFAULT_TACTILE_AUDIO_PARAMS: TactileAudioParams = {
-  masterGain: 1.0,
+  masterGain: 1,
 
   matteClickGain: 0.048,
-  matteClickFreq: 1260,
-  matteClickDecayMs: 9,
-  matteBodyGain: 0.013,
+  matteClickFreq: 740,
+  matteClickDecayMs: 15,
+  matteBodyGain: 0.055,
   matteBodyFreq: 215,
-  matteHoverGain: 0.02,
-  matteHoverFreq: 920,
+  matteHoverGain: 0.08,
+  matteHoverFreq: 300,
 
-  lampHumGain: 0.024,
-  lampHoverGain: 0.017,
-  lampBaseFreq: 74,
-  lampDetuneHz: 4.5,
-  lampLowpassHz: 255,
-  lampWaveRateHz: 15.5,
-  lampWaveDepth: 0.28,
-  lampDurationMs: 210,
-  lampTouchGain: 0.02,
+  lampHumGain: 0.018,
+  lampHoverGain: 0.014,
+  lampBaseFreq: 72,
+  lampDetuneHz: 0,
+  lampLowpassHz: 165,
+  lampWaveRateHz: 22,
+  lampWaveDepth: 0,
+  lampDurationMs: 500,
+  lampTouchGain: 0.001,
 
-  knobDragGain: 0.022,
-  knobLowpassHz: 240,
-  knobHighpassHz: 75,
-  knobGlideGain: 0.02,
+  knobDragGain: 0.013,
+  knobAttackMs: 48,
+  knobReleaseMs: 130,
+  knobSpeedSens: 0.3,
+  knobLowpassHz: 140,
+  knobHighpassHz: 95,
+  knobSnapGain: 0,
+  knobGlideGain: 0.08,
+  knobGlideAttackMs: 24,
   knobGlideDurationMs: 60,
 };
 
-const PARAMS_STORAGE_KEY = "leo_tactile_audio_params_v1";
+const PARAMS_STORAGE_KEY = "leo_tactile_audio_params_v2";
 
 interface ActiveKnobDragVoice {
   source: AudioBufferSourceNode;
   highpass: BiquadFilterNode;
+  highpass2: BiquadFilterNode;
   filter: BiquadFilterNode;
   gain: GainNode;
   idleTimer: ReturnType<typeof setTimeout> | null;
@@ -137,22 +148,32 @@ class TactileAudio {
         void this.ctx.resume().catch(() => {});
       }
       if (!this.noiseBuffer) {
+        // Zero-DC seamless pink-velvet noise buffer (eliminates DC-offset envelope thumps!)
         const length = Math.floor(this.ctx.sampleRate * 1.5);
         const buffer = this.ctx.createBuffer(1, length, this.ctx.sampleRate);
         const data = buffer.getChannelData(0);
         let b0 = 0;
         let b1 = 0;
         let b2 = 0;
+        let sum = 0;
         for (let i = 0; i < length; i++) {
           const white = Math.random() * 2 - 1;
           b0 = 0.99765 * b0 + white * 0.099046;
           b1 = 0.963 * b1 + white * 0.2965164;
           b2 = 0.57 * b2 + white * 1.0526913;
-          data[i] = (b0 + b1 + b2 + white * 0.1848) * 0.18;
+          const sample = (b0 + b1 + b2 + white * 0.1848) * 0.18;
+          data[i] = sample;
+          sum += sample;
         }
-        const fadeSamples = 256;
+        // Remove DC offset completely so rapid gain modulation never thumps
+        const mean = sum / length;
+        for (let i = 0; i < length; i++) {
+          data[i] -= mean;
+        }
+        // Smooth cosine crossfade at loop seam
+        const fadeSamples = 1024;
         for (let i = 0; i < fadeSamples; i++) {
-          const t = i / fadeSamples;
+          const t = 0.5 - 0.5 * Math.cos((i / fadeSamples) * Math.PI);
           data[i] = data[i] * t + data[length - fadeSamples + i] * (1 - t);
         }
         this.noiseBuffer = buffer;
@@ -164,11 +185,22 @@ class TactileAudio {
   }
 
   /**
+   * Smoothly ramps an AudioParam from its exact current value without step clicks/thumps.
+   */
+  private smoothParam(param: AudioParam, target: number, now: number, timeConstantSec: number): void {
+    const current = param.value;
+    param.cancelScheduledValues(now);
+    param.setValueAtTime(current, now);
+    param.setTargetAtTime(target, now, Math.max(0.004, timeConstantSec));
+  }
+
+  /**
    * Continuous velocity-coupled oil-damped friction while rotating the NAV knob.
+   * Zero step discontinuities, 24dB/oct sub-thump highpass, tunable attack/release/speed sensitivity.
    */
   updateKnobDrag(angularSpeedDeg: number): void {
     const p = this.params;
-    if (!this.enabled || p.masterGain <= 0 || p.knobDragGain <= 0 || angularSpeedDeg <= 0.15) {
+    if (!this.enabled || p.masterGain <= 0 || p.knobDragGain <= 0 || angularSpeedDeg <= 0.08) {
       return;
     }
     const ctx = this.getContext();
@@ -176,27 +208,36 @@ class TactileAudio {
 
     try {
       const now = ctx.currentTime;
+      const hpFreq = Math.max(25, p.knobHighpassHz);
+      const lpFreq = Math.max(hpFreq + 20, p.knobLowpassHz);
 
       if (!this.activeDragVoice) {
         const source = ctx.createBufferSource();
         source.buffer = this.noiseBuffer;
         source.loop = true;
 
+        // Cascaded 2-stage highpass cleanly removes sub-bass thumps while keeping velvety warmth
         const highpass = ctx.createBiquadFilter();
         highpass.type = "highpass";
-        highpass.frequency.setValueAtTime(p.knobHighpassHz, now);
-        highpass.Q.setValueAtTime(0.4, now);
+        highpass.frequency.setValueAtTime(hpFreq, now);
+        highpass.Q.setValueAtTime(0.5, now);
+
+        const highpass2 = ctx.createBiquadFilter();
+        highpass2.type = "highpass";
+        highpass2.frequency.setValueAtTime(hpFreq, now);
+        highpass2.Q.setValueAtTime(0.5, now);
 
         const filter = ctx.createBiquadFilter();
         filter.type = "lowpass";
-        filter.frequency.setValueAtTime(p.knobLowpassHz, now);
-        filter.Q.setValueAtTime(0.35, now);
+        filter.frequency.setValueAtTime(lpFreq, now);
+        filter.Q.setValueAtTime(0.4, now);
 
         const gain = ctx.createGain();
-        gain.gain.setValueAtTime(0.0001, now);
+        gain.gain.setValueAtTime(0.00001, now);
 
         source.connect(highpass);
-        highpass.connect(filter);
+        highpass.connect(highpass2);
+        highpass2.connect(filter);
         filter.connect(gain);
         gain.connect(ctx.destination);
 
@@ -205,6 +246,7 @@ class TactileAudio {
         this.activeDragVoice = {
           source,
           highpass,
+          highpass2,
           filter,
           gain,
           idleTimer: null,
@@ -213,43 +255,53 @@ class TactileAudio {
 
       const voice = this.activeDragVoice;
       const clampedSpeed = Math.min(14, angularSpeedDeg);
-      const speedFactor = 0.25 + (clampedSpeed / 14) * 0.85;
-      const targetGain = Math.max(0.0001, p.knobDragGain * speedFactor * p.masterGain);
-      const targetCutoff = p.knobLowpassHz + clampedSpeed * 12;
+      const sens = Math.max(0, Math.min(1, p.knobSpeedSens));
+      const speedFactor = (1 - sens) + sens * Math.min(1.25, 0.25 + (clampedSpeed / 12) * 0.95);
+      const targetGain = Math.max(0.00005, p.knobDragGain * speedFactor * p.masterGain);
+      const targetCutoff = lpFreq + clampedSpeed * 10 * sens;
 
-      voice.highpass.frequency.setTargetAtTime(p.knobHighpassHz, now, 0.015);
-      voice.filter.frequency.setTargetAtTime(targetCutoff, now, 0.015);
-      voice.gain.gain.cancelScheduledValues(now);
-      voice.gain.gain.setTargetAtTime(targetGain, now, 0.012);
+      const attackTau = Math.max(0.004, (p.knobAttackMs / 1000) * 0.45);
+      const releaseTau = Math.max(0.008, (p.knobReleaseMs / 1000) * 0.45);
+
+      this.smoothParam(voice.highpass.frequency, hpFreq, now, 0.02);
+      this.smoothParam(voice.highpass2.frequency, hpFreq, now, 0.02);
+      this.smoothParam(voice.filter.frequency, targetCutoff, now, 0.025);
+      this.smoothParam(
+        voice.gain.gain,
+        targetGain,
+        now,
+        targetGain >= voice.gain.gain.value ? attackTau : releaseTau
+      );
 
       if (voice.idleTimer) {
         clearTimeout(voice.idleTimer);
       }
+      // Generous 95ms hold window + smooth releaseTau prevents choppy pumping/thumping on slow rotation
       voice.idleTimer = setTimeout(() => {
         if (!this.activeDragVoice || !this.ctx) return;
         const t = this.ctx.currentTime;
-        this.activeDragVoice.gain.gain.cancelScheduledValues(t);
-        this.activeDragVoice.gain.gain.setTargetAtTime(0.0001, t, 0.014);
-      }, 38);
+        const tau = Math.max(0.01, (this.params.knobReleaseMs / 1000) * 0.45);
+        this.smoothParam(this.activeDragVoice.gain.gain, 0.00001, t, tau);
+      }, 95);
     } catch {
       // Ignore Web Audio scheduling errors
     }
   }
 
-  /** Preview a 320ms simulated smooth knob turn from the tuner panel */
+  /** Preview a 550ms simulated smooth knob turn from the tuner panel */
   previewKnobDrag(): void {
     let step = 0;
     const id = setInterval(() => {
       step += 1;
-      this.updateKnobDrag(7);
-      if (step >= 7) {
+      this.updateKnobDrag(6);
+      if (step >= 12) {
         clearInterval(id);
         this.stopKnobDrag();
       }
     }, 35);
   }
 
-  /** Cleanly releases the continuous oil-damped knob drag voice */
+  /** Cleanly releases the continuous oil-damped knob drag voice without any pop/thump */
   stopKnobDrag(): void {
     const voice = this.activeDragVoice;
     if (!voice) return;
@@ -261,16 +313,27 @@ class TactileAudio {
     try {
       if (this.ctx) {
         const now = this.ctx.currentTime;
+        const relSec = Math.max(0.025, this.params.knobReleaseMs / 1000);
+        const currentVal = Math.max(0.00001, voice.gain.gain.value);
         voice.gain.gain.cancelScheduledValues(now);
-        voice.gain.gain.setValueAtTime(Math.max(0.0001, voice.gain.gain.value), now);
-        voice.gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.022);
-        voice.source.stop(now + 0.028);
+        voice.gain.gain.setValueAtTime(currentVal, now);
+        voice.gain.gain.linearRampToValueAtTime(0.00001, now + relSec);
+        voice.source.stop(now + relSec + 0.02);
       } else {
         voice.source.stop();
       }
     } catch {
       // Ignore stop errors
     }
+  }
+
+  /**
+   * Optional soft detent sound on pointer release snap (controlled by `knobSnapGain`, default 0 = silent).
+   */
+  playKnobSnap(): void {
+    const p = this.params;
+    if (!this.enabled || p.masterGain <= 0 || p.knobSnapGain <= 0.0001) return;
+    this.playGlideBurst(p.knobSnapGain * p.masterGain, false);
   }
 
   /**
@@ -283,21 +346,26 @@ class TactileAudio {
       this.updateKnobDrag(5);
       return;
     }
-    if (p.knobGlideGain <= 0) return;
+    if (p.knobGlideGain <= 0.0001) return;
+    this.playGlideBurst(p.knobGlideGain * p.masterGain, requireRunning);
+  }
 
+  private playGlideBurst(peak: number, requireRunning: boolean): void {
+    const p = this.params;
     const ctx = this.getContext(true);
     if (!ctx || !this.noiseBuffer) return;
     if (requireRunning && ctx.state !== "running") return;
 
     try {
       const now = ctx.currentTime;
-      const durSec = Math.max(0.018, p.knobGlideDurationMs / 1000);
-      const peak = Math.max(0.0002, p.knobGlideGain * p.masterGain);
+      const durSec = Math.max(0.02, p.knobGlideDurationMs / 1000);
+      const attackSec = Math.min(durSec * 0.65, Math.max(0.004, p.knobGlideAttackMs / 1000));
+      const hpFreq = Math.max(25, p.knobHighpassHz);
+      const lpFreq = Math.max(hpFreq + 20, p.knobLowpassHz);
 
       if (this.activeGlideGain) {
         try {
-          this.activeGlideGain.gain.cancelScheduledValues(now);
-          this.activeGlideGain.gain.setTargetAtTime(0.0001, now, 0.006);
+          this.smoothParam(this.activeGlideGain.gain, 0.00001, now, 0.01);
         } catch {
           // ignore
         }
@@ -308,22 +376,22 @@ class TactileAudio {
 
       const highpass = ctx.createBiquadFilter();
       highpass.type = "highpass";
-      highpass.frequency.setValueAtTime(p.knobHighpassHz, now);
-      highpass.Q.setValueAtTime(0.4, now);
+      highpass.frequency.setValueAtTime(hpFreq, now);
+      highpass.Q.setValueAtTime(0.5, now);
 
       const lowpass = ctx.createBiquadFilter();
       lowpass.type = "lowpass";
-      lowpass.frequency.setValueAtTime(p.knobLowpassHz * 1.2, now);
+      lowpass.frequency.setValueAtTime(lpFreq * 1.2, now);
       lowpass.frequency.exponentialRampToValueAtTime(
-        Math.max(40, p.knobLowpassHz * 0.72),
+        Math.max(40, lpFreq * 0.75),
         now + durSec
       );
-      lowpass.Q.setValueAtTime(0.35, now);
+      lowpass.Q.setValueAtTime(0.4, now);
 
       const gain = ctx.createGain();
-      gain.gain.setValueAtTime(0.0001, now);
-      gain.gain.linearRampToValueAtTime(peak, now + Math.min(0.014, durSec * 0.25));
-      gain.gain.exponentialRampToValueAtTime(0.0001, now + durSec);
+      gain.gain.setValueAtTime(0.00001, now);
+      gain.gain.linearRampToValueAtTime(peak, now + attackSec);
+      gain.gain.linearRampToValueAtTime(0.00001, now + durSec);
 
       noise.connect(highpass);
       highpass.connect(lowpass);
@@ -331,7 +399,7 @@ class TactileAudio {
       gain.connect(ctx.destination);
 
       this.activeGlideGain = gain;
-      noise.start(now, Math.random() * 0.8, durSec + 0.008);
+      noise.start(now, Math.random() * 0.8, durSec + 0.015);
     } catch {
       // Ignore Web Audio scheduling errors
     }
@@ -476,7 +544,7 @@ class TactileAudio {
 
         const lowpass = ctx.createBiquadFilter();
         lowpass.type = "lowpass";
-        lowpass.frequency.setValueAtTime(Math.max(400, p.matteClickFreq * 1.65), now);
+        lowpass.frequency.setValueAtTime(Math.max(250, p.matteClickFreq * 1.65), now);
 
         const noiseGain = ctx.createGain();
         noiseGain.gain.setValueAtTime(0.0001, now);
@@ -556,7 +624,7 @@ class TactileAudio {
 
       const lowpass = ctx.createBiquadFilter();
       lowpass.type = "lowpass";
-      lowpass.frequency.setValueAtTime(Math.max(400, p.matteHoverFreq * 1.6), now);
+      lowpass.frequency.setValueAtTime(Math.max(180, p.matteHoverFreq * 1.6), now);
 
       const gain = ctx.createGain();
       gain.gain.setValueAtTime(0.0001, now);

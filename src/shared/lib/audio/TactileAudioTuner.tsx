@@ -21,12 +21,12 @@ interface SliderDef {
 
 const MATTE_SLIDERS: SliderDef[] = [
   { key: "matteClickGain", label: "Громкость клика", min: 0, max: 0.16, step: 0.002, decimals: 3 },
-  { key: "matteClickFreq", label: "Тон щелчка", min: 300, max: 3200, step: 20, unit: "Hz", decimals: 0 },
-  { key: "matteClickDecayMs", label: "Длина щелчка", min: 3, max: 35, step: 1, unit: "ms", decimals: 0 },
-  { key: "matteBodyGain", label: "Корпус (плотность)", min: 0, max: 0.06, step: 0.001, decimals: 3 },
-  { key: "matteBodyFreq", label: "Тон корпуса", min: 70, max: 450, step: 5, unit: "Hz", decimals: 0 },
-  { key: "matteHoverGain", label: "Громкость ховера", min: 0, max: 0.08, step: 0.001, decimals: 3 },
-  { key: "matteHoverFreq", label: "Тон ховера", min: 300, max: 2400, step: 20, unit: "Hz", decimals: 0 },
+  { key: "matteClickFreq", label: "Тон щелчка", min: 200, max: 3200, step: 20, unit: "Hz", decimals: 0 },
+  { key: "matteClickDecayMs", label: "Длина щелчка", min: 3, max: 45, step: 1, unit: "ms", decimals: 0 },
+  { key: "matteBodyGain", label: "Корпус (плотность)", min: 0, max: 0.12, step: 0.002, decimals: 3 },
+  { key: "matteBodyFreq", label: "Тон корпуса", min: 60, max: 450, step: 5, unit: "Hz", decimals: 0 },
+  { key: "matteHoverGain", label: "Громкость ховера", min: 0, max: 0.16, step: 0.002, decimals: 3 },
+  { key: "matteHoverFreq", label: "Тон ховера", min: 80, max: 2400, step: 10, unit: "Hz", decimals: 0 },
 ];
 
 const LAMP_SLIDERS: SliderDef[] = [
@@ -34,25 +34,30 @@ const LAMP_SLIDERS: SliderDef[] = [
   { key: "lampHoverGain", label: "Громкость ховера", min: 0, max: 0.06, step: 0.001, decimals: 3 },
   { key: "lampBaseFreq", label: "Высота тона лампы", min: 38, max: 200, step: 1, unit: "Hz", decimals: 0 },
   { key: "lampDetuneHz", label: "Расстройка (биения)", min: 0, max: 16, step: 0.5, unit: "Hz", decimals: 1 },
-  { key: "lampLowpassHz", label: "Мягкость (срез ВЧ)", min: 110, max: 750, step: 5, unit: "Hz", decimals: 0 },
-  { key: "lampWaveRateHz", label: "Скорость волн", min: 2, max: 32, step: 0.5, unit: "Hz", decimals: 1 },
+  { key: "lampLowpassHz", label: "Мягкость (срез ВЧ)", min: 90, max: 750, step: 5, unit: "Hz", decimals: 0 },
+  { key: "lampWaveRateHz", label: "Скорость волн", min: 2, max: 35, step: 0.5, unit: "Hz", decimals: 1 },
   { key: "lampWaveDepth", label: "Глубина волн", min: 0, max: 0.85, step: 0.02, decimals: 2 },
-  { key: "lampDurationMs", label: "Длительность гула", min: 60, max: 500, step: 10, unit: "ms", decimals: 0 },
+  { key: "lampDurationMs", label: "Длительность гула", min: 60, max: 1200, step: 20, unit: "ms", decimals: 0 },
   { key: "lampTouchGain", label: "Клик софт-пластика", min: 0, max: 0.06, step: 0.001, decimals: 3 },
 ];
 
 const KNOB_SLIDERS: SliderDef[] = [
-  { key: "knobDragGain", label: "Громкость вращения", min: 0, max: 0.08, step: 0.001, decimals: 3 },
-  { key: "knobLowpassHz", label: "Вязкость (срез ВЧ)", min: 100, max: 1100, step: 10, unit: "Hz", decimals: 0 },
-  { key: "knobHighpassHz", label: "Срез низа (НЧ)", min: 30, max: 350, step: 5, unit: "Hz", decimals: 0 },
-  { key: "knobGlideGain", label: "Громкость доворота", min: 0, max: 0.08, step: 0.001, decimals: 3 },
-  { key: "knobGlideDurationMs", label: "Длина доворота", min: 20, max: 200, step: 5, unit: "ms", decimals: 0 },
+  { key: "knobDragGain", label: "Громкость вращения", min: 0, max: 0.10, step: 0.001, decimals: 3 },
+  { key: "knobAttackMs", label: "Мягкость старта (без удара)", min: 5, max: 200, step: 5, unit: "ms", decimals: 0 },
+  { key: "knobReleaseMs", label: "Плавность затухания", min: 20, max: 350, step: 5, unit: "ms", decimals: 0 },
+  { key: "knobSpeedSens", label: "Реакция на скорость", min: 0, max: 1, step: 0.05, decimals: 2 },
+  { key: "knobLowpassHz", label: "Срез ВЧ (вязкость)", min: 60, max: 1800, step: 10, unit: "Hz", decimals: 0 },
+  { key: "knobHighpassHz", label: "Срез удара НЧ", min: 30, max: 500, step: 5, unit: "Hz", decimals: 0 },
+  { key: "knobSnapGain", label: "Удар при отпускании", min: 0, max: 0.12, step: 0.002, decimals: 3 },
+  { key: "knobGlideGain", label: "Громкость ховера NAV", min: 0, max: 0.16, step: 0.002, decimals: 3 },
+  { key: "knobGlideAttackMs", label: "Мягкость атаки ховера", min: 4, max: 120, step: 2, unit: "ms", decimals: 0 },
+  { key: "knobGlideDurationMs", label: "Длина ховера NAV", min: 20, max: 350, step: 5, unit: "ms", decimals: 0 },
 ];
 
 export const TactileAudioTuner: React.FC = () => {
   const [mounted, setMounted] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
-  const [tab, setTab] = useState<TunerTab>("matte");
+  const [tab, setTab] = useState<TunerTab>("knob");
   const [enabled, setEnabled] = useState(true);
   const [params, setParams] = useState<TactileAudioParams>(DEFAULT_TACTILE_AUDIO_PARAMS);
   const [copied, setCopied] = useState(false);
@@ -115,7 +120,7 @@ export const TactileAudioTuner: React.FC = () => {
   return (
     <aside
       aria-label="Tactile Sound Tuner"
-      className="fixed right-3 top-1/2 -translate-y-1/2 z-[90] flex w-[288px] max-h-[calc(100dvh-24px)] flex-col rounded-[14px] border border-[#383838] bg-[#1c1c1c]/95 text-[#e5e5e5] shadow-[0_20px_50px_rgba(0,0,0,0.65)] backdrop-blur-md select-none font-hauora"
+      className="fixed right-3 top-1/2 -translate-y-1/2 z-[90] flex w-[300px] max-h-[calc(100dvh-24px)] flex-col rounded-[14px] border border-[#383838] bg-[#1c1c1c]/95 text-[#e5e5e5] shadow-[0_20px_50px_rgba(0,0,0,0.65)] backdrop-blur-md select-none font-hauora"
     >
       {/* Header */}
       <div className="flex items-center justify-between border-b border-[#2e2e2e] px-3.5 py-2.5">
@@ -147,7 +152,7 @@ export const TactileAudioTuner: React.FC = () => {
       </div>
 
       {/* Master Volume */}
-      <div className="border-b border-[#2a2a2a] px-3.5 py-2.5">
+      <div className="border-b border-[#2a2a2a] px-3.5 py-2">
         <div className="mb-1 flex items-center justify-between text-[11px]">
           <span className="text-[#b5b5b5]">Общая громкость</span>
           <span className="tabular-nums text-[#f0f0f0]">
@@ -242,7 +247,7 @@ export const TactileAudioTuner: React.FC = () => {
               onClick={() => tactileAudio.playKnobRustle("glide", false)}
               className="rounded-[6px] border border-[#3a3a3a] bg-[#262626] px-2.5 py-1 text-[11px] text-[#eee] hover:bg-[#303030] active:translate-y-[0.5px] cursor-pointer"
             >
-              Доворот
+              Ховер NAV
             </button>
           </>
         )}
