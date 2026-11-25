@@ -78,6 +78,9 @@ export default async function Home() {
         "ogImageUrl": ogImage.asset->url,
         aboutParagraphs,
         petLabelInterval,
+        "cassetteAudioUrl": cassetteAudio.asset->url,
+        cassetteTitle,
+        cassetteArtist,
         "ledImages": ledImages[]{
           "url": coalesce(asset->url, url, @)
         }.url

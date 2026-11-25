@@ -5,6 +5,7 @@ import { Hero, PetProjectSheet } from "@/widgets/hero";
 import { Project } from "@/widgets/project";
 import { TopBar } from "@/widgets/top-bar";
 import { Experience } from "@/widgets/experience";
+import { CassettePlayer } from "@/widgets/cassette-player";
 import type { ProjectData } from "@/entities/project";
 import type { PetProjectData } from "@/entities/pet-project";
 
@@ -18,6 +19,9 @@ export interface SiteSettingsData {
   ogImageUrl?: string;
   aboutParagraphs?: string[];
   petLabelInterval?: number;
+  cassetteAudioUrl?: string;
+  cassetteTitle?: string;
+  cassetteArtist?: string;
 }
 
 export interface HomePageClientProps {
@@ -211,6 +215,14 @@ export function HomePageClient({
               </p>
             ))}
           </div>
+
+          {/* Interactive Skeuomorphic Cassette Player at the end of About */}
+          <CassettePlayer
+            audioUrl={siteSettings?.cassetteAudioUrl}
+            title={siteSettings?.cassetteTitle || "Legends Never Die"}
+            subtitle={siteSettings?.cassetteArtist || "League of Legends"}
+            className="mt-[28px] sm:mt-[40px]"
+          />
         </section>
       )}
       </main>

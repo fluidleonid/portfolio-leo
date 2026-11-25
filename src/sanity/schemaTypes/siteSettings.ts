@@ -124,5 +124,29 @@ export const siteSettingsType = defineType({
       initialValue: 2,
       validation: (Rule) => Rule.min(0.5).max(60),
     }),
+    defineField({
+      name: "cassetteAudio",
+      title: "About Cassette Audio Track",
+      type: "file",
+      options: {
+        accept: "audio/*",
+      },
+      description:
+        "Upload an audio track (.mp3, .wav, .ogg, .m4a) for the Cassette Player at the bottom of the About section.",
+    }),
+    defineField({
+      name: "cassetteTitle",
+      title: "Cassette Label Title",
+      type: "string",
+      description: "Main title printed on the cassette label (default: Legends Never Die).",
+      initialValue: "Legends Never Die",
+    }),
+    defineField({
+      name: "cassetteArtist",
+      title: "Cassette Label Subtitle / Artist",
+      type: "string",
+      description: "Subtitle printed under the cassette title (default: League of Legends).",
+      initialValue: "League of Legends",
+    }),
   ],
 });
