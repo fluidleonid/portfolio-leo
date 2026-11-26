@@ -162,6 +162,7 @@ export function CaseStudyView({ caseData, nextCase }: CaseStudyViewProps) {
         stations={caseStations}
         activeStation={activeStation}
         onStationChange={handleStationChange}
+        backHref={backHref}
       />
 
       <article className="relative flex w-full max-w-[564px] flex-col pb-[96px] sm:pb-[120px]">

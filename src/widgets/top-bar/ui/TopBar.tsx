@@ -7,6 +7,7 @@ import React, {
   useCallback,
   useMemo,
 } from "react";
+import Link from "next/link";
 import { tactileAudio } from "@/shared/lib/audio";
 
 export interface TunerFrame {
@@ -32,6 +33,8 @@ export interface TopBarProps extends React.HTMLAttributes<HTMLDivElement> {
   activeStation?: string;
   /** Navigation callback when station changes via click, scroll, or drag */
   onStationChange?: (station: string) => void;
+  /** Optional back link URL (renders flush-left icon-only back button inside the TopBar on case pages) */
+  backHref?: string;
   /** Inactivity delay before top bar hides (default: 1200ms) */
   hideDelay?: number;
 }
@@ -52,6 +55,7 @@ export const TopBar: React.FC<TopBarProps> = ({
   projects,
   activeStation,
   onStationChange,
+  backHref,
   hideDelay = 1200,
   className = "",
   ...props
@@ -492,9 +496,42 @@ export const TopBar: React.FC<TopBarProps> = ({
     >
       <nav
         aria-label="Portfolio Radio Tuner Navigation"
-        className="relative w-full overflow-hidden bg-surface select-none border-none px-[16px] pt-[6px] pb-[4px] touch-none"
+        className={`relative flex w-full flex-row items-stretch overflow-hidden bg-surface select-none border-none touch-none ${
+          backHref ? "pl-0 pr-[16px]" : "px-[16px]"
+        }`}
         style={{ touchAction: "none" }}
       >
+        {backHref && (
+          <Link
+            href={backHref}
+            aria-label="Back to portfolio"
+            onPointerDown={(e) => {
+              e.stopPropagation();
+              if (e.button === 0) tactileAudio.playKeyClick("matte");
+            }}
+            onClick={(e) => e.stopPropagation()}
+            className="flex shrink-0 items-center justify-center self-stretch bg-transparent pl-[16px] pr-[14px] text-content-secondary hover:text-content-contrast transition-colors duration-150 cursor-pointer select-none"
+          >
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 16 16"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              aria-hidden="true"
+            >
+              <path
+                d="M10.5 3.5L6 8L10.5 12.5"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </Link>
+        )}
+
+        <div className="flex-1 min-w-0 pt-[6px] pb-[4px]">
         <div
           ref={trackRef}
           onPointerDown={handlePointerDown}
@@ -623,6 +660,7 @@ export const TopBar: React.FC<TopBarProps> = ({
           >
             <div className="h-[57px] w-[2px] bg-signal-amber shadow-[0_0_4px_rgba(255,170,0,0.6)] pointer-events-none select-none" />
           </div>
+        </div>
         </div>
       </nav>
     </header>
