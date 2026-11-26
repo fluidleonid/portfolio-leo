@@ -3,17 +3,20 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import Link from "next/link";
 import { TopBar, type TunerFrame } from "@/widgets/top-bar";
+import { Section, CaseLink } from "@/shared/ui";
 import { CaseBlockRenderer } from "./CaseBlockRenderer";
 import {
   type CaseStudyData,
+  type NextCaseStudyLink,
   normalizeCaseSections,
 } from "@/entities/case-study";
 
 export interface CaseStudyViewProps {
   caseData: CaseStudyData;
+  nextCase?: NextCaseStudyLink | null;
 }
 
-export function CaseStudyView({ caseData }: CaseStudyViewProps) {
+export function CaseStudyView({ caseData, nextCase }: CaseStudyViewProps) {
   // Resolve sections (using explicit sections if defined, or auto-grouping legacy blocks)
   const sections = useMemo(() => {
     return normalizeCaseSections(caseData);
@@ -225,16 +228,29 @@ export function CaseStudyView({ caseData }: CaseStudyViewProps) {
           })}
         </div>
 
-        {/* 4. FOOTER RETURN */}
-        <footer className="mt-[80px] sm:mt-[120px] flex w-full flex-col items-start gap-[12px] pt-[24px]">
-          <Link
-            href={backHref}
-            className="inline-flex items-center gap-[8px] font-hauora text-[16px] font-light leading-[24px] text-content-secondary hover:text-content-primary transition-colors duration-150"
-          >
-            <span>←</span>
-            <span>back</span>
-          </Link>
-        </footer>
+        {/* 4. FOOTER NEXT CASE SECTION (No anchor id, excluded from TopBar navigation) */}
+        {nextCase && (
+          <footer className="mt-[80px] sm:mt-[120px] flex w-full flex-col items-stretch">
+            <Section
+              label={
+                nextCase.projectName
+                  ? `CASE • ${nextCase.projectName.toUpperCase()}`
+                  : "CASE"
+              }
+              labelClassName="max-w-[calc(100%-32px)]"
+              textClassName="truncate whitespace-nowrap"
+              direction="column"
+              className="w-full justify-start items-stretch gap-[8px] sm:gap-[16px] p-[16px] sm:px-[28px] sm:py-[28px]"
+            >
+              <CaseLink
+                label={nextCase.label}
+                sublabel={nextCase.sublabel}
+                href={nextCase.href}
+                active={true}
+              />
+            </Section>
+          </footer>
+        )}
       </article>
     </>
   );

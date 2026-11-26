@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
-import type { CaseStudyData } from "@/entities/case-study";
+import type { CaseStudyData, NextCaseStudyLink } from "@/entities/case-study";
 import { CaseStudyView } from "@/widgets/case-study";
 import { client } from "@/sanity/lib/client";
 import { urlForImage } from "@/sanity/lib/image";
@@ -172,14 +172,67 @@ async function getCaseStudy(slug: string): Promise<CaseStudyData | null> {
   }
 }
 
+async function getNextCaseStudy(currentSlug: string): Promise<NextCaseStudyLink | null> {
+  try {
+    const allCases = await client.fetch<
+      Array<{
+        _id: string;
+        title?: string;
+        slug?: string;
+        buttonLabel?: string;
+        buttonSublabel?: string;
+        projectTitle?: string;
+      }>
+    >(
+      `*[_type == "caseStudy" && defined(slug.current) && isButtonActive != false]
+        | order(coalesce(project->order, 999) asc, coalesce(order, 999) asc, _createdAt asc) {
+          _id,
+          title,
+          "slug": slug.current,
+          buttonLabel,
+          buttonSublabel,
+          "projectTitle": project->title
+        }`
+    );
+
+    if (!Array.isArray(allCases) || allCases.length <= 1) {
+      return null;
+    }
+
+    const currentIdx = allCases.findIndex((c) => c.slug === currentSlug);
+    const nextItem =
+      currentIdx >= 0
+        ? allCases[(currentIdx + 1) % allCases.length]
+        : allCases.find((c) => c.slug && c.slug !== currentSlug);
+
+    if (!nextItem || !nextItem.slug || nextItem.slug === currentSlug) {
+      return null;
+    }
+
+    return {
+      slug: nextItem.slug,
+      label: nextItem.buttonLabel?.trim() || nextItem.title || "Next Case Study",
+      sublabel: nextItem.buttonSublabel?.trim() || undefined,
+      projectName: nextItem.projectTitle?.trim() || undefined,
+      href: `/case/${nextItem.slug}`,
+    };
+  } catch (err) {
+    console.warn("[Sanity Next Case Fetch Error]:", err);
+    return null;
+  }
+}
+
 async function CaseStudyContent({ slug }: { slug: string }) {
-  const caseData = await getCaseStudy(slug);
+  const [caseData, nextCase] = await Promise.all([
+    getCaseStudy(slug),
+    getNextCaseStudy(slug),
+  ]);
 
   if (!caseData) {
     notFound();
   }
 
-  return <CaseStudyView caseData={caseData} />;
+  return <CaseStudyView caseData={caseData} nextCase={nextCase} />;
 }
 
 export default async function CaseStudyPage({ params }: PageProps) {

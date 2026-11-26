@@ -177,6 +177,14 @@ export interface CaseSection {
   blocks: CaseContentBlock[];
 }
 
+export interface NextCaseStudyLink {
+  slug: string;
+  label: string;
+  sublabel?: string;
+  projectName?: string;
+  href: string;
+}
+
 export interface CaseStudyData {
   _id?: string;
   title: string;
