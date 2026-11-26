@@ -166,14 +166,30 @@ export function CaseStudyView({ caseData, nextCase }: CaseStudyViewProps) {
       />
 
       <article className="relative flex w-full max-w-[564px] flex-col pb-[96px] sm:pb-[120px]">
-        {/* 1. TOP NAVIGATION / BACK LINK */}
+        {/* 1. TOP NAVIGATION / BACK TO WORKS LINK */}
         <nav className="flex w-full items-center justify-start pt-[8px] sm:pt-[16px]">
           <Link
             href={backHref}
-            className="inline-flex items-center gap-[8px] font-hauora text-[16px] font-light leading-[24px] text-content-secondary hover:text-content-primary transition-colors duration-150"
+            className="inline-flex items-center gap-[6px] font-hauora text-[16px] font-light leading-[24px] text-content-secondary hover:text-content-primary transition-colors duration-150"
           >
-            <span>←</span>
-            <span>back</span>
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 16 16"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              aria-hidden="true"
+              className="shrink-0 -ml-[4px]"
+            >
+              <path
+                d="M10.5 3.5L6 8L10.5 12.5"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+            <span>Back to works</span>
           </Link>
         </nav>
 
