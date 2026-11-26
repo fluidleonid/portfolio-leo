@@ -1,18 +1,78 @@
+export interface TapeDspParams {
+  enabled: boolean;
+  /** 0 = worn dusty cassette, 100 = crisp Type IV metal tape */
+  tapeQuality: number;
+  /** 0 = silent / Dolby NR, 100 = heavy vintage analog hiss */
+  noiseLevel: number;
+  /** 0 = worn misaligned head (warm/muffled), 100 = fresh aligned head */
+  headQuality: number;
+  /** 0 = worn rubber belt (strong wow & flutter + motor droop), 100 = quartz direct drive */
+  motorQuality: number;
+  /** Playback rate multiplier during Cue/Review (2.0x - 5.0x) */
+  cueSpeed: number;
+  /** Mechanical motor whir loudness during FF/REW (0 - 100) */
+  scrubMotorGain: number;
+}
+
+export const DEFAULT_TAPE_DSP_PARAMS: TapeDspParams = {
+  enabled: true,
+  tapeQuality: 55,
+  noiseLevel: 32,
+  headQuality: 60,
+  motorQuality: 65,
+  cueSpeed: 3.4,
+  scrubMotorGain: 45,
+};
+
+const TAPE_DSP_STORAGE_KEY = "leo_tape_dsp_params_v1";
+
+export function loadSavedTapeDspParams(): TapeDspParams {
+  if (typeof window === "undefined") return { ...DEFAULT_TAPE_DSP_PARAMS };
+  try {
+    const raw = window.localStorage.getItem(TAPE_DSP_STORAGE_KEY);
+    if (raw) {
+      return { ...DEFAULT_TAPE_DSP_PARAMS, ...(JSON.parse(raw) as Partial<TapeDspParams>) };
+    }
+  } catch {
+    // ignore storage errors
+  }
+  return { ...DEFAULT_TAPE_DSP_PARAMS };
+}
+
+export function saveTapeDspParams(params: TapeDspParams): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(TAPE_DSP_STORAGE_KEY, JSON.stringify(params));
+  } catch {
+    // ignore storage errors
+  }
+}
+
 /**
  * VintageTapeEngine
- * Real-time Web Audio API analog cassette deck processor:
- * 1. Connects to an HTMLAudioElement and applies Type I 120µs Normal Bias tape coloring:
- *    - Sub-bass trim (68Hz HPF) + warm head bump (260Hz +2.5dB)
- *    - Soft-clipping magnetic saturation (WaveShaper tanh)
- *    - Warm HF roll-off (4.4kHz LPF)
- *    - Subtle analog wow & flutter (dual-LFO modulated DelayNode)
- *    - Continuous analog tape hiss bed when playing
- * 2. Synthesizes realistic mechanical FF / REW high-speed tape-head whir & motor sound.
+ * Real-time Web Audio API analog cassette deck processor with live-tunable:
+ * - Tape Quality (HPF/LPF bandwidth + magnetic WaveShaper saturation)
+ * - Noise Level (filtered analog tape hiss bed)
+ * - Head Quality (240Hz head bump resonance + 2.6kHz azimuth high-shelf loss)
+ * - Motor Quality (dual-LFO wow & flutter depth + start/stop motor inertia)
+ * - Mechanical FF/REW motor whir + Cue/Review head-engaged playback
  */
 export class VintageTapeEngine {
   private ctx: AudioContext | null = null;
-  private sourceNode: MediaElementAudioSourceNode | null = null;
   private attachedEl: HTMLAudioElement | null = null;
+  private isPlayingAudio = false;
+  public params: TapeDspParams = { ...DEFAULT_TAPE_DSP_PARAMS };
+
+  // Live DSP nodes for real-time parameter tweaking
+  private hpf: BiquadFilterNode | null = null;
+  private headBump: BiquadFilterNode | null = null;
+  private headShelf: BiquadFilterNode | null = null;
+  private shaper: WaveShaperNode | null = null;
+  private lpf: BiquadFilterNode | null = null;
+  private wowDepth: GainNode | null = null;
+  private flutterDepth: GainNode | null = null;
+  private dryGain: GainNode | null = null;
+  private wetGain: GainNode | null = null;
 
   private hissGain: GainNode | null = null;
   private hissSource: AudioBufferSourceNode | null = null;
@@ -25,6 +85,12 @@ export class VintageTapeEngine {
     noiseSource: AudioBufferSourceNode;
     masterGain: GainNode;
   } | null = null;
+
+  constructor(initialParams?: TapeDspParams) {
+    if (initialParams) {
+      this.params = { ...initialParams };
+    }
+  }
 
   private ensureContext(): AudioContext | null {
     if (typeof window === "undefined") return null;
@@ -60,23 +126,22 @@ export class VintageTapeEngine {
     }
   }
 
-  private makeTapeSaturationCurve(drive = 2.0): Float32Array<ArrayBuffer> {
+  private makeTapeSaturationCurve(drive: number): Float32Array<ArrayBuffer> {
     const samples = 1024;
     const curve = new Float32Array(new ArrayBuffer(samples * 4));
+    const safeDrive = Math.max(0.5, drive);
+    const norm = Math.tanh(safeDrive);
     for (let i = 0; i < samples; i++) {
       const x = (i * 2) / samples - 1;
-      // Gentle asymmetric warm magnetic tape saturation
-      curve[i] = Math.tanh((x + 0.04 * x * x) * drive) / Math.tanh(drive);
+      curve[i] = Math.tanh((x + 0.035 * x * x) * safeDrive) / norm;
     }
     return curve;
   }
 
-  /**
-   * Attaches the vintage cassette signal chain to an <audio> element once.
-   */
   public attachAudioElement(audioEl: HTMLAudioElement): void {
     if (this.attachedEl === audioEl) {
       this.ensureContext();
+      this.applyParams(this.params);
       return;
     }
     const ctx = this.ensureContext();
@@ -85,66 +150,69 @@ export class VintageTapeEngine {
     try {
       const source = ctx.createMediaElementSource(audioEl);
 
-      // 1. Sub-bass trim (cassette tape naturally rolls off below ~68Hz)
+      // Parallel dry/wet routing for instant click-free A/B bypass
+      const dryGain = ctx.createGain();
+      const wetGain = ctx.createGain();
+      dryGain.connect(ctx.destination);
+      wetGain.connect(ctx.destination);
+
+      source.connect(dryGain);
+
+      // 1. Tape quality HPF
       const hpf = ctx.createBiquadFilter();
       hpf.type = "highpass";
-      hpf.frequency.value = 68;
       hpf.Q.value = 0.65;
 
-      // 2. Analog head bump warmth around 260Hz
+      // 2. Head bump resonance (240Hz)
       const headBump = ctx.createBiquadFilter();
       headBump.type = "peaking";
-      headBump.frequency.value = 260;
+      headBump.frequency.value = 240;
       headBump.Q.value = 0.85;
-      headBump.gain.value = 2.6;
 
-      // 3. Gentle tape saturation
+      // 3. Head azimuth high-shelf damping (2.6kHz)
+      const headShelf = ctx.createBiquadFilter();
+      headShelf.type = "highshelf";
+      headShelf.frequency.value = 2600;
+
+      // 4. Magnetic tape saturation
       const shaper = ctx.createWaveShaper();
-      shaper.curve = this.makeTapeSaturationCurve(1.85);
       shaper.oversample = "2x";
 
-      // 4. Warm Type I 120µs high-frequency roll-off (~4.4kHz)
+      // 5. Tape quality HF roll-off LPF
       const lpf = ctx.createBiquadFilter();
       lpf.type = "lowpass";
-      lpf.frequency.value = 4400;
       lpf.Q.value = 0.65;
 
-      // 5. Subtle analog wow & flutter via micro-modulated DelayNode
+      // 6. Motor quality wow & flutter DelayNode
       const delay = ctx.createDelay(0.05);
-      delay.delayTime.value = 0.008;
+      delay.delayTime.value = 0.01;
 
       const wowLfo = ctx.createOscillator();
       wowLfo.type = "sine";
       wowLfo.frequency.value = 0.55;
       const wowDepth = ctx.createGain();
-      wowDepth.gain.value = 0.00042;
       wowLfo.connect(wowDepth);
       wowDepth.connect(delay.delayTime);
 
       const flutterLfo = ctx.createOscillator();
       flutterLfo.type = "sine";
-      flutterLfo.frequency.value = 4.6;
+      flutterLfo.frequency.value = 4.8;
       const flutterDepth = ctx.createGain();
-      flutterDepth.gain.value = 0.0001;
       flutterLfo.connect(flutterDepth);
       flutterDepth.connect(delay.delayTime);
 
       wowLfo.start();
       flutterLfo.start();
 
-      // Slight makeup gain so processed tape sits at a comfortable level
-      const outGain = ctx.createGain();
-      outGain.gain.value = 0.92;
-
       source.connect(hpf);
       hpf.connect(headBump);
-      headBump.connect(shaper);
+      headBump.connect(headShelf);
+      headShelf.connect(shaper);
       shaper.connect(lpf);
       lpf.connect(delay);
-      delay.connect(outGain);
-      outGain.connect(ctx.destination);
+      delay.connect(wetGain);
 
-      // 6. Continuous analog tape hiss bed (muted when paused, softly present while playing)
+      // 7. Analog tape hiss bed
       if (this.noiseBuffer) {
         const hissSrc = ctx.createBufferSource();
         hissSrc.buffer = this.noiseBuffer;
@@ -172,38 +240,96 @@ export class VintageTapeEngine {
         this.hissGain = hissGain;
       }
 
-      this.sourceNode = source;
+      this.hpf = hpf;
+      this.headBump = headBump;
+      this.headShelf = headShelf;
+      this.shaper = shaper;
+      this.lpf = lpf;
+      this.wowDepth = wowDepth;
+      this.flutterDepth = flutterDepth;
+      this.dryGain = dryGain;
+      this.wetGain = wetGain;
       this.attachedEl = audioEl;
+
+      this.applyParams(this.params);
     } catch {
-      // If MediaElementAudioSourceNode fails (e.g. CORS or already connected), let native audio play cleanly
+      // Fallback gracefully if MediaElementSource cannot attach
     }
   }
 
-  /** Smoothly fades analog tape hiss in when playing or out when paused */
-  public setTapeHiss(active: boolean): void {
-    if (!this.ctx || !this.hissGain) return;
+  /** Live-updates every analog cassette DSP parameter in real time while playing */
+  public applyParams(next: TapeDspParams): void {
+    this.params = { ...next };
+    if (!this.ctx) return;
+
     try {
       const now = this.ctx.currentTime;
-      const current = this.hissGain.gain.value;
-      this.hissGain.gain.cancelScheduledValues(now);
-      this.hissGain.gain.setValueAtTime(current, now);
-      this.hissGain.gain.linearRampToValueAtTime(
-        active ? 0.017 : 0,
-        now + (active ? 0.18 : 0.12)
-      );
+      const tapeQ = Math.max(0, Math.min(100, next.tapeQuality)) / 100;
+      const headQ = Math.max(0, Math.min(100, next.headQuality)) / 100;
+      const motorQ = Math.max(0, Math.min(100, next.motorQuality)) / 100;
+
+      // Bypass / Enabled crossfade
+      if (this.dryGain && this.wetGain) {
+        this.dryGain.gain.setTargetAtTime(next.enabled ? 0 : 1, now, 0.02);
+        this.wetGain.gain.setTargetAtTime(next.enabled ? 0.94 : 0, now, 0.02);
+      }
+
+      // 1. Tape Quality: bandwidth (LPF 2100..9800Hz, HPF 110..38Hz) & saturation drive (3.3..1.05)
+      const hpfHz = 110 - tapeQ * 72;
+      const lpfHz = 2100 + Math.pow(tapeQ, 1.35) * 7700;
+      const drive = 3.3 - tapeQ * 2.25;
+
+      if (this.hpf) this.hpf.frequency.setTargetAtTime(hpfHz, now, 0.025);
+      if (this.lpf) this.lpf.frequency.setTargetAtTime(lpfHz, now, 0.025);
+      if (this.shaper) this.shaper.curve = this.makeTapeSaturationCurve(drive);
+
+      // 2. Head Quality: worn head bump (+5.5dB -> +0.4dB) & azimuth treble damping (-10dB -> 0dB)
+      const bumpDb = (1 - headQ) * 5.2 + 0.4;
+      const shelfDb = -(1 - headQ) * 10;
+      if (this.headBump) this.headBump.gain.setTargetAtTime(bumpDb, now, 0.025);
+      if (this.headShelf) this.headShelf.gain.setTargetAtTime(shelfDb, now, 0.025);
+
+      // 3. Motor Quality: wow (0..2.2ms) & flutter (0..0.55ms)
+      const wowSec = Math.pow(1 - motorQ, 1.5) * 0.0022;
+      const flutterSec = Math.pow(1 - motorQ, 1.5) * 0.00055;
+      if (this.wowDepth) this.wowDepth.gain.setTargetAtTime(wowSec, now, 0.03);
+      if (this.flutterDepth) this.flutterDepth.gain.setTargetAtTime(flutterSec, now, 0.03);
+
+      // 4. Noise Level: tape hiss gain (active only when playing & DSP enabled)
+      this.updateHissGain();
     } catch {
       // ignore
     }
   }
 
+  private updateHissGain(): void {
+    if (!this.ctx || !this.hissGain) return;
+    try {
+      const now = this.ctx.currentTime;
+      const noiseNorm = Math.max(0, Math.min(100, this.params.noiseLevel)) / 100;
+      const target =
+        this.isPlayingAudio && this.params.enabled ? noiseNorm * 0.062 : 0;
+      this.hissGain.gain.setTargetAtTime(target, now, 0.04);
+    } catch {
+      // ignore
+    }
+  }
+
+  public setTapeHiss(active: boolean): void {
+    this.isPlayingAudio = active;
+    this.updateHissGain();
+  }
+
   /**
-   * Starts realistic mechanical cassette FF / REW sound:
-   * - Mechanical latch clunk
-   * - DC reel motor & plastic gear whirr (~145–165Hz with flutter)
-   * - High-speed magnetic tape sliding over the playhead (swept chatter & subtle squeal)
+   * Starts mechanical cassette FF / REW motor & tape-head whir.
+   * When `headEngaged` is true (Cue/Review while playing), keeps the motor subtler so the
+   * high-pitched accelerated song takes center stage!
    */
-  public startScrubSound(direction: "rew" | "ff"): void {
+  public startScrubSound(direction: "rew" | "ff", headEngaged = false): void {
     this.stopScrubSound(true);
+    const motorLevel = Math.max(0, Math.min(100, this.params.scrubMotorGain)) / 100;
+    if (motorLevel <= 0.01) return;
+
     const ctx = this.ensureContext();
     if (!ctx || !this.noiseBuffer) return;
 
@@ -212,9 +338,10 @@ export class VintageTapeEngine {
       const isFf = direction === "ff";
 
       const masterGain = ctx.createGain();
+      const targetMaster = (headEngaged ? 0.52 : 0.85) * motorLevel;
       masterGain.gain.value = 0;
       masterGain.gain.setValueAtTime(0, now);
-      masterGain.gain.linearRampToValueAtTime(0.85, now + 0.055);
+      masterGain.gain.linearRampToValueAtTime(targetMaster, now + 0.055);
       masterGain.connect(ctx.destination);
 
       // 1. High-speed DC motor + reel gear whirr
@@ -226,17 +353,17 @@ export class VintageTapeEngine {
 
       const motorLp = ctx.createBiquadFilter();
       motorLp.type = "lowpass";
-      motorLp.frequency.value = 380;
-      motorLp.Q.value = 1.2;
+      motorLp.frequency.value = 360;
+      motorLp.Q.value = 1.1;
 
       const motorGain = ctx.createGain();
-      motorGain.gain.value = 0.028;
+      motorGain.gain.value = 0.032;
 
       motorOsc.connect(motorLp);
       motorLp.connect(motorGain);
       motorGain.connect(masterGain);
 
-      // 2. High-speed tape-head sliding noise ("shhh-fzz-shhh" with fast reel flutter)
+      // 2. High-speed tape sliding noise
       const noiseSource = ctx.createBufferSource();
       noiseSource.buffer = this.noiseBuffer;
       noiseSource.loop = true;
@@ -244,16 +371,16 @@ export class VintageTapeEngine {
       const tapeBp = ctx.createBiquadFilter();
       tapeBp.type = "bandpass";
       tapeBp.frequency.value = isFf ? 2450 : 2100;
-      tapeBp.Q.value = 2.2;
+      tapeBp.Q.value = 2.0;
 
       const tapeGain = ctx.createGain();
-      tapeGain.gain.value = 0.042;
+      tapeGain.gain.value = headEngaged ? 0.025 : 0.044;
 
       noiseSource.connect(tapeBp);
       tapeBp.connect(tapeGain);
       tapeGain.connect(masterGain);
 
-      // 3. Subtle "chipmunk" magnetic tape chatter across the head
+      // 3. Subtle head chatter (stronger only when disengaged; when engaged, real audio supplies the squeal!)
       const chatterOsc = ctx.createOscillator();
       chatterOsc.type = "triangle";
       chatterOsc.frequency.value = isFf ? 1280 : 1080;
@@ -264,29 +391,28 @@ export class VintageTapeEngine {
       chatterBp.Q.value = 3.0;
 
       const chatterGain = ctx.createGain();
-      chatterGain.gain.value = 0.009;
+      chatterGain.gain.value = headEngaged ? 0.002 : 0.009;
 
       chatterOsc.connect(chatterBp);
       chatterBp.connect(chatterGain);
       chatterGain.connect(masterGain);
 
-      // Fast LFO driving reel rotation flutter & tape chatter pitch modulation
       const lfo = ctx.createOscillator();
       lfo.type = "sine";
       lfo.frequency.value = isFf ? 22 : 18.5;
 
       const lfoToTapeBp = ctx.createGain();
-      lfoToTapeBp.gain.value = 680;
+      lfoToTapeBp.gain.value = 640;
       lfo.connect(lfoToTapeBp);
       lfoToTapeBp.connect(tapeBp.frequency);
 
       const lfoToChatter = ctx.createGain();
-      lfoToChatter.gain.value = 340;
+      lfoToChatter.gain.value = 320;
       lfo.connect(lfoToChatter);
       lfoToChatter.connect(chatterOsc.frequency);
 
       const lfoToMotor = ctx.createGain();
-      lfoToMotor.gain.value = 11;
+      lfoToMotor.gain.value = 10;
       lfo.connect(lfoToMotor);
       lfoToMotor.connect(motorOsc.frequency);
 
@@ -307,15 +433,6 @@ export class VintageTapeEngine {
     }
   }
 
-  /** Plays a short realistic tape-whir burst on quick skip taps */
-  public playShortScrubBurst(direction: "rew" | "ff", durationMs = 175): void {
-    this.startScrubSound(direction);
-    setTimeout(() => {
-      this.stopScrubSound();
-    }, durationMs);
-  }
-
-  /** Winds down and stops the FF / REW motor & tape-whir cleanly */
   public stopScrubSound(immediate = false): void {
     const nodes = this.scrubNodes;
     if (!nodes) return;
@@ -331,7 +448,6 @@ export class VintageTapeEngine {
         nodes.masterGain.gain.setValueAtTime(currentGain, now);
         nodes.masterGain.gain.linearRampToValueAtTime(0, now + fadeSec);
 
-        // Wind motor pitch down as the reel brakes
         if (!immediate) {
           nodes.motorOsc.frequency.cancelScheduledValues(now);
           nodes.motorOsc.frequency.setValueAtTime(nodes.motorOsc.frequency.value, now);
