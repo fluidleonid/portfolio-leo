@@ -5,12 +5,8 @@ import { Section } from "@/shared/ui";
 import { tactileAudio } from "@/shared/lib/audio";
 import {
   DEFAULT_TAPE_DSP_PARAMS,
-  type TapeDspParams,
   VintageTapeEngine,
-  loadSavedTapeDspParams,
-  saveTapeDspParams,
 } from "../model/vintageTapeEngine";
-import { TapeDspTunerPanel } from "./TapeDspTunerPanel";
 
 export interface CassettePlayerProps {
   /** Optional single audio track URL from Sanity CMS */
@@ -92,9 +88,6 @@ export const CassettePlayer: React.FC<CassettePlayerProps> = ({
   const scrubIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const holdActiveRef = useRef<boolean>(false);
 
-  const [dspParams, setDspParams] = useState<TapeDspParams>(DEFAULT_TAPE_DSP_PARAMS);
-  const dspParamsRef = useRef<TapeDspParams>(DEFAULT_TAPE_DSP_PARAMS);
-
   const [localTrackUrl, setLocalTrackUrl] = useState<string | null>(null);
   const [trackTitle, setTrackTitle] = useState<string>(title);
   const [trackIndex, setTrackIndex] = useState<number>(0);
@@ -103,20 +96,6 @@ export const CassettePlayer: React.FC<CassettePlayerProps> = ({
   const [duration, setDuration] = useState<number>(0);
   const [reelAngle, setReelAngle] = useState<number>(0);
   const [isDragOver, setIsDragOver] = useState<boolean>(false);
-
-  useEffect(() => {
-    const saved = loadSavedTapeDspParams();
-    setDspParams(saved);
-    dspParamsRef.current = saved;
-    engineRef.current?.applyParams(saved);
-  }, []);
-
-  const handleDspChange = (next: TapeDspParams) => {
-    setDspParams(next);
-    dspParamsRef.current = next;
-    saveTapeDspParams(next);
-    engineRef.current?.applyParams(next);
-  };
 
   const playlist = useMemo(() => {
     if (localTrackUrl) return [localTrackUrl];
@@ -146,7 +125,7 @@ export const CassettePlayer: React.FC<CassettePlayerProps> = ({
 
   const ensureEngine = useCallback(() => {
     if (!engineRef.current) {
-      engineRef.current = new VintageTapeEngine(dspParamsRef.current);
+      engineRef.current = new VintageTapeEngine(DEFAULT_TAPE_DSP_PARAMS);
     }
     if (audioRef.current) {
       engineRef.current.attachAudioElement(audioRef.current);
@@ -195,7 +174,7 @@ export const CassettePlayer: React.FC<CassettePlayerProps> = ({
       const engine = ensureEngine();
       engine.setTapeHiss(true);
 
-      const p = dspParamsRef.current;
+      const p = DEFAULT_TAPE_DSP_PARAMS;
       if (withMotorSpinUp && p.enabled) {
         const motorWear = (100 - p.motorQuality) / 100;
         const spinDur = Math.round(80 + motorWear * 260);
@@ -351,7 +330,7 @@ export const CassettePlayer: React.FC<CassettePlayerProps> = ({
     const audio = audioRef.current;
     const wasPlaying = mode === "playing";
     const engine = ensureEngine();
-    const cueRate = Math.max(2.0, Math.min(5.0, dspParamsRef.current.cueSpeed));
+    const cueRate = Math.max(2.0, Math.min(5.0, DEFAULT_TAPE_DSP_PARAMS.cueSpeed));
 
     holdActiveRef.current = false;
     setMode(direction === "rew" ? "rewinding" : "forwarding");
@@ -533,11 +512,7 @@ export const CassettePlayer: React.FC<CassettePlayerProps> = ({
   );
 
   return (
-    <>
-      {/* Staging Tape DSP Control Panel on Right Side */}
-      <TapeDspTunerPanel params={dspParams} onChange={handleDspChange} />
-
-      <div className={`flex w-full max-w-[564px] flex-col items-center gap-[20px] sm:gap-[24px] ${className}`}>
+    <div className={`flex w-full max-w-[564px] flex-col items-center gap-[20px] sm:gap-[24px] ${className}`}>
         <audio
           ref={audioRef}
           src={currentSrc}
@@ -915,6 +890,5 @@ export const CassettePlayer: React.FC<CassettePlayerProps> = ({
           </DeckButton>
         </Section>
       </div>
-    </>
   );
 };

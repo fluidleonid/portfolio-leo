@@ -16,37 +16,13 @@ export interface TapeDspParams {
 
 export const DEFAULT_TAPE_DSP_PARAMS: TapeDspParams = {
   enabled: true,
-  tapeQuality: 55,
-  noiseLevel: 32,
-  headQuality: 60,
-  motorQuality: 65,
-  cueSpeed: 3.4,
-  scrubMotorGain: 45,
+  tapeQuality: 70,
+  noiseLevel: 39,
+  headQuality: 20,
+  motorQuality: 14,
+  cueSpeed: 2.4,
+  scrubMotorGain: 100,
 };
-
-const TAPE_DSP_STORAGE_KEY = "leo_tape_dsp_params_v1";
-
-export function loadSavedTapeDspParams(): TapeDspParams {
-  if (typeof window === "undefined") return { ...DEFAULT_TAPE_DSP_PARAMS };
-  try {
-    const raw = window.localStorage.getItem(TAPE_DSP_STORAGE_KEY);
-    if (raw) {
-      return { ...DEFAULT_TAPE_DSP_PARAMS, ...(JSON.parse(raw) as Partial<TapeDspParams>) };
-    }
-  } catch {
-    // ignore storage errors
-  }
-  return { ...DEFAULT_TAPE_DSP_PARAMS };
-}
-
-export function saveTapeDspParams(params: TapeDspParams): void {
-  if (typeof window === "undefined") return;
-  try {
-    window.localStorage.setItem(TAPE_DSP_STORAGE_KEY, JSON.stringify(params));
-  } catch {
-    // ignore storage errors
-  }
-}
 
 /**
  * VintageTapeEngine
