@@ -336,7 +336,7 @@ const siteSettingsDoc = {
   siteTitle: "Leonid Dmitriev — Product Designer",
   metaDescription:
     "Portfolio of Leonid Dmitriev: Product Designer specializing in complex B2B platforms, enterprise tools, and FinTech systems.",
-  siteUrl: "https://leo-portfolio-orpin.vercel.app",
+  siteUrl: "https://leodmitriev.vercel.app",
   keywords: [
     "Leonid Dmitriev",
     "Leo Dmitriev",

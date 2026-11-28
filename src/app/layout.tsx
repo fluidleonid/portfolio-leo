@@ -13,7 +13,10 @@ const rockSalt = Rock_Salt({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://portfolio-leo-virid.vercel.app"),
+  metadataBase: new URL("https://leodmitriev.vercel.app"),
+  alternates: {
+    canonical: "https://leodmitriev.vercel.app",
+  },
   title: {
     default: "Leonid Dmitriev — Product Designer",
     template: "%s — Leonid Dmitriev",
@@ -28,7 +31,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: "https://portfolio-leo-virid.vercel.app",
+    url: "https://leodmitriev.vercel.app",
     siteName: "Leonid Dmitriev — Product Designer",
     title: "Leonid Dmitriev — Product Designer",
     description:
