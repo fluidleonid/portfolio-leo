@@ -570,8 +570,6 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
             <a
               href="/Leo_Dmitriev_Product_Designer.pdf"
               download="Leo_Dmitriev_Product_Designer.pdf"
-              target="_blank"
-              rel="noopener noreferrer"
               aria-label="Download CV"
               onClick={() => trackEvent("contact_click", { channel: "cv_download" })}
               className="cursor-pointer"
