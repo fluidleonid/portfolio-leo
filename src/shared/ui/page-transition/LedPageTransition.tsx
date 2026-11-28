@@ -81,7 +81,7 @@ export function LedPageTransition({ children }: LedPageTransitionProps) {
       const href = anchor.getAttribute("href");
       if (!href) return;
 
-      // Ignore external links, in-page hash anchors, mailto/tel, or modified clicks
+      // Ignore external links, file downloads, in-page hash anchors, mailto/tel, or modified clicks
       if (
         href.startsWith("http") ||
         href.startsWith("//") ||
@@ -89,6 +89,8 @@ export function LedPageTransition({ children }: LedPageTransitionProps) {
         href.startsWith("mailto:") ||
         href.startsWith("tel:") ||
         anchor.target === "_blank" ||
+        anchor.hasAttribute("download") ||
+        /\.(pdf|zip|png|jpe?g|webp|svg|mp3|wav|mp4)$/i.test(href.split("?")[0]) ||
         e.ctrlKey ||
         e.metaKey ||
         e.shiftKey ||
