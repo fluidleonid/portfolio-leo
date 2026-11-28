@@ -568,8 +568,8 @@ export const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
           <Section label="CV" className="flex h-[94px] sm:h-[124px] w-[96px] sm:w-[124px] shrink-0 items-center justify-center p-[16px] sm:p-[20px]"
           >
             <a
-              href="/cv.pdf"
-              download="Leo_Dmitriev_CV.pdf"
+              href="/Leo_Dmitriev_Product_Designer.pdf"
+              download="Leo_Dmitriev_Product_Designer.pdf"
               target="_blank"
               rel="noopener noreferrer"
               aria-label="Download CV"
